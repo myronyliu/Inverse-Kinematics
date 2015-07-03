@@ -2,6 +2,9 @@
 
 #include "stdafx.h"
 #include "GlutUI.h"
+#include "Paths.h"
+
+
 void SaveAsBMP(const char *fileName)
 {
     FILE *file;
@@ -54,8 +57,8 @@ GlutUI::Manager MANAGER;
 int main(int argc, char* argv[])
 {
     MANAGER.init(argc, argv);
-    int windowWidth = 256;
-    int windowHeight = 256;
+    int windowWidth = 512;
+    int windowHeight = 512;
     GlutUI::Window & mainWindow = MANAGER.createWindow(windowWidth, windowHeight, "Render Window");
     GlutUI::Panel & mainPanel = MANAGER.createPanel(mainWindow, windowWidth, windowHeight, "Render Panel");
     Scene::World world = Scene::createWorld();
@@ -66,15 +69,25 @@ int main(int argc, char* argv[])
 
     Scene::Shader* rainbowShader = new Scene::Shader("shaders/rainbow_vert.glsl", "shaders/rainbow_frag.glsl");
 
-    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec4(1, 0, 0, 1));
-    Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), glm::vec4(0, 1, 0, 1));
-    Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec4(0, 0, 1, 1));
+    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-1, -1, -1), glm::vec3(2, 0, 0));
+    Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-1, -1, -1), glm::vec3(0, 2, 0));
+    Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-1, -1, -1), glm::vec3(0, 0, 2));
+    xAxis->setColor(glm::vec4(1, 0, 0, 1));
+    yAxis->setColor(glm::vec4(0, 1, 0, 1));
+    zAxis->setColor(glm::vec4(0, 0, 1, 1));
     world.addObject(xAxis);
     world.addObject(yAxis);
     world.addObject(zAxis);
+
+    Scene::Path * linePath = new Scene::Path;
+    linePath->setParameterization(PathParameterizations::circle);
+    world.addObject(linePath);
+
+
+
     Scene::Camera * cam = new Scene::Camera();
-    cam->setPos(glm::vec3(0,0,5));
-    //cam->setRz(0);
+    cam->setPos(glm::vec3(0, 0, 4));
+    cam->setDir(glm::vec3(0, 0, -1));
     mainPanel.setWorld(&world);
     mainPanel.setCamera(cam);
     GlutUI::Controls::Keyboard keyboard(&mainPanel, mainPanel.getCamera());
@@ -83,7 +96,7 @@ int main(int argc, char* argv[])
     ///////////////////////////////////////
     ///// Keyboard Hotkey Assignments /////
     ///////////////////////////////////////
-    auto ilambda = [&]() {
+    auto ilambda = []() {
         std::string bmpName = "out.bmp";
         SaveAsBMP(bmpName.c_str());
     };

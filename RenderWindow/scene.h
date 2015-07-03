@@ -30,8 +30,8 @@ public:
 
     /* setters */
     void setPos(glm::vec3 pos) { _pos = pos; }
-    void setDir(glm::vec3 dir) { _dir = dir; }
-    void setUp(glm::vec3 up) { _up = up; }
+    void setDir(glm::vec3 dir) { _dir = glm::normalize(dir); }
+    void setUp(glm::vec3 up) { _up = glm::normalize(up - glm::dot(_up, _dir)*_dir); }
 
     void panLeft(float theta) { _dir = glm::rotate(_dir, theta, _up); }
     void panRight(float theta) { _dir = glm::rotate(_dir, -theta, _up); }
@@ -120,12 +120,11 @@ class Object
 {
 public:
 /* Constructors */
-    Object() : _tx(0), _ty(0), _tz(0), _phi(0), _the(0), _psi(0), _visible(true)
+    Object() : _t(glm::vec3(0,0,0)), _w(glm::vec3(0,0,0)), _color(glm::vec4(1,1,1,1)), _visible(true)
         {
             _objectID = nextID();
         }
-    Object(float tx, float ty, float tz, float phi, float the, float psi) : _tx(tx), _ty(ty), _tz(tz),
-        _phi(psi), _the(the), _psi(psi), _visible(true)
+    Object(glm::vec3 t, glm::vec3 w) : _t(t), _w(w), _color(glm::vec4(1, 1, 1, 1)), _visible(true)
         {
             _objectID = nextID();
         }
@@ -134,23 +133,24 @@ public:
     virtual void doDraw() = 0;
 
     /* getters */
-    float getTx() { return _tx; } const
-    float getTy() { return _ty; } const
-    float getTz() { return _tz; } const
-    float getPhi() { return _phi; } const
-    float getThe() { return _the; } const
-    float getPsi() { return _psi; } const
-    bool getVisible() { return _visible; } const
-    World* getWorld() { return _world; } const
-    int getID() { return _objectID; } const
+    glm::vec3 position() const { return _t; }
+    glm::vec3 rotation() const { return _w; }
+    bool getVisible() const { return _visible; }
+    World* getWorld() const { return _world; }
+    int getID() const { return _objectID; }
 
     /* setters */
-    void setTx(float tx) { _tx = tx; }
-    void setTy(float ty) { _ty = ty; }
-    void setTz(float tz) { _tz = tz; }
-    void setPhi(float phi) { _phi = phi; }
-    void setThe(float the) { _the = the; }
-    void setPsi(float psi) { _psi = psi; }
+    void setColor(const glm::vec4& color) { _color = color; }
+    void setPosition(const glm::vec3& t) { _t = t; }
+    void setRotation(const glm::vec3& w) { _w = w; }
+    void setOrientation(const glm::vec3& zIn, const glm::vec3& yIn) {
+        glm::vec3 z = glm::normalize(zIn);
+        glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
+        glm::vec3 x = glm::cross(y, z);
+        glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
+        _w = glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]);
+        _w *= acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2) / (2 * sin(glm::length(_w)));
+    }
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
 
@@ -162,8 +162,9 @@ public:
 protected:
     World * _world;
     int _objectID;
-    float _tx, _ty, _tz;
-    float _phi, _the, _psi;
+    glm::vec3 _t; // translation
+    glm::vec3 _w; // angle-axis rotation
+    glm::vec4 _color;
     bool _visible;
 
 private:
@@ -187,14 +188,12 @@ private:
 
 class Arrow : public Object{
 public:
-    Arrow() : Object(), _tail(glm::vec3(0, 0, 0)), _head(glm::vec3(0, 0, 1)), _color(glm::vec4(1, 1, 1, 1)) {}
-    Arrow(const glm::vec3& tail, const glm::vec3& head) : Object(), _tail(tail), _head(head), _color(glm::vec4(1, 1, 1, 1)) {}
-    Arrow(const glm::vec3& tail, const glm::vec3& head, const glm::vec4& color) : Object(), _tail(tail), _head(head), _color(color) {}
+    Arrow() : Object(), _origin(glm::vec3(0, 0, 0)), _displacement(glm::vec3(0, 0, 1)) {}
+    Arrow(const glm::vec3& origin, const glm::vec3& displacement) : Object(), _origin(origin), _displacement(displacement) {}
     void doDraw();
 private:
-    glm::vec4 _color;
-    glm::vec3 _head;
-    glm::vec3 _tail;
+    glm::vec3 _displacement;
+    glm::vec3 _origin;
 };
 
 class Sphere : public Object
@@ -217,8 +216,7 @@ public:
     ObjGeometry(std::string filename) : Object() { _filename = filename; };
     void doDraw();
 
-    ~ObjGeometry()
-    {
+    ~ObjGeometry() {
         glBindVertexArray(0);
         glDeleteVertexArrays(1, &_vertexArrayID);
     }
@@ -235,7 +233,18 @@ private:
     GLuint _vertexArrayID;
 };
 
-
+class Path : public Object
+{
+public:
+    Path() : Object() {};
+    void setParameterization(glm::vec3 (*parameterization)(const float&))
+    {
+        _parameterization = parameterization;
+    }
+    void doDraw();
+private:
+    glm::vec3(*_parameterization)(const float&);
+};
 
 }
 

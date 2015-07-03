@@ -5,14 +5,15 @@
 
 namespace GlutDraw
 {
-void drawLine(float x1, float y1, float z1,
-        float x2, float y2, float z2);
+void drawLine(glm::vec3 tail, glm::vec3 head);
+
+void drawCone(glm::vec3 base, float radius, glm::vec3 axis, int n = 32);
 
 //TODO PRIO: drawRectangle so that we can do buttons.
 void drawRectangle(float x, float y,
         float width, float height);
 
 //Draw sphere at center of panel
-void drawSphere(float r,GLint n, GLint m);
+void drawSphere(glm::vec3 center, float r, int n = 32, int m = 32);
 };
 #endif /* GLUTDRAW_H */

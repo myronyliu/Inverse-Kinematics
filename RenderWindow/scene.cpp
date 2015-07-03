@@ -51,11 +51,16 @@ void Object::draw()
 {
     if (!_visible) return;
 
+    glPushAttrib(GL_CURRENT_BIT);
+    glColor4f(_color[0], _color[1], _color[2], _color[3]);
+
+    float theta = glm::length(_w);
+    glm::vec3 wHat;
+    wHat = _w / theta;
+
     glPushMatrix();
-    glTranslated(_tx, _ty, _tz);
-    glRotated(_psi, 0, 0, 1);
-    glRotated(_the, 0, 1, 0);
-    glRotated(_phi, 0, 0, 1);
+    glTranslated(_t[0], _t[1], _t[2]);
+    if (theta > 0) glRotated(theta, wHat[0], wHat[1], wHat[2]);
 
     doDraw();
 
@@ -66,55 +71,52 @@ void Object::draw(Shader * shader)
 {
     if (!_visible) return;
 
+    float theta = glm::length(_w);
+    glm::vec3 wHat;
+    wHat = _w / theta;
+
     glPushMatrix();
-    glTranslated(_tx, _ty, _tz);
-    glRotated(_psi, 0, 0, 1);
-    glRotated(_the, 0, 1, 0);
-    glRotated(_phi, 0, 0, 1);
+    glTranslated(_t[0], _t[1], _t[2]);
+    if (theta>0) glRotated(theta, wHat[0], wHat[1], wHat[2]);
 
     shader->link();
     doDraw();
     shader->unlink();
     glPopMatrix();
+
+
+    glPopAttrib();
 }
 
 void Grid::doDraw()
 {
     for (int r = -(_rows / 2); r <= (_rows / 2); r++)
     {
-        GlutDraw::drawLine(-(_cols / 2.0f)*_gap, 0, r*_gap,
-            (_cols / 2.0f)*_gap, 0, r*_gap);
+        GlutDraw::drawLine(
+            glm::vec3(-(_cols / 2.0f)*_gap, 0, r*_gap),
+            glm::vec3((_cols / 2.0f)*_gap, 0, r*_gap));
     }
     for (int c = -(_cols / 2); c <= (_cols / 2); c++)
     {
-        GlutDraw::drawLine(c*_gap, 0, -(_rows / 2.0f)*_gap,
-            c*_gap, 0, (_rows / 2.0f)*_gap);
+        GlutDraw::drawLine(
+            glm::vec3(c*_gap, 0, -(_rows / 2.0f)*_gap),
+            glm::vec3(c*_gap, 0, (_rows / 2.0f)*_gap));
     }
 }
 
 void Arrow::doDraw() {
-    glPushAttrib(GL_CURRENT_BIT);
-    glColor3f(_color[0], _color[1], _color[2]);
-    GlutDraw::drawLine(_tail[0], _tail[1], _tail[2], _head[0], _head[1], _head[2]);
+    
+    GlutDraw::drawLine(_origin, _origin + _displacement);
 
-    glPushMatrix();
-    glTranslated(_head[0], _head[1], _head[2]);
-    GlutDraw::drawSphere((_head - _tail).length() / 32.0f, 32, 32);
-    glPopMatrix();
+    float alpha = 1.0f / 16;
+    float d = glm::length(_displacement);
+    GlutDraw::drawCone(_origin + (1 - alpha)*_displacement, d*alpha/2, alpha*_displacement);
 
-
-    //float d = distance(_head, _tail);
-    //vec3 n = normalize(_head - _tail);
-    //vec3 pivot = _head - (d / 10)*n;
-    //glBegin(GL_TRIANGLE_FAN);
-    //glVertex3f(_head[0], _head[1], _head[2]);
-    //glEnd();
-    glPopAttrib();
 }
 
 void Sphere::doDraw()
 {
-    GlutDraw::drawSphere(_r, _n, _m);
+    GlutDraw::drawSphere(_t,_r, _n, _m);
 }
 
 void ObjGeometry::doDraw()
@@ -320,4 +322,19 @@ void Shader::link()
 void Shader::unlink()
 {
     glUseProgram(0);
+}
+
+
+
+
+
+void Path::doDraw() {
+    int n = 1024;
+
+    glBegin(GL_LINE_STRIP);
+    for (int i = 0; i <= n; i++) {
+        glm::vec3 pt = _parameterization((float)i / n);
+        glVertex3f(pt[0], pt[1], pt[2]);
+    }
+    glEnd();
 }

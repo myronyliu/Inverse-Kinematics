@@ -215,7 +215,7 @@ void Panel::draw()
         glPushMatrix();
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        gluPerspective(45, (float)getWidth() / getHeight(), 0.01, 1000000);
+        gluPerspective(32, (float)getWidth() / getHeight(), 0.01, 1000000);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glMultMatrixf(_camera->rotMatData());
