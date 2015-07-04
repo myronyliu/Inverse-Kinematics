@@ -69,9 +69,9 @@ int main(int argc, char* argv[])
 
     Scene::Shader* rainbowShader = new Scene::Shader("shaders/rainbow_vert.glsl", "shaders/rainbow_frag.glsl");
 
-    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-1, -1, -1), glm::vec3(2, 0, 0));
-    Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-1, -1, -1), glm::vec3(0, 2, 0));
-    Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-1, -1, -1), glm::vec3(0, 0, 2));
+    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(2, 0, 0));
+    Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 2, 0));
+    Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 2));
     xAxis->setColor(glm::vec4(1, 0, 0, 1));
     yAxis->setColor(glm::vec4(0, 1, 0, 1));
     zAxis->setColor(glm::vec4(0, 0, 1, 1));

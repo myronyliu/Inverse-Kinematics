@@ -6,6 +6,7 @@ using namespace std;
 using namespace glm;
 /** Global variables **/
 int Object::NEXTID = 0;
+float jointRadius = 0.1;
 
 /* Method Definitions */
 void World::addObject(Object * obj)
@@ -104,13 +105,29 @@ void Grid::doDraw()
     }
 }
 
+Arrow::Arrow(const glm::vec3& origin, const glm::vec3& displacement) : Object() {
+    _t = origin;
+    _length = glm::length(displacement);
+    if (displacement[0] == 0 && displacement[1] == 0) {
+        _w = glm::vec3(0, 0, 0);
+    }
+    else {
+        _w = (M_PI/2.0f)*glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), displacement/_length);
+    }
+}
+
 void Arrow::doDraw() {
-    
-    GlutDraw::drawLine(_origin, _origin + _displacement);
+    float theta = glm::length(_w);
+    glm::vec3 displacement;
+    if (theta == 0) displacement = glm::vec3(0, 0, _length);
+    else displacement = glm::rotate(glm::vec3(0, 0, _length), theta, _w / theta);
+    glm::vec3 asdf = _t + displacement;
+
+    GlutDraw::drawLine(_t, _t + displacement);
 
     float alpha = 1.0f / 16;
-    float d = glm::length(_displacement);
-    GlutDraw::drawCone(_origin + (1 - alpha)*_displacement, d*alpha/2, alpha*_displacement);
+    float d = glm::length(displacement);
+    GlutDraw::drawCone(_t + (1 - alpha)*displacement, d*alpha/2, alpha*displacement);
 
 }
 
@@ -337,4 +354,35 @@ void Path::doDraw() {
         glVertex3f(pt[0], pt[1], pt[2]);
     }
     glEnd();
+}
+
+Body* Body::root() {
+    Body* body = this;
+    while (body->_parent != NULL) { body = body->_parent; }
+    return body;
+}
+
+void Body::updateGlobalTransform() {
+    std::vector<glm::mat3> Rs;
+    std::vector<glm::vec3> ts;
+    Body* body = this;
+    Rs.push_back(rotationMatrix(_w));
+    ts.push_back(_t);
+    while (body->_parent != NULL) {
+        body = body->_parent;
+        Rs.push_back(rotationMatrix(body->_w));
+        ts.push_back(_t);
+    }
+    glm::mat3 R = Rs.back();
+    glm::vec3 t = ts.back();
+    for (int i = Rs.size()-2; i > -1; i--) {
+        t += R* ts[i];
+        R = Rs[i] * R;
+    }
+    _body->setRotation(angleAxisVector(R));
+    _body->setPosition(t);
+}
+
+void Body::doDraw() {
+
 }

@@ -54,3 +54,26 @@ std::string zero_padded_name(std::string prefix, int number, int pad)
 
     return name.str();
 }
+
+glm::mat3 rotationMatrix(const glm::vec3& w) {
+    glm::mat3 wCross(
+        glm::vec3(0, w[2], -w[1]),
+        glm::vec3(-w[2], 0, w[0]),
+        glm::vec3(w[1], -w[0], 0));
+    float theta = glm::length(w);
+    return glm::mat3() + sin(theta)*wCross + (1 - cos(theta))*wCross*wCross;
+}
+
+glm::vec3 angleAxisVector(const glm::mat3& R) {
+    float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
+    return glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]) / (2 * sin(theta));
+}
+
+glm::vec3 angleAxisVector(const glm::vec3& zIn, const glm::vec3& yIn) {
+    glm::vec3 z = glm::normalize(zIn);
+    glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
+    glm::vec3 x = glm::cross(y, z);
+    glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
+    float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
+    return glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]) / (2 * sin(theta));
+}

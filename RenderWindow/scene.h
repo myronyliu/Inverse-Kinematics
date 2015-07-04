@@ -6,14 +6,15 @@
 
 namespace Scene
 {
-enum{
-    BINARY_APPROXIMATION_METHOD = 0,
-    MIDPOINT_APPROXIMATION_METHOD = 1,
-    QUADRIC_APPROXIMATION_METHOD = 2
+enum {
+    PIN = 0,
+    BALL = 1,
+    PRISM = 2
 };
 
 class Object;
 class Shader;
+class Body;
 
 class Camera
 {
@@ -148,8 +149,8 @@ public:
         glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
         glm::vec3 x = glm::cross(y, z);
         glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
-        _w = glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]);
-        _w *= acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2) / (2 * sin(glm::length(_w)));
+        float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
+        _w = glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]) / (2 * sin(theta));
     }
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
@@ -188,12 +189,12 @@ private:
 
 class Arrow : public Object{
 public:
-    Arrow() : Object(), _origin(glm::vec3(0, 0, 0)), _displacement(glm::vec3(0, 0, 1)) {}
-    Arrow(const glm::vec3& origin, const glm::vec3& displacement) : Object(), _origin(origin), _displacement(displacement) {}
+    Arrow() {}
+    Arrow(const glm::vec3& origin, const glm::vec3& displacement);
+    void init();
     void doDraw();
 private:
-    glm::vec3 _displacement;
-    glm::vec3 _origin;
+    float _length;
 };
 
 class Sphere : public Object
@@ -245,6 +246,36 @@ public:
 private:
     glm::vec3(*_parameterization)(const float&);
 };
+
+
+class Body : public Object
+{
+public:
+    Body() {}
+
+    Body* root();
+
+    void updateGlobalTransform();
+
+    
+
+    void doDraw();
+private:
+    Object* _body; // _body->w and _body->t contain the GLOBAL transforms
+
+    Body* _parent;
+    std::vector<Body*> _children;
+    int _jointType; // the type of joint connecting this to its parent
+
+    // the following refer to the local coordinate system
+
+    glm::vec3 _t; // relative to parent Body
+    glm::vec3 _w;
+
+    glm::vec3 _tJoint; // relative to this Body
+    glm::vec3 _wJoint;
+};
+
 
 }
 

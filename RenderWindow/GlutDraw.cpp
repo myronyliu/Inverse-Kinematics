@@ -57,3 +57,39 @@ void GlutDraw::drawSphere(glm::vec3 center, float r, int n, int m)
     glutSolidSphere(r, n, m);
     glPopMatrix();
 }
+
+void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n)
+{
+    float h = glm::length(halfAxis);
+    glm::vec3 w = glm::cross(glm::vec3(0, 0, 1), halfAxis / h);
+    float phi = glm::length(w);
+    if (phi > 0) w /= phi;
+    phi *= 90;
+
+    float dTheta = 2 * M_PI / n;
+
+    glPushMatrix();
+    glTranslatef(center[0], center[1], center[2]);
+    glRotatef(phi, w[0], w[1], w[2]);
+
+    glBegin(GL_QUAD_STRIP);
+    for (int i = 0; i <= n; i++) {
+        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), -h);
+        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), h);
+    }
+    glEnd();
+    
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(0, 0, -h);
+    for (int i = 0; i <= n; i++) {
+        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), -h);
+    }
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex3f(0, 0, h);
+    for (int i = 0; i <= n; i++) {
+        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), h);
+    }
+    glEnd();
+}
