@@ -68,7 +68,7 @@ int main(int argc, char* argv[])
     std::cout << "====================================================" << std::endl;
 
     Scene::Shader* rainbowShader = new Scene::Shader("shaders/rainbow_vert.glsl", "shaders/rainbow_frag.glsl");
-
+/*
     Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(2, 0, 0));
     Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 2, 0));
     Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 2));
@@ -77,7 +77,17 @@ int main(int argc, char* argv[])
     zAxis->setColor(glm::vec4(0, 0, 1, 1));
     world.addObject(xAxis);
     world.addObject(yAxis);
-    world.addObject(zAxis);
+    world.addObject(zAxis);*/
+
+    Scene::Cylinder* xCylinder = new Scene::Cylinder(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), 0.1);
+    Scene::Cylinder* yCylinder = new Scene::Cylinder(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), 0.1);
+    Scene::Cylinder* zCylinder = new Scene::Cylinder(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), 0.1);
+    xCylinder->setColor(glm::vec4(1, 0, 0, 1));
+    yCylinder->setColor(glm::vec4(0, 1, 0, 1));
+    zCylinder->setColor(glm::vec4(0, 0, 1, 1));
+    world.addObject(xCylinder);
+    world.addObject(yCylinder);
+    world.addObject(zCylinder);
 
     Scene::Path * linePath = new Scene::Path;
     linePath->setParameterization(PathParameterizations::circle);

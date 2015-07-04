@@ -13,7 +13,7 @@ void GlutDraw::drawCone(glm::vec3 base, float r, glm::vec3 axis, int n) {
     glm::vec3 w = glm::cross(glm::vec3(0, 0, 1), axis / h);
     float phi = glm::length(w);
     if (phi > 0) w /= phi;
-    phi *= 90;
+    phi *= 90.0f;
 
     float dTheta = 2 * M_PI / n;
 
@@ -64,7 +64,7 @@ void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n
     glm::vec3 w = glm::cross(glm::vec3(0, 0, 1), halfAxis / h);
     float phi = glm::length(w);
     if (phi > 0) w /= phi;
-    phi *= 90;
+    phi *= 90.0f;
 
     float dTheta = 2 * M_PI / n;
 
@@ -92,4 +92,6 @@ void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n
         glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), h);
     }
     glEnd();
+
+    glPopMatrix();
 }

@@ -131,9 +131,32 @@ void Arrow::doDraw() {
 
 }
 
-void Sphere::doDraw()
-{
-    GlutDraw::drawSphere(_t,_r, _n, _m);
+Cylinder::Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) : Object() {
+    _t = center;
+    _r = radius;
+    _h = 2 * glm::length(halfAxis);
+    if (halfAxis[0] == 0 && halfAxis[1] == 0) {
+        _w = glm::vec3(0, 0, 0);
+    }
+    else {
+        _w = (M_PI / 2.0f)*glm::cross(glm::vec3(0.0f, 0.0f, 1.0f), 2.0f*halfAxis/_h);
+    }
+}
+
+void Cylinder::doDraw() {
+    float theta = glm::length(_w);
+
+    if (theta > 0) {
+        glPushMatrix();
+        glm::vec3 rotAxis = _w / theta;
+        glRotatef((180.0f / M_PI)*theta, rotAxis[0], rotAxis[1], rotAxis[2]);
+    }
+
+    GlutDraw::drawCylinder(_t, glm::vec3(0, 0, _h / 2), _r);
+
+    if (theta > 0) {
+        glPopMatrix();
+    }
 }
 
 void ObjGeometry::doDraw()
@@ -380,9 +403,29 @@ void Body::updateGlobalTransform() {
         R = Rs[i] * R;
     }
     _body->setRotation(angleAxisVector(R));
-    _body->setPosition(t);
+    _body->setTranslation(t);
 }
 
 void Body::doDraw() {
+    _body->doDraw();
 
+    glm::vec3 trans = _body->translation();
+    glm::vec3 rot = _body->rotation();
+    float theta = glm::length(rot);
+    rot /= theta;
+    theta *= 180.0f / M_PI;
+
+    glPushMatrix();
+
+    glTranslatef(trans[0], trans[1], trans[2]);
+    glRotatef(theta, rot[0], rot[1], rot[2]);
+
+    if (_jointType == BALL) {
+        GlutDraw::drawSphere(_t, 0.1);
+    }
+    if (_jointType == PIN) {
+        //gl
+        //GlutDraw::drawCylinder(_t,)
+    }
+    glPopMatrix();
 }

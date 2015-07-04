@@ -134,7 +134,7 @@ public:
     virtual void doDraw() = 0;
 
     /* getters */
-    glm::vec3 position() const { return _t; }
+    glm::vec3 translation() const { return _t; }
     glm::vec3 rotation() const { return _w; }
     bool getVisible() const { return _visible; }
     World* getWorld() const { return _world; }
@@ -142,7 +142,7 @@ public:
 
     /* setters */
     void setColor(const glm::vec4& color) { _color = color; }
-    void setPosition(const glm::vec3& t) { _t = t; }
+    void setTranslation(const glm::vec3& t) { _t = t; }
     void setRotation(const glm::vec3& w) { _w = w; }
     void setOrientation(const glm::vec3& zIn, const glm::vec3& yIn) {
         glm::vec3 z = glm::normalize(zIn);
@@ -191,23 +191,31 @@ class Arrow : public Object{
 public:
     Arrow() {}
     Arrow(const glm::vec3& origin, const glm::vec3& displacement);
-    void init();
     void doDraw();
 private:
     float _length;
+};
+
+class Cylinder : public Object {
+public:
+    Cylinder() {}
+    Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius);
+    void doDraw();
+private:
+    float _r;
+    float _h;
 };
 
 class Sphere : public Object
 {
 public:
     /* Constructors */
-    Sphere() : Object(), _r(5), _n(100), _m(100) { }
-    Sphere(float radius, int n, int m) : Object(), _r(radius), _n(n), _m(m) { }
+    Sphere() : Object(), _r(5) { }
+    Sphere(float radius) : Object(), _r(radius) { }
 
-    void doDraw();
+    void doDraw() { GlutDraw::drawSphere(_t, _r); }
 
 protected:
-    int _n, _m; // number of theta and phi subdivisions respectively
     float _r;
 };
 
