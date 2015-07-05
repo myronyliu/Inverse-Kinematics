@@ -11,10 +11,14 @@ enum {
     BALL = 1,
     PRISM = 2
 };
+enum {
+    AMBIENT = 0,
+    DIFFUSE = 1
+};
 
 class Object;
 class Shader;
-class Body;
+class TreeBody;
 
 class Camera
 {
@@ -71,6 +75,18 @@ public:
     void assignShader(Object *, Shader *);
     Shader * findShader(Object *);
 
+    void addLight(const glm::vec3& position, const glm::vec4& diffuse) {
+        glEnable(GL_LIGHT0);
+        GLfloat light_position[] = { position[0], position[1], position[2] };
+        GLfloat light_ambient[] = { 0.0, 0.0, 0.0, 1.0 };
+        GLfloat light_diffuse[] = { diffuse[0], diffuse[1], diffuse[2], diffuse[3] };
+        GLfloat light_specular[] = { 0.0, 0.0, 0.0, 1.0 };
+        glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
+        glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
+        glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
+        glLightfv(GL_LIGHT0, GL_POSITION, light_position);
+    }
+
     //void removeObject(Object & obj) {  }
 
     Camera * getCam() { return _cam; }
@@ -121,11 +137,11 @@ class Object
 {
 public:
 /* Constructors */
-    Object() : _t(glm::vec3(0,0,0)), _w(glm::vec3(0,0,0)), _color(glm::vec4(1,1,1,1)), _visible(true)
+    Object() : _t(glm::vec3(0,0,0)), _w(glm::vec3(0,0,0)), _color(glm::vec4(1,1,1,1)), _material(DIFFUSE), _visible(true)
         {
             _objectID = nextID();
         }
-    Object(glm::vec3 t, glm::vec3 w) : _t(t), _w(w), _color(glm::vec4(1, 1, 1, 1)), _visible(true)
+    Object(glm::vec3 t, glm::vec3 w) : _t(t), _w(w), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true)
         {
             _objectID = nextID();
         }
@@ -144,14 +160,7 @@ public:
     void setColor(const glm::vec4& color) { _color = color; }
     void setTranslation(const glm::vec3& t) { _t = t; }
     void setRotation(const glm::vec3& w) { _w = w; }
-    void setOrientation(const glm::vec3& zIn, const glm::vec3& yIn) {
-        glm::vec3 z = glm::normalize(zIn);
-        glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
-        glm::vec3 x = glm::cross(y, z);
-        glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
-        float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
-        _w = glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]) / (2 * sin(theta));
-    }
+    void setOrientation(const glm::vec3& z, const glm::vec3& y);
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
 
@@ -166,6 +175,7 @@ protected:
     glm::vec3 _t; // translation
     glm::vec3 _w; // angle-axis rotation
     glm::vec4 _color;
+    int _material;
     bool _visible;
 
 private:
@@ -189,18 +199,36 @@ private:
 
 class Arrow : public Object{
 public:
-    Arrow() {}
+    Arrow() : Object(), _length(1) {}
     Arrow(const glm::vec3& origin, const glm::vec3& displacement);
     void doDraw();
 private:
     float _length;
 };
 
+class Box : public Object {
+public:
+    Box() : Object() {}
+    Box(const glm::vec3& center, const glm::vec3& rotation, const glm::vec3& dimensions) : Object(center, rotation), _dimensions(dimensions) {}
+    Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions);
+    void doDraw();
+protected:
+    glm::vec3 _dimensions;
+};
+class AnchoredBox : public Box {
+public:
+    AnchoredBox() : Box() {}
+    AnchoredBox(const glm::vec3& anchor, const glm::vec3& rotation, const glm::vec3& dimensions);
+    AnchoredBox(const glm::vec3& anchor, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions);
+    void doDraw();
+private:
+};
+
 class Cylinder : public Object {
 public:
     Cylinder() {}
     Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius);
-    void doDraw();
+    void doDraw() { GlutDraw::drawCylinder(_t, glm::vec3(0, 0, _h / 2), _r); }
 private:
     float _r;
     float _h;
@@ -211,7 +239,7 @@ class Sphere : public Object
 public:
     /* Constructors */
     Sphere() : Object(), _r(5) { }
-    Sphere(float radius) : Object(), _r(radius) { }
+    Sphere(const glm::vec3& translation, const float& radius) : Object(translation,glm::vec3(0,0,0)), _r(radius) { }
 
     void doDraw() { GlutDraw::drawSphere(_t, _r); }
 
@@ -256,33 +284,49 @@ private:
 };
 
 
-class Body : public Object
+class TreeBody : public Object
 {
 public:
-    Body() {}
+    TreeBody() {}
+    TreeBody(TreeBody* parent) {}
 
-    Body* root();
-
+    TreeBody* root();
     void updateGlobalTransform();
-
-    
-
     void doDraw();
-private:
-    Object* _body; // _body->w and _body->t contain the GLOBAL transforms
+protected:
+    Object* _object; // _object->w and _object->t contain the GLOBAL transforms
 
-    Body* _parent;
-    std::vector<Body*> _children;
+    TreeBody* _parent;
+    std::vector<TreeBody*> _children;
     int _jointType; // the type of joint connecting this to its parent
 
-    // the following refer to the local coordinate system
+    // _t and _w refer to the LOCAL transform relative to the parent (the root has _t,_w = [0,0,0])
+    // To get the GLOBAL transform, access body->_t and _body->_w
 
-    glm::vec3 _t; // relative to parent Body
-    glm::vec3 _w;
-
-    glm::vec3 _tJoint; // relative to this Body
+    glm::vec3 _tJoint; // relative to the Body on which the joint lies
     glm::vec3 _wJoint;
 };
+
+class Arm : public Object
+{
+public:
+    Arm() : Object() {}
+
+    void append(const float& length = 1, const int& type = BALL, const glm::vec3& wLocal = glm::vec3(0, 0, 0));
+    void updateGlobalTransform(const int&);
+    float armLength();
+    float armReach();
+    void doDraw();
+private:
+    // _t and _w refer to the anchor position and orientation as per usual
+    std::vector<int> _types;
+    std::vector<glm::vec3> _wLocals; // RELATIVE rotation vectors
+    std::vector<float> _lengths; // lenghts of the arms
+
+    std::vector<glm::vec3> _wGlobals; // GLOBAL rotation vectors for each segment
+    std::vector<glm::vec3> _tGlobals;
+};
+
 
 
 }

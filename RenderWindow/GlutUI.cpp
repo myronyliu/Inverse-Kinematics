@@ -249,7 +249,7 @@ void Panel::draw()
 
 void Button::draw()
 {
-    glPushMatrix();
+    /*glPushMatrix();
     glColor4d(1.0, 1.0, 1.0, 0.2);
     GlutDraw::drawRectangle(getXPos(), getYPos(), getWidth(), getHeight());
     
@@ -259,7 +259,7 @@ void Button::draw()
         glVertex2d(getXPos() + getWidth(), getYPos());
         glVertex2d(getXPos() + getWidth(), getYPos() + getHeight());
         glVertex2d(getXPos(), getYPos() + getHeight());
-    glEnd();
+    glEnd();*/
 }
 
 void Controls::Mouse::init()

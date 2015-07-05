@@ -75,5 +75,5 @@ glm::vec3 angleAxisVector(const glm::vec3& zIn, const glm::vec3& yIn) {
     glm::vec3 x = glm::cross(y, z);
     glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
     float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
-    return glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]) / (2 * sin(theta));
+    return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
 }
