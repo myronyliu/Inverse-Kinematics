@@ -64,12 +64,12 @@ glm::mat3 rotationMatrix(const glm::vec3& w) {
     return glm::mat3() + sin(theta)*wCross + (1 - cos(theta))*wCross*wCross;
 }
 
-glm::vec3 angleAxisVector(const glm::mat3& R) {
+glm::vec3 axisAngleVector(const glm::mat3& R) {
     float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
-    return glm::vec3(R[2][3] - R[3][2], R[3][1] - R[1][3], R[1][2] - R[2][1]) / (2 * sin(theta));
+    return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
 }
 
-glm::vec3 angleAxisVector(const glm::vec3& zIn, const glm::vec3& yIn) {
+glm::vec3 axisAngleVector(const glm::vec3& zIn, const glm::vec3& yIn) {
     glm::vec3 z = glm::normalize(zIn);
     glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
     glm::vec3 x = glm::cross(y, z);

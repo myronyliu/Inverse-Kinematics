@@ -17,7 +17,6 @@ glm::vec3 wAlignZ(const glm::vec3& axisIn) {
         return (M_PI / 2.0f)*glm::cross(glm::vec3(0, 0, 1), glm::normalize(axisIn));
     }
 }
-
 glm::vec3 wAlignZY(const glm::vec3& zIn, const glm::vec3& yIn) {
     glm::vec3 z = glm::normalize(zIn);
     glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
@@ -25,6 +24,10 @@ glm::vec3 wAlignZY(const glm::vec3& zIn, const glm::vec3& yIn) {
     glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
     float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
     return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
+}
+
+inline glm::vec3 composeRotation(const glm::vec3& w0, const glm::vec3& w1) {
+    return axisAngleVector(rotationMatrix(w1)*rotationMatrix(w0));
 }
 
 /* Method Definitions */
@@ -167,23 +170,15 @@ AnchoredBox::AnchoredBox(const glm::vec3& anchor, const glm::vec3& z, const glm:
 Box(anchor, z, y, dimensions) {}
 
 void AnchoredBox::doDraw() {
-    glm::vec3 half = _dimensions / 2.0f;
-    GlutDraw::drawRectangle(glm::vec3(half[0], 0, half[2]), glm::vec3(0, half[1], 0), glm::vec3(0, 0, half[2]));
-    GlutDraw::drawRectangle(glm::vec3(-half[0], 0, half[2]), glm::vec3(0, half[1], 0), -glm::vec3(0, 0, half[2]));
-    GlutDraw::drawRectangle(glm::vec3(0, half[1], half[2]), glm::vec3(0, 0, half[2]), glm::vec3(half[0], 0, 0));
-    GlutDraw::drawRectangle(glm::vec3(0, -half[1], half[2]), glm::vec3(0, 0, half[2]), -glm::vec3(half[0], 0, 0));
-    GlutDraw::drawRectangle(glm::vec3(0, 0, _dimensions[2]), glm::vec3(half[0], 0, 0), glm::vec3(0, half[1], 0));
-    GlutDraw::drawRectangle(glm::vec3(0, 0, 0), glm::vec3(half[0], 0, 0), -glm::vec3(0, half[1], 0));
+    glPushMatrix();
+    glTranslatef(0, 0, -_dimensions[2] / 2);
+    Box::doDraw();
+    glPopMatrix();
 }
 
 void Box::doDraw() {
     glm::vec3 half = _dimensions / 2.0f;
-    GlutDraw::drawRectangle(glm::vec3(half[0], 0, 0), glm::vec3(0, half[1], 0), glm::vec3(0, 0, half[2]));
-    GlutDraw::drawRectangle(-glm::vec3(half[0], 0, 0), glm::vec3(0, half[1], 0), -glm::vec3(0, 0, half[2]));
-    GlutDraw::drawRectangle(glm::vec3(0, half[1], 0), glm::vec3(0, 0, half[2]), glm::vec3(half[0], 0, 0));
-    GlutDraw::drawRectangle(-glm::vec3(0, half[1], 0), glm::vec3(0, 0, half[2]), -glm::vec3(half[0], 0, 0));
-    GlutDraw::drawRectangle(glm::vec3(0, 0, half[2]), glm::vec3(half[0], 0, 0), glm::vec3(0, half[1], 0));
-    GlutDraw::drawRectangle(-glm::vec3(0, 0, half[2]), glm::vec3(half[0], 0, 0), -glm::vec3(0, half[1], 0));
+    GlutDraw::drawParallelepiped(glm::vec3(0, 0, 0), glm::vec3(half[0], 0, 0), glm::vec3(0, half[1], 0), glm::vec3(0, 0, half[2]));
 }
 
 void ObjGeometry::doDraw()
@@ -429,7 +424,7 @@ void TreeBody::updateGlobalTransform() {
         t += R* ts[i];
         R = Rs[i] * R;
     }
-    _object->setRotation(angleAxisVector(R));
+    _object->setRotation(axisAngleVector(R));
     _object->setTranslation(t);
 }
 
@@ -457,24 +452,64 @@ void TreeBody::doDraw() {
     glPopMatrix();
 }
 
+
+Arm::Arm(std::vector<float>& lengths) :
+Object(),
+_lengths(lengths),
+_wLocals(std::vector<glm::vec3>(lengths.size(), glm::vec3(0, 0, 0))),
+_types(std::vector<int>(lengths.size(), BALL))
+{
+    if (_lengths.size() == 0) return;
+    _tGlobals.resize(lengths.size());
+    _wGlobals.resize(lengths.size());
+    glm::mat3 R = rotationMatrix(_w);
+    for (int i = 0; i < _lengths.size(); i++) {
+        if (i == 0) {
+            _tGlobals[i] = _t;
+        }
+        else {
+            _tGlobals[i] = _tGlobals[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
+        }
+        R = rotationMatrix(_wLocals[i])*R;
+        _wGlobals[i] = axisAngleVector(R);
+    }
+}
+
+
 void Arm::append(const float& length, const int& type, const glm::vec3& wLocal) {
     _lengths.push_back(length);
     _types.push_back(type);
     _wLocals.push_back(wLocal);
     _wGlobals.push_back(glm::vec3(0, 0, 0));
     _tGlobals.push_back(glm::vec3(0, 0, 0));
-    updateGlobalTransform(_lengths.size() - 1);
+    updateGlobalTransforms(_lengths.size() - 1);
 }
 
-void Arm::updateGlobalTransform(const int& index) {
-    glm::mat3 R = rotationMatrix(_w); // start with anchor
-    glm::vec3 t = _t;
-    for (int i = 0; i < index; i++) {
-        t += R*glm::vec3(0, 0, _lengths[i]);
-        R = R* rotationMatrix(_wLocals[i]);
+void Arm::updateGlobalTransforms(const int& index) {
+    int nJoints = _lengths.size();
+    if (nJoints == 0) return;
+    glm::mat3 R;
+    if (index == 0) {
+        R = rotationMatrix(_w);
     }
-    _tGlobals[index] = t;
-    _wGlobals[index] = angleAxisVector(R);
+    else {
+        R = rotationMatrix(_wGlobals[index - 1]);
+    }
+    for (int i = index; i < nJoints; i++) {
+        if (i == 0) {
+            _tGlobals[i] = _t;
+        }
+        else {
+            _tGlobals[i] = _tGlobals[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
+        }
+        R = rotationMatrix(_wLocals[i])*R;
+        _wGlobals[i] = axisAngleVector(R);
+    }
+}
+
+void Arm::setLocalJointRotation(const int& joint, const glm::vec3& wLocal) {
+    _wLocals[joint] = wLocal;
+    updateGlobalTransforms(joint);
 }
 
 float Arm::armLength() {
@@ -491,7 +526,8 @@ float Arm::armReach() {
 }
 
 void Arm::doDraw() {
-    for (int i = 0; i < _lengths.size(); i++) {
-        AnchoredBox(_tGlobals[i], _wGlobals[i], glm::vec3(0.125, 0.125, 1)*_lengths[i]).draw();
+    for (int i = 0; i < _lengths.size() - 1; i++) {
+        glm::vec3 center = (_tGlobals[i] + _tGlobals[i + 1]) / 2.0f;
+        GlutDraw::drawParallelepiped(center, glm::vec3(0, 0.05, 0), glm::vec3(0.05, 0, 0), glm::vec3(0, 0, _lengths[i] / 2));
     }
 }

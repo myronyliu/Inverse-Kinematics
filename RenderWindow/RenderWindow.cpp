@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     world.addObject(yCylinder);
     world.addObject(zCylinder);*/
 
-    Scene::AnchoredBox* xBox = new Scene::AnchoredBox(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), glm::vec3(0, 1, 0), glm::vec3(1,2,4)/10.0f);
+    Scene::AnchoredBox* xBox = new Scene::AnchoredBox(glm::vec3(1, 1, 1), glm::vec3(1, 2, 0), glm::vec3(0, 1, 0.1), glm::vec3(1, 2, 4) / 10.0f);
     xBox->setColor(glm::vec4(1, 1, 1, 1));
     world.addObject(xBox);
 
@@ -102,6 +102,11 @@ int main(int argc, char* argv[])
     linePath->setParameterization(PathParameterizations::circle);
     world.addObject(linePath);
 
+    Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 0.1f, 0.2f, 0.3f, 0.4f }));
+    arm->setLocalJointRotation(1, glm::vec3(1, 0, 0));
+    arm->setLocalJointRotation(2, glm::vec3(0, 1, 0));
+    arm->setLocalJointRotation(3, glm::vec3(0, 0, 1));
+    world.addObject(arm);
 
 
     Scene::Camera * cam = new Scene::Camera();

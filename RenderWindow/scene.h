@@ -311,9 +311,11 @@ class Arm : public Object
 {
 public:
     Arm() : Object() {}
+    Arm(std::vector<float>& lengths);
 
     void append(const float& length = 1, const int& type = BALL, const glm::vec3& wLocal = glm::vec3(0, 0, 0));
-    void updateGlobalTransform(const int&);
+    void setLocalJointRotation(const int& joint, const glm::vec3& wLocal);
+    void updateGlobalTransforms(const int& index = 0);
     float armLength();
     float armReach();
     void doDraw();
@@ -325,6 +327,8 @@ private:
 
     std::vector<glm::vec3> _wGlobals; // GLOBAL rotation vectors for each segment
     std::vector<glm::vec3> _tGlobals;
+
+    glm::vec3 _tip; // GLOBAL position of the tip of the arm
 };
 
 

@@ -23,5 +23,5 @@ void _check_gl_error(const char *file, int line);
 std::string zero_padded_name(std::string, int, int);
 
 glm::mat3 rotationMatrix(const glm::vec3& w);
-glm::vec3 angleAxisVector(const glm::mat3& R);
-glm::vec3 angleAxisVector(const glm::vec3& zIn, const glm::vec3& yIn);
+glm::vec3 axisAngleVector(const glm::mat3& R);
+glm::vec3 axisAngleVector(const glm::vec3& zIn, const glm::vec3& yIn);

@@ -115,3 +115,66 @@ void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n
 
     glPopMatrix();
 }
+
+void GlutDraw::drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis, glm::vec3 zAxisIn) {
+    glm::vec3 zAxis;
+    if (glm::dot(glm::cross(xAxis, yAxis), zAxisIn) < 0) {
+        zAxis = -zAxisIn;
+    }
+    else {
+        zAxis = zAxisIn;
+    }
+
+    glm::vec3 pt000 = center - xAxis - yAxis - zAxis;
+    glm::vec3 pt001 = center - xAxis - yAxis + zAxis;
+    glm::vec3 pt010 = center - xAxis + yAxis - zAxis;
+    glm::vec3 pt011 = center - xAxis + yAxis + zAxis;
+    glm::vec3 pt100 = center + xAxis - yAxis - zAxis;
+    glm::vec3 pt101 = center + xAxis - yAxis + zAxis;
+    glm::vec3 pt110 = center + xAxis + yAxis - zAxis;
+    glm::vec3 pt111 = center + xAxis + yAxis + zAxis;
+
+    glm::vec3 xNormal = glm::normalize(glm::cross(yAxis, zAxis));
+    glm::vec3 yNormal = glm::normalize(glm::cross(zAxis, xAxis));
+    glm::vec3 zNormal = glm::normalize(glm::cross(xAxis, yAxis));
+
+    glBegin(GL_QUADS);
+
+    glNormal3f(xNormal[0], xNormal[1], xNormal[2]);
+    glVertex3f(pt100[0], pt100[1], pt100[2]);
+    glVertex3f(pt101[0], pt101[1], pt101[2]);
+    glVertex3f(pt111[0], pt111[1], pt111[2]);
+    glVertex3f(pt110[0], pt110[1], pt110[2]);
+
+    glNormal3f(-xNormal[0], -xNormal[1], -xNormal[2]);
+    glVertex3f(pt000[0], pt000[1], pt000[2]);
+    glVertex3f(pt001[0], pt001[1], pt001[2]);
+    glVertex3f(pt011[0], pt011[1], pt011[2]);
+    glVertex3f(pt010[0], pt010[1], pt010[2]);
+
+    glNormal3f(yNormal[0], yNormal[1], yNormal[2]);
+    glVertex3f(pt010[0], pt010[1], pt010[2]);
+    glVertex3f(pt011[0], pt011[1], pt011[2]);
+    glVertex3f(pt111[0], pt111[1], pt111[2]);
+    glVertex3f(pt110[0], pt110[1], pt110[2]);
+
+    glNormal3f(-yNormal[0], -yNormal[1], -yNormal[2]);
+    glVertex3f(pt000[0], pt000[1], pt000[2]);
+    glVertex3f(pt001[0], pt001[1], pt001[2]);
+    glVertex3f(pt101[0], pt101[1], pt101[2]);
+    glVertex3f(pt100[0], pt100[1], pt100[2]);
+
+    glNormal3f(zNormal[0], zNormal[1], zNormal[2]);
+    glVertex3f(pt001[0], pt001[1], pt001[2]);
+    glVertex3f(pt011[0], pt011[1], pt011[2]);
+    glVertex3f(pt111[0], pt111[1], pt111[2]);
+    glVertex3f(pt101[0], pt101[1], pt101[2]);
+
+    glNormal3f(-zNormal[0], -zNormal[1], -zNormal[2]);
+    glVertex3f(pt000[0], pt000[1], pt000[2]);
+    glVertex3f(pt010[0], pt010[1], pt010[2]);
+    glVertex3f(pt110[0], pt110[1], pt110[2]);
+    glVertex3f(pt100[0], pt100[1], pt100[2]);
+
+    glEnd();
+}

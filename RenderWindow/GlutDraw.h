@@ -18,6 +18,7 @@ namespace GlutDraw
 
     void drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n = 32);
 
+    void drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis, glm::vec3 zAxis);
 
 };
 
