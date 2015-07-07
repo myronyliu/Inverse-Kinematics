@@ -66,6 +66,7 @@ glm::mat3 rotationMatrix(const glm::vec3& w) {
 
 glm::vec3 axisAngleVector(const glm::mat3& R) {
     float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
+    if (theta == 0) return glm::vec3(0, 0, 0);
     return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
 }
 

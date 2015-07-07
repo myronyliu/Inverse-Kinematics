@@ -168,12 +168,11 @@ void Window::draw()
 {    
     //std::cout << "Creating Window: " << getWidth() << " by " << getHeight() << "." << std::endl;
 
-    glClearColor(0.2f, 0.2f, 0.2f, 0.0f);
-    //glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
+    glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_COLOR_MATERIAL);
+    glDisable(GL_COLOR_MATERIAL);
 
     for(std::vector<UIElement *>::const_iterator child = getChildren().begin() ;
         child < getChildren().end() ; child++)

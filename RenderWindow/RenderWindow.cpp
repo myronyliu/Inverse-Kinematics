@@ -68,15 +68,14 @@ int main(int argc, char* argv[])
     std::cout << "====================================================" << std::endl;
 
     glShadeModel(GL_FLAT);
-    glDisable(GL_COLOR_MATERIAL);
     glEnable(GL_LIGHTING);
     world.addLight(glm::vec3(0, 10, 0), glm::vec4(1, 1, 1, 1));
 
     Scene::Shader* rainbowShader = new Scene::Shader("shaders/rainbow_vert.glsl", "shaders/rainbow_frag.glsl");
 
-    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(2, 0, 0));
-    Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 2, 0));
-    Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 2));
+    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(1, 0, 0));
+    Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 1, 0));
+    Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 1));
     xAxis->setColor(glm::vec4(1, 0, 0, 1));
     yAxis->setColor(glm::vec4(0, 1, 0, 1));
     zAxis->setColor(glm::vec4(0, 0, 1, 1));
@@ -94,24 +93,22 @@ int main(int argc, char* argv[])
     world.addObject(yCylinder);
     world.addObject(zCylinder);*/
 
-    Scene::AnchoredBox* xBox = new Scene::AnchoredBox(glm::vec3(1, 1, 1), glm::vec3(1, 2, 0), glm::vec3(0, 1, 0.1), glm::vec3(1, 2, 4) / 10.0f);
-    xBox->setColor(glm::vec4(1, 1, 1, 1));
-    world.addObject(xBox);
-
     Scene::Path * linePath = new Scene::Path;
     linePath->setParameterization(PathParameterizations::circle);
     world.addObject(linePath);
 
-    Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 0.1f, 0.2f, 0.3f, 0.4f }));
-    arm->setLocalJointRotation(1, glm::vec3(1, 0, 0));
-    arm->setLocalJointRotation(2, glm::vec3(0, 1, 0));
-    arm->setLocalJointRotation(3, glm::vec3(0, 0, 1));
+    Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 0.4f, 0.3f, 0.2f, 0.1f }));
+    arm->setLocalJointRotation(1, glm::vec3(0.5, 0, 0));
+    arm->setLocalJointRotation(2, glm::vec3(0, 0.5, 0));
+    arm->setLocalJointRotation(3, glm::vec3(0.5, 0.5, 0));
+    arm->setRotation(glm::vec3(1,0,0));
+    arm->setTranslation(glm::vec3(1, 1, 0));
     world.addObject(arm);
 
 
     Scene::Camera * cam = new Scene::Camera();
-    cam->setPos(glm::vec3(0, 0, 8));
-    cam->setDir(glm::vec3(0, 0, -1));
+    cam->setPos(glm::vec3(8, 0, 0));
+    cam->setDir(glm::vec3(-1, 0, 0));
     mainPanel.setWorld(&world);
     mainPanel.setCamera(cam);
     GlutUI::Controls::Keyboard keyboard(&mainPanel, mainPanel.getCamera());

@@ -457,13 +457,15 @@ Arm::Arm(std::vector<float>& lengths) :
 Object(),
 _lengths(lengths),
 _wLocals(std::vector<glm::vec3>(lengths.size(), glm::vec3(0, 0, 0))),
-_types(std::vector<int>(lengths.size(), BALL))
+_types(std::vector<int>(lengths.size(), BALL)),
+_radius(*std::min_element(lengths.begin(), lengths.end()) / 8)
 {
-    if (_lengths.size() == 0) return;
-    _tGlobals.resize(lengths.size());
-    _wGlobals.resize(lengths.size());
+    int nJoints = _lengths.size();
+    if (nJoints == 0) return;
+    _tGlobals.resize(nJoints);
+    _wGlobals.resize(nJoints);
     glm::mat3 R = rotationMatrix(_w);
-    for (int i = 0; i < _lengths.size(); i++) {
+    for (int i = 0; i < nJoints; i++) {
         if (i == 0) {
             _tGlobals[i] = _t;
         }
@@ -473,6 +475,7 @@ _types(std::vector<int>(lengths.size(), BALL))
         R = rotationMatrix(_wLocals[i])*R;
         _wGlobals[i] = axisAngleVector(R);
     }
+    _tip = _tGlobals.back() + R*glm::vec3(0, 0, _lengths.back());
 }
 
 
@@ -505,6 +508,7 @@ void Arm::updateGlobalTransforms(const int& index) {
         R = rotationMatrix(_wLocals[i])*R;
         _wGlobals[i] = axisAngleVector(R);
     }
+    _tip = _tGlobals.back() + R*glm::vec3(0, 0, _lengths.back());
 }
 
 void Arm::setLocalJointRotation(const int& joint, const glm::vec3& wLocal) {
@@ -526,8 +530,20 @@ float Arm::armReach() {
 }
 
 void Arm::doDraw() {
-    for (int i = 0; i < _lengths.size() - 1; i++) {
-        glm::vec3 center = (_tGlobals[i] + _tGlobals[i + 1]) / 2.0f;
-        GlutDraw::drawParallelepiped(center, glm::vec3(0, 0.05, 0), glm::vec3(0.05, 0, 0), glm::vec3(0, 0, _lengths[i] / 2));
+    glPushMatrix();
+    for (int i = 0; i < _lengths.size(); i++) {
+        float theta = glm::length(_wLocals[i]);
+        glm::vec3 axis = _wLocals[i];
+        if (theta>0) axis /= theta;
+        theta *= 180 / M_PI;
+
+        glRotatef(theta, axis[0], axis[1], axis[2]);
+
+        if (_types[i]==BALL) GlutDraw::drawSphere(glm::vec3(0, 0, 0), _radius);
+        //if (_types[i] == PIN) GlutDraw::drawCylinder(glm::vec3(0,0,0),,_radius)
+        GlutDraw::drawParallelepiped(glm::vec3(0, 0, _lengths[i] / 2), glm::vec3(0, _radius, 0), glm::vec3(_radius, 0, 0), glm::vec3(0, 0, _lengths[i] / 2 - _radius));
+
+        glTranslatef(0, 0, _lengths[i]);
     }
+    glPopMatrix();
 }

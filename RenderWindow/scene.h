@@ -318,6 +318,9 @@ public:
     void updateGlobalTransforms(const int& index = 0);
     float armLength();
     float armReach();
+
+    float jiggle();
+
     void doDraw();
 private:
     // _t and _w refer to the anchor position and orientation as per usual
@@ -328,7 +331,8 @@ private:
     std::vector<glm::vec3> _wGlobals; // GLOBAL rotation vectors for each segment
     std::vector<glm::vec3> _tGlobals;
 
-    glm::vec3 _tip; // GLOBAL position of the tip of the arm
+
+    float _radius;
 };
 
 
