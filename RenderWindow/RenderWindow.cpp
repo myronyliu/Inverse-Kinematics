@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
     arm->setLocalJointRotation(2, glm::vec3(0, 0.5, 0));
     arm->setLocalJointRotation(3, glm::vec3(0.5, 0.5, 0));
     arm->setRotation(glm::vec3(1,0,0));
-    arm->setTranslation(glm::vec3(1, 1, 0));
+    //arm->setTranslation(glm::vec3(1, 1, 0));
     world.addObject(arm);
 
 

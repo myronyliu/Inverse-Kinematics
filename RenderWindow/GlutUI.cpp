@@ -208,7 +208,6 @@ void Window::reshape(int w, int h)
 
 void Panel::draw()
 {
-    float asdf[] = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
     if(_world != NULL)
     {
         glPushMatrix();
@@ -217,8 +216,8 @@ void Panel::draw()
         gluPerspective(32, (float)getWidth() / getHeight(), 0.01, 1000000);
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        glMultMatrixf(_camera->rotMatData());
-        //glMultMatrixf(asdf);
+        _camera->pushRotation();
+        //glMultMatrixf(_camera->rotMatData());
         glTranslatef(-_camera->pos()[0], -_camera->pos()[1], -_camera->pos()[2]);
         _world->draw();
 

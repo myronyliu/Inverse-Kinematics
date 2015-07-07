@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "GlutDraw.h"
+#include "utils.h"
 
 namespace Scene
 {
@@ -46,18 +47,7 @@ public:
     void rollLeft(float theta) { _up = glm::rotate(_up, -theta, _dir); }
     void rollRight(float theta) { _up = glm::rotate(_up, theta, _dir); }
 
-    glm::mat4 rotMat() {
-        glm::vec4 x(right()[0], right()[1], right()[2], 0);
-        glm::vec4 y(up()[0], up()[1], up()[2], 0);
-        glm::vec4 z(-_dir[0], -_dir[1], -_dir[2], 0);
-        return glm::inverse(glm::mat4(x, y, z, glm::vec4(0, 0, 0, 1)));
-    }
-    float* rotMatData() {
-        glm::mat4 M = rotMat();
-        float* out = new float[16];
-        for (int i = 0; i < 16; i++) { out[i] = M[i / 4][i % 4]; }
-        return out;
-    }
+    void pushRotation() const;
 
 private:
     glm::vec3 _pos; // camera position
@@ -133,34 +123,42 @@ private:
     bool _checkShaderError(GLuint);
 };
 
+
 class Object
 {
 public:
 /* Constructors */
-    Object() : _t(glm::vec3(0,0,0)), _w(glm::vec3(0,0,0)), _color(glm::vec4(1,1,1,1)), _material(DIFFUSE), _visible(true)
-        {
-            _objectID = nextID();
-        }
-    Object(glm::vec3 t, glm::vec3 w) : _t(t), _w(w), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true)
-        {
-            _objectID = nextID();
-        }
+    Object() :
+        _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+    Object(const glm::vec3& translation, const glm::vec3& w) :
+        _translation(translation), _rotation(parameterize2(w)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+    Object(const glm::vec3& translation, const glm::vec2& axis, const float& angle) :
+        _translation(translation), _rotation(AxisAngleRotation2(axis,angle)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+    Object(const glm::vec3& translation, const AxisAngleRotation2& axisAngle) :
+        _translation(translation), _rotation(axisAngle), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     void draw();
-    void draw(Shader *);
+    void draw(Shader*);
     virtual void doDraw() = 0;
 
     /* getters */
-    glm::vec3 translation() const { return _t; }
-    glm::vec3 rotation() const { return _w; }
+    glm::vec3 translation() const { return _translation; }
+    glm::vec3 rotationAxis3() const { return parameterize3(_rotation._axis,1); }
+    glm::vec2 rotationAxis2() const { return _rotation._axis; }
+    glm::vec3 rotation3() const { return _rotation.parameterize3(); }
+    glm::mat3 rotationMat() const { return rotationMatrix(_rotation); }
+    AxisAngleRotation2 rotation() const { return _rotation; }
+    AxisAngleRotation2 rotation2() const { return _rotation; }
     bool getVisible() const { return _visible; }
     World* getWorld() const { return _world; }
     int getID() const { return _objectID; }
 
     /* setters */
     void setColor(const glm::vec4& color) { _color = color; }
-    void setTranslation(const glm::vec3& t) { _t = t; }
-    void setRotation(const glm::vec3& w) { _w = w; }
-    void setOrientation(const glm::vec3& z, const glm::vec3& y);
+    void setTranslation(const glm::vec3& translation) { _translation = translation; }
+    void setRotation(const glm::vec3& w) { _rotation = parameterize2(w); }
+    void setRotationAxis(const glm::vec3& w) { _rotation._axis = parameterize2(w)._axis; }
+    void setRotationAxis(const glm::vec2& rotAxis) { _rotation._axis = rotAxis; }
+    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = axisAngleAlignZY2(z, y); }
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
 
@@ -172,8 +170,8 @@ public:
 protected:
     World * _world;
     int _objectID;
-    glm::vec3 _t; // translation
-    glm::vec3 _w; // angle-axis rotation
+    glm::vec3 _translation; // translation
+    AxisAngleRotation2 _rotation; // rotation axis direction parameterized by (theta,phi)
     glm::vec4 _color;
     int _material;
     bool _visible;
@@ -200,7 +198,8 @@ private:
 class Arrow : public Object{
 public:
     Arrow() : Object(), _length(1) {}
-    Arrow(const glm::vec3& origin, const glm::vec3& displacement);
+    Arrow(const glm::vec3& origin, const glm::vec3& displacement) :
+        Object(origin, axisAngleAlignZ2(displacement)), _length(glm::length(displacement)) {}
     void doDraw();
 private:
     float _length;
@@ -209,8 +208,10 @@ private:
 class Box : public Object {
 public:
     Box() : Object() {}
-    Box(const glm::vec3& center, const glm::vec3& rotation, const glm::vec3& dimensions) : Object(center, rotation), _dimensions(dimensions) {}
-    Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions);
+    Box(const glm::vec3& center, const glm::vec3& rotation, const glm::vec3& dimensions) :
+        Object(center, rotation), _dimensions(dimensions) {}
+    Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
+        Object(center, axisAngleAlignZY2(z, y)), _dimensions(dimensions) {}
     void doDraw();
 protected:
     glm::vec3 _dimensions;
@@ -218,8 +219,10 @@ protected:
 class AnchoredBox : public Box {
 public:
     AnchoredBox() : Box() {}
-    AnchoredBox(const glm::vec3& anchor, const glm::vec3& rotation, const glm::vec3& dimensions);
-    AnchoredBox(const glm::vec3& anchor, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions);
+    AnchoredBox(const glm::vec3& anchor, const glm::vec3& rotation, const glm::vec3& dimensions):
+        Box(anchor, rotation, dimensions) {}
+    AnchoredBox(const glm::vec3& anchor, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
+        Box(anchor, z, y, dimensions) {}
     void doDraw();
 private:
 };
@@ -227,11 +230,12 @@ private:
 class Cylinder : public Object {
 public:
     Cylinder() {}
-    Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius);
-    void doDraw() { GlutDraw::drawCylinder(_t, glm::vec3(0, 0, _h / 2), _r); }
+    Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) :
+        Object(center, axisAngleAlignZ2(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
+    void doDraw() { GlutDraw::drawCylinder(_translation, glm::vec3(0, 0, _height / 2), _radius); }
 private:
-    float _r;
-    float _h;
+    float _radius;
+    float _height;
 };
 
 class Sphere : public Object
@@ -241,7 +245,7 @@ public:
     Sphere() : Object(), _r(5) { }
     Sphere(const glm::vec3& translation, const float& radius) : Object(translation,glm::vec3(0,0,0)), _r(radius) { }
 
-    void doDraw() { GlutDraw::drawSphere(_t, _r); }
+    void doDraw() { GlutDraw::drawSphere(_translation, _r); }
 
 protected:
     float _r;
@@ -283,30 +287,6 @@ private:
     glm::vec3(*_parameterization)(const float&);
 };
 
-
-class TreeBody : public Object
-{
-public:
-    TreeBody() {}
-    TreeBody(TreeBody* parent) {}
-
-    TreeBody* root();
-    void updateGlobalTransform();
-    void doDraw();
-protected:
-    Object* _object; // _object->w and _object->t contain the GLOBAL transforms
-
-    TreeBody* _parent;
-    std::vector<TreeBody*> _children;
-    int _jointType; // the type of joint connecting this to its parent
-
-    // _t and _w refer to the LOCAL transform relative to the parent (the root has _t,_w = [0,0,0])
-    // To get the GLOBAL transform, access body->_t and _body->_w
-
-    glm::vec3 _tJoint; // relative to the Body on which the joint lies
-    glm::vec3 _wJoint;
-};
-
 class Arm : public Object
 {
 public:
@@ -314,6 +294,8 @@ public:
     Arm(std::vector<float>& lengths);
 
     void append(const float& length = 1, const int& type = BALL, const glm::vec3& wLocal = glm::vec3(0, 0, 0));
+    void append(const float& length = 1, const int& type = BALL, const glm::vec2& axisLocal = glm::vec2(0, 0), const float& angleLocal = 0);
+    void append(const float& length = 1, const int& type = BALL, const AxisAngleRotation2& axisAngleLocal = AxisAngleRotation2());
     void setLocalJointRotation(const int& joint, const glm::vec3& wLocal);
     void updateGlobalTransforms(const int& index = 0);
     float armLength();
@@ -325,12 +307,13 @@ public:
 private:
     // _t and _w refer to the anchor position and orientation as per usual
     std::vector<int> _types;
-    std::vector<glm::vec3> _wLocals; // RELATIVE rotation vectors
+    std::vector<AxisAngleRotation2> _localRotations; // RELATIVE rotation axes
     std::vector<float> _lengths; // lenghts of the arms
 
-    std::vector<glm::vec3> _wGlobals; // GLOBAL rotation vectors for each segment
-    std::vector<glm::vec3> _tGlobals;
+    std::vector<AxisAngleRotation2> _globalRotations; // GLOBAL rotation axis for each segment
+    std::vector<glm::vec3> _globalTranslations;
 
+    glm::vec3 _tip;
 
     float _radius;
 };

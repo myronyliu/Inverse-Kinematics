@@ -1,5 +1,4 @@
 #include "scene.h"
-#include "utils.h"
 
 using namespace Scene;
 using namespace std;
@@ -9,31 +8,22 @@ int Object::NEXTID = 0;
 float jointRadius = 0.1;
 
 // find rotation vector to align object axis with global z-axis
-glm::vec3 wAlignZ(const glm::vec3& axisIn) {
-    if (axisIn[0] == 0 && axisIn[1] == 0) {
-        return glm::vec3(0, 0, 0);
-    }
-    else {
-        return (M_PI / 2.0f)*glm::cross(glm::vec3(0, 0, 1), glm::normalize(axisIn));
-    }
-}
-glm::vec3 wAlignZY(const glm::vec3& zIn, const glm::vec3& yIn) {
-    glm::vec3 z = glm::normalize(zIn);
-    glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
-    glm::vec3 x = glm::cross(y, z);
-    glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
-    float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
-    return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
-}
+
 
 inline glm::vec3 composeRotation(const glm::vec3& w0, const glm::vec3& w1) {
-    return axisAngleVector(rotationMatrix(w1)*rotationMatrix(w0));
+    return axisAngle3(rotationMatrix(w1)*rotationMatrix(w0));
 }
 
 /* Method Definitions */
 
-void Object::setOrientation(const glm::vec3& z, const glm::vec3& y) {
-    _w = wAlignZY(z, y);
+void Camera::pushRotation() const {
+    glm::vec3 w = axisAngleAlignZY3(-_dir, _up);
+    float angle = glm::length(w);
+    if (angle > 0) {
+        w /= angle;
+        angle *= 180 / M_PI;
+        glRotatef(angle, w[0], w[1], w[2]);
+    }
 }
 
 void World::addObject(Object * obj)
@@ -74,23 +64,23 @@ Shader * World::findShader(Object * obj)
     return _shaderMap[obj->getID()];
 }
 
-
 void Object::draw()
 {
     if (!_visible) return;
 
     GLfloat color[] = { _color[0], _color[1], _color[2], _color[3] };
-
     glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
 
-    float theta = glm::length(_w);
-    glm::vec3 wHat = _w;
-    if (theta>0) wHat = _w / theta;
-    theta *= 180.0f / M_PI;
+    float theta = _rotation._axis[0];
+    float phi = _rotation._axis[1];
 
     glPushMatrix();
-    glTranslated(_t[0], _t[1], _t[2]);
-    if (theta > 0) glRotatef(theta, wHat[0], wHat[1], wHat[2]);
+    glTranslated(_translation[0], _translation[1], _translation[2]);
+    glRotatef(
+        (180.0f/M_PI)*_rotation._angle,
+        sin(theta)*cos(phi),
+        sin(theta)*sin(phi),
+        cos(theta));
 
     doDraw();
 
@@ -101,14 +91,16 @@ void Object::draw(Shader * shader)
 {
     if (!_visible) return;
 
-    float theta = glm::length(_w);
-    glm::vec3 wHat = _w;
-    if (theta>0) wHat = _w / theta;
-    theta *= 180.0f / M_PI;
+    float theta = _rotation._axis[0];
+    float phi = _rotation._axis[1];
 
     glPushMatrix();
-    glTranslated(_t[0], _t[1], _t[2]);
-    if (theta > 0) glRotatef(theta, wHat[0], wHat[1], wHat[2]);
+    glTranslated(_translation[0], _translation[1], _translation[2]);
+    glRotatef(
+        (180.0f / M_PI)*_rotation._angle,
+        sin(theta)*cos(phi),
+        sin(theta)*cos(phi),
+        cos(theta));
 
     shader->link();
     doDraw();
@@ -135,39 +127,13 @@ void Grid::doDraw()
     }
 }
 
-Arrow::Arrow(const glm::vec3& origin, const glm::vec3& displacement) : Object() {
-    _t = origin;
-    _length = glm::length(displacement);
-    _w = wAlignZ(displacement);
-}
+
 
 void Arrow::doDraw() {
     GlutDraw::drawLine(glm::vec3(0,0,0),glm::vec3(0,0,_length));
     float alpha = 1.0f / 16;
     GlutDraw::drawCone(glm::vec3(0, 0, (1 - alpha)*_length), _length*alpha / 2, glm::vec3(0, 0, alpha*_length));
 }
-
-Cylinder::Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) : Object() {
-    _t = center;
-    _r = radius;
-    _h = 2 * glm::length(halfAxis);
-    _w = wAlignZ(halfAxis);
-}
-
-
-Box::Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) : Object() {
-    _t = center;
-    _dimensions = dimensions;
-    _w = wAlignZY(z, y);
-}
-
-AnchoredBox::AnchoredBox(const glm::vec3& anchor, const glm::vec3& rotation, const glm::vec3& dimensions) :
-//Box(anchor + glm::rotate(glm::vec3(0, 0, dimensions[2]/2), glm::length(rotation), glm::normalize(rotation)), rotation, dimensions) {}
-Box(anchor, rotation, dimensions) {}
-
-AnchoredBox::AnchoredBox(const glm::vec3& anchor, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
-//Box(anchor + glm::rotate(glm::vec3(0, 0, dimensions[2]/2), glm::length(wAlignZY(z, y)), glm::normalize(wAlignZY(z, y))), wAlignZY(z, y), dimensions) {}
-Box(anchor, z, y, dimensions) {}
 
 void AnchoredBox::doDraw() {
     glPushMatrix();
@@ -401,90 +367,55 @@ void Path::doDraw() {
     glEnd();
 }
 
-TreeBody* TreeBody::root() {
-    TreeBody* treeBody = this;
-    while (treeBody->_parent != NULL) { treeBody = treeBody->_parent; }
-    return treeBody;
-}
-
-void TreeBody::updateGlobalTransform() {
-    std::vector<glm::mat3> Rs;
-    std::vector<glm::vec3> ts;
-    TreeBody* treeBody = this;
-    Rs.push_back(rotationMatrix(_w));
-    ts.push_back(_t);
-    while (treeBody->_parent != NULL) {
-        treeBody = treeBody->_parent;
-        Rs.push_back(rotationMatrix(treeBody->_w));
-        ts.push_back(_t);
-    }
-    glm::mat3 R = Rs.back();
-    glm::vec3 t = ts.back();
-    for (int i = Rs.size() - 2; i > -1; i--) {
-        t += R* ts[i];
-        R = Rs[i] * R;
-    }
-    _object->setRotation(axisAngleVector(R));
-    _object->setTranslation(t);
-}
-
-void TreeBody::doDraw() {
-    _object->doDraw();
-
-    glm::vec3 trans = _object->translation();
-    glm::vec3 rot = _object->rotation();
-    float theta = glm::length(rot);
-    rot /= theta;
-    theta *= 180.0f / M_PI;
-
-    glPushMatrix();
-
-    glTranslatef(trans[0], trans[1], trans[2]);
-    glRotatef(theta, rot[0], rot[1], rot[2]);
-
-    if (_jointType == BALL) {
-        GlutDraw::drawSphere(_t, 0.1);
-    }
-    if (_jointType == PIN) {
-        //gl
-        //GlutDraw::drawCylinder(_t,)
-    }
-    glPopMatrix();
-}
-
 
 Arm::Arm(std::vector<float>& lengths) :
 Object(),
 _lengths(lengths),
-_wLocals(std::vector<glm::vec3>(lengths.size(), glm::vec3(0, 0, 0))),
+_localRotations(std::vector<AxisAngleRotation2>(lengths.size())),
 _types(std::vector<int>(lengths.size(), BALL)),
 _radius(*std::min_element(lengths.begin(), lengths.end()) / 8)
 {
     int nJoints = _lengths.size();
     if (nJoints == 0) return;
-    _tGlobals.resize(nJoints);
-    _wGlobals.resize(nJoints);
-    glm::mat3 R = rotationMatrix(_w);
+    _globalRotations.resize(nJoints);
+    _globalTranslations.resize(nJoints);
+    glm::mat3 R = rotationMat(); // start with the anchor
     for (int i = 0; i < nJoints; i++) {
         if (i == 0) {
-            _tGlobals[i] = _t;
+            _globalTranslations[i] = _translation;
         }
         else {
-            _tGlobals[i] = _tGlobals[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
+            _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
         }
-        R = rotationMatrix(_wLocals[i])*R;
-        _wGlobals[i] = axisAngleVector(R);
+        R = rotationMatrix(_localRotations[i])*R;
+        _globalRotations[i] = axisAngle2(R);
     }
-    _tip = _tGlobals.back() + R*glm::vec3(0, 0, _lengths.back());
+    _tip = _globalTranslations.back() + R*glm::vec3(0, 0, _lengths.back());
 }
 
 
 void Arm::append(const float& length, const int& type, const glm::vec3& wLocal) {
     _lengths.push_back(length);
     _types.push_back(type);
-    _wLocals.push_back(wLocal);
-    _wGlobals.push_back(glm::vec3(0, 0, 0));
-    _tGlobals.push_back(glm::vec3(0, 0, 0));
+    _localRotations.push_back(parameterize2(wLocal));
+    _globalRotations.push_back(glm::vec3(0, 0, 0));
+    _globalTranslations.push_back(glm::vec3(0, 0, 0));
+    updateGlobalTransforms(_lengths.size() - 1);
+}
+void Arm::append(const float& length, const int& type, const glm::vec2& axisLocal, const float& angleLocal) {
+    _lengths.push_back(length);
+    _types.push_back(type);
+    _localRotations.push_back(AxisAngleRotation2(axisLocal,angleLocal));
+    _globalRotations.push_back(glm::vec3(0, 0, 0));
+    _globalTranslations.push_back(glm::vec3(0, 0, 0));
+    updateGlobalTransforms(_lengths.size() - 1);
+}
+void Arm::append(const float& length, const int& type, const AxisAngleRotation2& axisAngleLocal) {
+    _lengths.push_back(length);
+    _types.push_back(type);
+    _localRotations.push_back(axisAngleLocal);
+    _globalRotations.push_back(glm::vec3(0, 0, 0));
+    _globalTranslations.push_back(glm::vec3(0, 0, 0));
     updateGlobalTransforms(_lengths.size() - 1);
 }
 
@@ -493,26 +424,26 @@ void Arm::updateGlobalTransforms(const int& index) {
     if (nJoints == 0) return;
     glm::mat3 R;
     if (index == 0) {
-        R = rotationMatrix(_w);
+        R = rotationMat(); // starting at the anchor
     }
     else {
-        R = rotationMatrix(_wGlobals[index - 1]);
+        R = rotationMatrix(_globalRotations[index - 1]);
     }
     for (int i = index; i < nJoints; i++) {
         if (i == 0) {
-            _tGlobals[i] = _t;
+            _globalTranslations[i] = _translation;
         }
         else {
-            _tGlobals[i] = _tGlobals[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
+            _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
         }
-        R = rotationMatrix(_wLocals[i])*R;
-        _wGlobals[i] = axisAngleVector(R);
+        R = rotationMatrix(_localRotations[i])*R;
+        _globalRotations[i] = AxisAngleRotation2(R);
     }
-    _tip = _tGlobals.back() + R*glm::vec3(0, 0, _lengths.back());
+    _tip = _globalTranslations.back() + R*glm::vec3(0, 0, _lengths.back());
 }
 
 void Arm::setLocalJointRotation(const int& joint, const glm::vec3& wLocal) {
-    _wLocals[joint] = wLocal;
+    _localRotations[joint] = wLocal;
     updateGlobalTransforms(joint);
 }
 
@@ -532,12 +463,15 @@ float Arm::armReach() {
 void Arm::doDraw() {
     glPushMatrix();
     for (int i = 0; i < _lengths.size(); i++) {
-        float theta = glm::length(_wLocals[i]);
-        glm::vec3 axis = _wLocals[i];
-        if (theta>0) axis /= theta;
-        theta *= 180 / M_PI;
 
-        glRotatef(theta, axis[0], axis[1], axis[2]);
+        float theta = _localRotations[i]._axis[0];
+        float phi = _localRotations[i]._axis[0];
+
+        glRotatef(
+            (180.0f / M_PI)*_localRotations[i]._angle,
+            sin(theta)*cos(phi),
+            sin(theta)*sin(phi),
+            cos(theta));
 
         if (_types[i]==BALL) GlutDraw::drawSphere(glm::vec3(0, 0, 0), _radius);
         //if (_types[i] == PIN) GlutDraw::drawCylinder(glm::vec3(0,0,0),,_radius)
