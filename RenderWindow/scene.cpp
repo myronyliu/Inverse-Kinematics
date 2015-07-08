@@ -361,7 +361,7 @@ void Path::doDraw() {
 
     glBegin(GL_LINE_STRIP);
     for (int i = 0; i <= n; i++) {
-        glm::vec3 pt = _parameterization((float)i / n);
+        glm::vec3 pt = _axisAngleRotation((float)i / n);
         glVertex3f(pt[0], pt[1], pt[2]);
     }
     glEnd();
@@ -397,7 +397,7 @@ _radius(*std::min_element(lengths.begin(), lengths.end()) / 8)
 void Arm::append(const float& length, const int& type, const glm::vec3& wLocal) {
     _lengths.push_back(length);
     _types.push_back(type);
-    _localRotations.push_back(parameterize2(wLocal));
+    _localRotations.push_back(axisAngleRotation2(wLocal));
     _globalRotations.push_back(glm::vec3(0, 0, 0));
     _globalTranslations.push_back(glm::vec3(0, 0, 0));
     updateGlobalTransforms(_lengths.size() - 1);
@@ -442,8 +442,8 @@ void Arm::updateGlobalTransforms(const int& index) {
     _tip = _globalTranslations.back() + R*glm::vec3(0, 0, _lengths.back());
 }
 
-void Arm::setLocalJointRotation(const int& joint, const glm::vec3& wLocal) {
-    _localRotations[joint] = wLocal;
+void Arm::setLocalRotation(const int& joint, const glm::vec3& wLocal) {
+    _localRotations[joint] = axisAngleRotation2(wLocal);
     updateGlobalTransforms(joint);
 }
 
@@ -465,7 +465,7 @@ void Arm::doDraw() {
     for (int i = 0; i < _lengths.size(); i++) {
 
         float theta = _localRotations[i]._axis[0];
-        float phi = _localRotations[i]._axis[0];
+        float phi = _localRotations[i]._axis[1];
 
         glRotatef(
             (180.0f / M_PI)*_localRotations[i]._angle,
@@ -480,4 +480,11 @@ void Arm::doDraw() {
         glTranslatef(0, 0, _lengths[i]);
     }
     glPopMatrix();
+}
+
+void Arm::jiggle() {
+    for (int i = 0; i < _lengths.size(); i++) {
+        _localRotations[i].perturb(0.01, 0.01);
+    }
+    //updateGlobalTransforms();
 }

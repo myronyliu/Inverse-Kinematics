@@ -131,7 +131,7 @@ public:
     Object() :
         _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const glm::vec3& w) :
-        _translation(translation), _rotation(parameterize2(w)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+        _translation(translation), _rotation(axisAngleRotation2(w)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const glm::vec2& axis, const float& angle) :
         _translation(translation), _rotation(AxisAngleRotation2(axis,angle)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const AxisAngleRotation2& axisAngle) :
@@ -142,9 +142,9 @@ public:
 
     /* getters */
     glm::vec3 translation() const { return _translation; }
-    glm::vec3 rotationAxis3() const { return parameterize3(_rotation._axis,1); }
+    glm::vec3 rotationAxis3() const { return axisAngleRotation3(_rotation._axis,1); }
     glm::vec2 rotationAxis2() const { return _rotation._axis; }
-    glm::vec3 rotation3() const { return _rotation.parameterize3(); }
+    glm::vec3 rotation3() const { return _rotation.axisAngleRotation3(); }
     glm::mat3 rotationMat() const { return rotationMatrix(_rotation); }
     AxisAngleRotation2 rotation() const { return _rotation; }
     AxisAngleRotation2 rotation2() const { return _rotation; }
@@ -155,8 +155,8 @@ public:
     /* setters */
     void setColor(const glm::vec4& color) { _color = color; }
     void setTranslation(const glm::vec3& translation) { _translation = translation; }
-    void setRotation(const glm::vec3& w) { _rotation = parameterize2(w); }
-    void setRotationAxis(const glm::vec3& w) { _rotation._axis = parameterize2(w)._axis; }
+    void setRotation(const glm::vec3& w) { _rotation = axisAngleRotation2(w); }
+    void setRotationAxis(const glm::vec3& w) { _rotation._axis = axisAngleRotation2(w)._axis; }
     void setRotationAxis(const glm::vec2& rotAxis) { _rotation._axis = rotAxis; }
     void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = axisAngleAlignZY2(z, y); }
     void setVisible(bool visible) { _visible = visible; }
@@ -171,7 +171,7 @@ protected:
     World * _world;
     int _objectID;
     glm::vec3 _translation; // translation
-    AxisAngleRotation2 _rotation; // rotation axis direction parameterized by (theta,phi)
+    AxisAngleRotation2 _rotation; // rotation axis direction axisAngleRotationd by (theta,phi)
     glm::vec4 _color;
     int _material;
     bool _visible;
@@ -278,13 +278,13 @@ class Path : public Object
 {
 public:
     Path() : Object() {};
-    void setParameterization(glm::vec3 (*parameterization)(const float&))
+    void setParameterization(glm::vec3 (*axisAngleRotation)(const float&))
     {
-        _parameterization = parameterization;
+        _axisAngleRotation = axisAngleRotation;
     }
     void doDraw();
 private:
-    glm::vec3(*_parameterization)(const float&);
+    glm::vec3(*_axisAngleRotation)(const float&);
 };
 
 class Arm : public Object
@@ -296,12 +296,12 @@ public:
     void append(const float& length = 1, const int& type = BALL, const glm::vec3& wLocal = glm::vec3(0, 0, 0));
     void append(const float& length = 1, const int& type = BALL, const glm::vec2& axisLocal = glm::vec2(0, 0), const float& angleLocal = 0);
     void append(const float& length = 1, const int& type = BALL, const AxisAngleRotation2& axisAngleLocal = AxisAngleRotation2());
-    void setLocalJointRotation(const int& joint, const glm::vec3& wLocal);
+    void setLocalRotation(const int& joint, const glm::vec3& wLocal);
     void updateGlobalTransforms(const int& index = 0);
     float armLength();
     float armReach();
 
-    float jiggle();
+    void jiggle();
 
     void doDraw();
 private:

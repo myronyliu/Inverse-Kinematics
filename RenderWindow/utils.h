@@ -32,7 +32,15 @@ struct AxisAngleRotation2 {
     AxisAngleRotation2(const glm::mat3& R);
     float theta() const { return _axis[0]; }
     float phi() const  { return _axis[1]; }
-    glm::vec3 parameterize3() const { return _angle*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[1])); }
+    void clampAngle() { _angle -= (2 * M_PI)*floor(_angle / (2 * M_PI)); }
+    void perturb(const float& dzArcLength, const float& dPolar);
+    // consider the rotation vector as specifying the orientation of a coordinate system
+    // perturb(...) reorients this coordinate system slightly by...
+    // jiggling its z-axis uniformly in a small "hemispherical cap" with geodesic-radius dzArcLength
+    // and after having done so, rotates the new x-axis and new y-axis about the new z-axis uniformly in range [-dPolar,dPolar]
+    glm::vec3 axisAngleRotation3() const { return _angle*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[1])); }
+    glm::mat3 rotationMatrix() const;
+    glm::mat3 coordinateAxes() const;
 };
 
 
@@ -47,11 +55,12 @@ glm::mat3 rotationMatrix(const float& angle, const glm::vec2& axis);
 glm::vec3 axisAngleAlignZY3(const glm::vec3& zIn, const glm::vec3& yIn);
 AxisAngleRotation2 axisAngleAlignZY2(const glm::vec3& zIn, const glm::vec3& yIn);
 
-glm::vec3 parameterize3(const glm::vec2& axis, float angle);
-glm::vec3 parameterize3(float angle, const glm::vec2& axis);
-glm::vec3 parameterize3(const AxisAngleRotation2& axisAngle);
+glm::vec3 axisAngleRotation3(const glm::vec2& axis, float angle);
+glm::vec3 axisAngleRotation3(float angle, const glm::vec2& axis);
+glm::vec3 axisAngleRotation3(const AxisAngleRotation2& axisAngle);
 
-AxisAngleRotation2 parameterize2(const glm::vec3& w);
+AxisAngleRotation2 axisAngleRotation2(const glm::vec3& w);
 
 glm::vec3 axisAngleAlignZ3(const glm::vec3& axisIn);
 AxisAngleRotation2 axisAngleAlignZ2(const glm::vec3& axis);
+glm::vec3 axisAngleAlignVectors(const glm::vec3& axis, const glm::vec3& target);

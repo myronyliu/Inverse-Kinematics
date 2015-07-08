@@ -97,13 +97,20 @@ int main(int argc, char* argv[])
     linePath->setParameterization(PathParameterizations::circle);
     world.addObject(linePath);
 
-    Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 0.4f, 0.3f, 0.2f, 0.1f }));
-    arm->setLocalJointRotation(1, glm::vec3(0.5, 0, 0));
-    arm->setLocalJointRotation(2, glm::vec3(0, 0.5, 0));
-    arm->setLocalJointRotation(3, glm::vec3(0.5, 0.5, 0));
-    arm->setRotation(glm::vec3(1,0,0));
-    //arm->setTranslation(glm::vec3(1, 1, 0));
+    Scene::Arm* arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
+    arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(1, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(2, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(3, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(4, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(5, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(6, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(7, glm::vec3(0.5*M_PI, 0, 0));
     world.addObject(arm);
+
+    /*Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 1.0f }));
+    arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
+    world.addObject(arm);*/
 
 
     Scene::Camera * cam = new Scene::Camera();
@@ -121,7 +128,11 @@ int main(int argc, char* argv[])
         std::string bmpName = "out.bmp";
         SaveAsBMP(bmpName.c_str());
     };
+    auto jlambda = [&]() {
+        arm->jiggle();
+    };
     keyboard.register_hotkey('i', ilambda);
+    keyboard.register_hotkey('j', jlambda);
 
     MANAGER.drawElements();
 

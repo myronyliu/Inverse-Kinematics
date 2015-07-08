@@ -55,32 +55,136 @@ std::string zero_padded_name(std::string prefix, int number, int pad)
     return name.str();
 }
 
+void printVec3(glm::vec3 v) {
+    printf("%f %f %f\n", v[0], v[1], v[2]);
+}
+void printMat3(glm::mat3 M) {
+    printf("%f %f %f\n", M[0][0], M[1][0], M[2][0]);
+    printf("%f %f %f\n", M[0][1], M[1][1], M[2][1]);
+    printf("%f %f %f\n", M[0][2], M[1][2], M[2][2]);
+}
+
 
 AxisAngleRotation2::AxisAngleRotation2(const glm::mat3& R) {
     AxisAngleRotation2 axisAngle = axisAngle2(R);
     _axis = axisAngle._axis;
     _angle = axisAngle._angle;
 }
+glm::mat3 AxisAngleRotation2::rotationMatrix() const {
+    glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
+    glm::mat3 wCross(
+        glm::vec3(0, wHat[2], -wHat[1]),
+        glm::vec3(-wHat[2], 0, wHat[0]),
+        glm::vec3(wHat[1], -wHat[0], 0));
+    return glm::mat3() + sin(_angle)*wCross + (1 - cos(_angle))*wCross*wCross;
+}
+glm::mat3 AxisAngleRotation2::coordinateAxes() const {
+    glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
+    glm::mat3 wCross(
+        glm::vec3(0, wHat[2], -wHat[1]),
+        glm::vec3(-wHat[2], 0, wHat[0]),
+        glm::vec3(wHat[1], -wHat[0], 0));
+    return glm::mat3() + sin(_angle)*wCross + (1 - cos(_angle))*wCross*wCross;
+}
+
+void AxisAngleRotation2::perturb(const float& dzArcLength, const float& dPolar) {
+
+    /*printf("%f %f %f\n", sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
+    printf("%f\n", _angle);*/
+
+    float randTheta = acos(1 - (1 - cos(dzArcLength))*rand() / RAND_MAX);
+    float randPhi = 2 * M_PI*rand() / RAND_MAX;
+    float randPolar = dPolar * (2.0f*rand() / RAND_MAX - 1);
+
+    glm::vec3 zTargetLocal = glm::vec3(sin(randTheta)*cos(randPhi), sin(randTheta)*sin(randPhi), cos(randTheta));
+
+    /*printVec3(zTargetLocal);
+    std::cout << std::endl;*/
+
+
+    glm::mat3 axes = coordinateAxes();
+    glm::vec3 x = axes[0];
+    glm::vec3 y = axes[1];
+    glm::vec3 z = axes[2];
+
+    glm::vec3 wAlignZ = axisAngleAlignZ3(z);
+    float angle = glm::length(wAlignZ);
+
+    glm::vec3 wAlignTarget = axisAngleAlignVectors(glm::vec3(0, 0, 1), zTargetLocal);
+
+    /*printMat3(glm::mat3(x, y, z));*/
+
+    // rotate axes to world-axes
+    if (angle > 0) {
+        glm::vec3 rotAxis = wAlignZ / angle;
+        x = glm::rotate(x, angle, rotAxis);
+        y = glm::rotate(y, angle, rotAxis);
+        z = glm::rotate(z, angle, rotAxis);
+    }
+
+
+    /*printf("\n");
+    printMat3(glm::mat3(x, y, z));*/
+
+    // rotate axes such that z and zTargetLocal are aligned
+    if (fabs(randTheta) > 0) {
+        glm::vec3 rotAxis = wAlignTarget / randTheta;
+        x = glm::rotate(x, fabs(randTheta), rotAxis);
+        y = glm::rotate(y, fabs(randTheta), rotAxis);
+        z = glm::rotate(z, fabs(randTheta), rotAxis);
+    }
+
+    /*printf("\n");
+    printMat3(glm::mat3(x, y, z));*/
+
+    // rotate x,y-axes about the z-axis
+    x = glm::rotate(x, randPolar, z);
+    y = glm::rotate(y, randPolar, z);
+
+    /*printf("\n");
+    printMat3(glm::mat3(x, y, z));*/
+
+    // undo the first rotation (note that the first glm::rotate conceptually captures TWO rotations)
+    if (angle > 0) {
+        glm::vec3 rotAxis = wAlignZ / angle;
+        x = glm::rotate(x, -angle, rotAxis);
+        y = glm::rotate(y, -angle, rotAxis);
+        z = glm::rotate(z, -angle, rotAxis);
+    }
+
+    /*printf("\n");
+    printMat3(glm::mat3(x, y, z));*/
+
+    glm::mat3 new_R = glm::mat3(x, y, z);
+    AxisAngleRotation2 aa = axisAngle2(new_R);
+    _axis = aa._axis;
+    //std::cout << fabs(_angle - aa._angle) << std::endl;
+    _angle = aa._angle;
+
+    /*printf("%f %f %f\n", sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
+    printf("%f\n", _angle);*/
+}
 
 
 
 
 glm::mat3 rotationMatrix(const glm::vec3& w) {
-    glm::mat3 wCross(
-        glm::vec3(0, w[2], -w[1]),
-        glm::vec3(-w[2], 0, w[0]),
-        glm::vec3(w[1], -w[0], 0));
     float theta = glm::length(w);
+    glm::vec3 wHat = w / theta;
+    glm::mat3 wCross(
+        glm::vec3(0, wHat[2], -wHat[1]),
+        glm::vec3(-wHat[2], 0, wHat[0]),
+        glm::vec3(wHat[1], -wHat[0], 0));
     return glm::mat3() + sin(theta)*wCross + (1 - cos(theta))*wCross*wCross;
 }
 glm::mat3 rotationMatrix(const AxisAngleRotation2& axisAngle) {
-    return rotationMatrix(axisAngle.parameterize3());
+    return rotationMatrix(axisAngle.axisAngleRotation3());
 }
 glm::mat3 rotationMatrix(const glm::vec2& axis, const float& angle) {
-    return rotationMatrix(parameterize3(axis, angle));
+    return rotationMatrix(axisAngleRotation3(axis, angle));
 }
 glm::mat3 rotationMatrix(const float& angle, const glm::vec2& axis) {
-    return rotationMatrix(parameterize3(axis, angle));
+    return rotationMatrix(axisAngleRotation3(axis, angle));
 }
 
 
@@ -90,7 +194,7 @@ glm::vec3 axisAngle3(const glm::mat3& R) {
     return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
 }
 AxisAngleRotation2 axisAngle2(const glm::mat3& R) {
-    return parameterize2(axisAngle3(R));
+    return axisAngleRotation2(axisAngle3(R));
 }
 
 glm::vec3 axisAngleAlignZY3(const glm::vec3& zIn, const glm::vec3& yIn) {
@@ -102,36 +206,55 @@ glm::vec3 axisAngleAlignZY3(const glm::vec3& zIn, const glm::vec3& yIn) {
     return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
 }
 AxisAngleRotation2 axisAngleAlignZY2(const glm::vec3& z, const glm::vec3& y) {
-    return parameterize2(axisAngleAlignZY3(z, y));
+    return axisAngleRotation2(axisAngleAlignZY3(z, y));
 }
 
-AxisAngleRotation2 parameterize2(const glm::vec3& w) {
+AxisAngleRotation2 axisAngleRotation2(const glm::vec3& w) {
     float angle = glm::length(w);
     if (angle == 0) return AxisAngleRotation2(glm::vec2(0, 0), 0);
     glm::vec2 axis(acos(w[2] / angle), atan2(w[1], w[0]));
     return AxisAngleRotation2(axis, angle);
 }
 
-glm::vec3 parameterize3(const glm::vec2& axis, float angle) {
-    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[1]));
+glm::vec3 axisAngleRotation3(const glm::vec2& axis, float angle) {
+    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
-glm::vec3 parameterize3(const float& angle, const glm::vec2& axis) {
-    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[1]));
+glm::vec3 axisAngleRotation3(const float& angle, const glm::vec2& axis) {
+    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
-glm::vec3 parameterize3(const AxisAngleRotation2& axisAngle) {
+glm::vec3 axisAngleRotation3(const AxisAngleRotation2& axisAngle) {
     glm::vec2 axis = axisAngle._axis;
     float angle = axisAngle._angle;
-    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[1]));
+    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
 
 glm::vec3 axisAngleAlignZ3(const glm::vec3& axisIn) {
-    if (axisIn[0] == 0 && axisIn[1] == 0) {
+    glm::vec3 axis = glm::normalize(axisIn);
+    /*if (axis[2]>0.999999) {
+        return glm::vec3(0, 0, 0);
+    }*/
+    if (axis[0] == 0 && axis[1] == 0) {
         return glm::vec3(0, 0, 0);
     }
     else {
-        return (M_PI / 2.0f)*glm::cross(glm::vec3(0, 0, 1), glm::normalize(axisIn));
+        return (M_PI / 2.0f)*glm::cross(axis, glm::vec3(0, 0, 1));
     }
 }
+
 AxisAngleRotation2 axisAngleAlignZ2(const glm::vec3& axis) {
-    return parameterize2(axisAngleAlignZ3(axis));
+    return axisAngleRotation2(axisAngleAlignZ3(axis));
+}
+
+glm::vec3 axisAngleAlignVectors(const glm::vec3& axisIn, const glm::vec3& targetIn) {
+    glm::vec3 axis = glm::normalize(axisIn);
+    glm::vec3 target = glm::normalize(targetIn);
+    /*if (glm::dot(axis, target) > 0.999999) {
+        return glm::vec3(0, 0, 0);
+    }*/
+    if (axis[0] == target[0] && axis[1] == target[1] && axis[2] == target[2]) {
+        return glm::vec3(0, 0, 0);
+    }
+    else {
+        return (M_PI / 2.0f)*glm::cross(axis,target);
+    }
 }
