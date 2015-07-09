@@ -146,7 +146,13 @@ glm::mat3 AxisAngleRotation2::rotationMatrix() const {
         glm::vec3(0, wHat[2], -wHat[1]),
         glm::vec3(-wHat[2], 0, wHat[0]),
         glm::vec3(wHat[1], -wHat[0], 0));
-    return glm::mat3() + sin(_angle)*wCross + (1 - cos(_angle))*wCross*wCross;
+    float clampedAngle = _angle - (2 * M_PI)*floor(_angle / (2 * M_PI));
+    if (clampedAngle == M_PI) {
+        return glm::mat3() + 2.0f * wCross*wCross;
+    }
+    else {
+        return glm::mat3() + sin(_angle)*wCross + (1 - cos(_angle))*wCross*wCross;
+    }
 }
 glm::mat3 AxisAngleRotation2::coordinateAxes() const {
     glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
@@ -240,13 +246,19 @@ void AxisAngleRotation2::perturb(const float& dzArcLength, const float& dPolar) 
 
 glm::mat3 rotationMatrix(const glm::vec3& w) {
     float theta = glm::length(w);
+    theta -= (2 * M_PI)*floor(theta / (2 * M_PI));
     if (theta == 0) return glm::mat3();
     glm::vec3 wHat = w / theta;
     glm::mat3 wCross(
         glm::vec3(0, wHat[2], -wHat[1]),
         glm::vec3(-wHat[2], 0, wHat[0]),
         glm::vec3(wHat[1], -wHat[0], 0));
-    return glm::mat3() + sin(theta)*wCross + (1 - cos(theta))*wCross*wCross;
+    if (theta == M_PI) {
+        return glm::mat3() + 2.0f * wCross*wCross;
+    }
+    else {
+        return glm::mat3() + sin(theta)*wCross + (1 - cos(theta))*wCross*wCross;
+    }
 }
 glm::mat3 rotationMatrix(const AxisAngleRotation2& axisAngle) {
     return rotationMatrix(axisAngle.axisAngleRotation3());

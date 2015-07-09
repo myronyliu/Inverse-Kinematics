@@ -3,7 +3,6 @@
 #include "stdafx.h"
 #include "GlutUI.h"
 #include "Paths.h"
-#include "Animations.h"
 
 Scene::Arm* arm;
 
@@ -32,7 +31,7 @@ int main(int argc, char* argv[])
     glEnable(GL_LIGHTING);
     world.addLight(glm::vec3(0, 10, 0), glm::vec4(1, 1, 1, 1));
 
-    /*Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(1, 0, 0));
+    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(1, 0, 0));
     Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 1, 0));
     Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 1));
     xAxis->setColor(glm::vec4(1, 0, 0, 1));
@@ -44,23 +43,26 @@ int main(int argc, char* argv[])
 
     Scene::Path * linePath = new Scene::Path;
     linePath->setParameterization(PathParameterizations::circle);
-    world.addObject(linePath);*/
+    world.addObject(linePath);
 
-    arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
-    arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(1, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(2, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(3, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(4, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(5, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(6, glm::vec3(0.5*M_PI, 0, 0));
-    arm->setLocalRotation(7, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setRotation(glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setTranslation(glm::vec3(1, 1, 1));
+    //arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
+    //arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(1, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(2, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(3, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(4, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(5, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(6, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setLocalRotation(7, glm::vec3(0.5*M_PI, 0, 0));
+    ////arm->setRotation(glm::vec3(0.5*M_PI, 0, 0));
+    ////arm->setTranslation(glm::vec3(1, 1, 1));
+
+    arm = new Scene::Arm(std::vector<float>({ 1.0f }));
+
     world.addObject(arm);
 
     Scene::Camera * cam = new Scene::Camera();
-    cam->setPos(glm::vec3(8, 0, 0));
+    cam->setPos(glm::vec3(10, 0, 0));
     cam->setDir(glm::vec3(-1, 0, 0));
     mainPanel.setWorld(&world);
     mainPanel.setCamera(cam);
@@ -77,8 +79,12 @@ int main(int argc, char* argv[])
     auto jlambda = [&]() {
         arm->jiggle(0.05, 0.05);
     };
+    auto nlambda = [&]() {
+        arm->nudgeTip(0.01f*glm::vec3(0, 1, 1));
+    };
     keyboard.register_hotkey('i', ilambda);
     keyboard.register_hotkey('j', jlambda);
+    keyboard.register_hotkey('n', nlambda);
 
 
     MANAGER.drawElements();

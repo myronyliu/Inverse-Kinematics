@@ -296,11 +296,28 @@ public:
     void append(const float& length = 1, const int& type = BALL, const glm::vec3& wLocal = glm::vec3(0, 0, 0));
     void append(const float& length = 1, const int& type = BALL, const glm::vec2& axisLocal = glm::vec2(0, 0), const float& angleLocal = 0);
     void append(const float& length = 1, const int& type = BALL, const AxisAngleRotation2& axisAngleLocal = AxisAngleRotation2());
-    void updateGlobalTransforms(const int& index = 0);
+    float localRotationTheta(const int& joint) const { return _localRotations[joint]._axis[0]; }
+    float localRotationPhi(const int& joint) const { return _localRotations[joint]._axis[1]; }
+    float localRotationAngle(const int& joint) const { return _localRotations[joint]._angle; }
     void setLocalRotation(const int& joint, const glm::vec3& wLocal);
+    void setLocalRotation(const int& joint, const AxisAngleRotation2& axisAngle);
+    void setLocalRotationAxis(const int& joint, const glm::vec3& axis);
+    void setLocalRotationAxis(const int& joint, const glm::vec2& axis);
+    void setLocalRotationTheta(const int& joint, const float& theta);
+    void setLocalRotationPhi(const int& joint, const float& phi);
+    void setLocalRotationAngle(const int& joint, const float& angle);
     void setRotation(const glm::vec3& w) { _rotation = axisAngleRotation2(w); updateGlobalTransforms(); }
     float armLength();
     float armReach();
+
+    void updateRotationDerivative(const int& joint = -1);
+    void updateGlobalTransforms(const int& index = 0);
+    void update(const int& joint = -1) { updateGlobalTransforms(fmax(0, joint)); updateRotationDerivative(joint); }
+
+    arma::mat forwardJacobian_analytic() const;
+    arma::mat forwardJacobian_numeric();
+
+    void nudgeTip(const glm::vec3& displacement); // modifies the rotation angles such that (locally) the tip is nudged in the direction of "displacement"
 
     void printRotations() const;
 
@@ -315,8 +332,11 @@ private:
 
     std::vector<AxisAngleRotation2> _globalRotations; // GLOBAL rotation axis for each segment
     std::vector<glm::vec3> _globalTranslations;
-
     glm::vec3 _tip;
+
+    std::vector<glm::mat3> _dR_dTheta; // local derivatives
+    std::vector<glm::mat3> _dR_dPhi;
+    std::vector<glm::mat3> _dR_dAngle;
 
     float _radius;
 };
