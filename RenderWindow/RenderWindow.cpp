@@ -3,56 +3,15 @@
 #include "stdafx.h"
 #include "GlutUI.h"
 #include "Paths.h"
+#include "Animations.h"
 
+Scene::Arm* arm;
 
-void SaveAsBMP(const char *fileName)
-{
-    FILE *file;
-    unsigned long imageSize;
-    GLbyte *data = NULL;
-    GLint viewPort[4];
-    GLenum lastBuffer;
-    BITMAPFILEHEADER bmfh;
-    BITMAPINFOHEADER bmih;
-    bmfh.bfType = 'MB';
-    bmfh.bfReserved1 = 0;
-    bmfh.bfReserved2 = 0;
-    bmfh.bfOffBits = 54;
-    glGetIntegerv(GL_VIEWPORT, viewPort);
-    imageSize = ((viewPort[2] + ((4 - (viewPort[2] % 4)) % 4))*viewPort[3] * 3) + 2;
-    bmfh.bfSize = imageSize + sizeof(bmfh) + sizeof(bmih);
-    data = (GLbyte*)malloc(imageSize);
-    glPixelStorei(GL_PACK_ALIGNMENT, 4);
-    glPixelStorei(GL_PACK_ROW_LENGTH, 0);
-    glPixelStorei(GL_PACK_SKIP_ROWS, 0);
-    glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
-    glPixelStorei(GL_PACK_SWAP_BYTES, 1);
-    glGetIntegerv(GL_READ_BUFFER, (GLint*)&lastBuffer);
-    glReadBuffer(GL_FRONT);
-    glReadPixels(0, 0, viewPort[2], viewPort[3], GL_BGR, GL_UNSIGNED_BYTE, data);
-    data[imageSize - 1] = 0;
-    data[imageSize - 2] = 0;
-    glReadBuffer(lastBuffer);
-    std::FILE* f;
-    fopen_s(&f, fileName, "wb");
-    file = f;
-    bmih.biSize = 40;
-    bmih.biWidth = viewPort[2];
-    bmih.biHeight = viewPort[3];
-    bmih.biPlanes = 1;
-    bmih.biBitCount = 24;
-    bmih.biCompression = 0;
-    bmih.biSizeImage = imageSize;
-    bmih.biXPelsPerMeter = 45089;
-    bmih.biYPelsPerMeter = 45089;
-    bmih.biClrUsed = 0;
-    bmih.biClrImportant = 0;
-    fwrite(&bmfh, sizeof(bmfh), 1, file);
-    fwrite(&bmih, sizeof(bmih), 1, file);
-    fwrite(data, imageSize, 1, file);
-    free(data);
-    fclose(file);
-}//
+void idle(void) {
+    //arm->jiggle(0.01, 0.01);
+    //glutPostRedisplay();
+}
+
 GlutUI::Manager MANAGER;
 int main(int argc, char* argv[])
 {
@@ -67,13 +26,13 @@ int main(int argc, char* argv[])
     std::cout << "OpenGL " << std::string((char *)glGetString(GL_VERSION)) << std::endl;
     std::cout << "====================================================" << std::endl;
 
+    glutIdleFunc(idle);
+
     glShadeModel(GL_FLAT);
     glEnable(GL_LIGHTING);
     world.addLight(glm::vec3(0, 10, 0), glm::vec4(1, 1, 1, 1));
 
-    Scene::Shader* rainbowShader = new Scene::Shader("shaders/rainbow_vert.glsl", "shaders/rainbow_frag.glsl");
-
-    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(1, 0, 0));
+    /*Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(1, 0, 0));
     Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 1, 0));
     Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 1));
     xAxis->setColor(glm::vec4(1, 0, 0, 1));
@@ -83,21 +42,11 @@ int main(int argc, char* argv[])
     world.addObject(yAxis);
     world.addObject(zAxis);
 
-    /*Scene::Cylinder* xCylinder = new Scene::Cylinder(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), 0.1);
-    Scene::Cylinder* yCylinder = new Scene::Cylinder(glm::vec3(0, 0, 0), glm::vec3(0, 1, 0), 0.1);
-    Scene::Cylinder* zCylinder = new Scene::Cylinder(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), 0.1);
-    xCylinder->setColor(glm::vec4(1, 0, 0, 1));
-    yCylinder->setColor(glm::vec4(0, 1, 0, 1));
-    zCylinder->setColor(glm::vec4(0, 0, 1, 1));
-    world.addObject(xCylinder);
-    world.addObject(yCylinder);
-    world.addObject(zCylinder);*/
-
     Scene::Path * linePath = new Scene::Path;
     linePath->setParameterization(PathParameterizations::circle);
-    world.addObject(linePath);
+    world.addObject(linePath);*/
 
-    Scene::Arm* arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
+    arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
     arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
     arm->setLocalRotation(1, glm::vec3(0.5*M_PI, 0, 0));
     arm->setLocalRotation(2, glm::vec3(0.5*M_PI, 0, 0));
@@ -106,12 +55,9 @@ int main(int argc, char* argv[])
     arm->setLocalRotation(5, glm::vec3(0.5*M_PI, 0, 0));
     arm->setLocalRotation(6, glm::vec3(0.5*M_PI, 0, 0));
     arm->setLocalRotation(7, glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setRotation(glm::vec3(0.5*M_PI, 0, 0));
+    //arm->setTranslation(glm::vec3(1, 1, 1));
     world.addObject(arm);
-
-    /*Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 1.0f }));
-    arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
-    world.addObject(arm);*/
-
 
     Scene::Camera * cam = new Scene::Camera();
     cam->setPos(glm::vec3(8, 0, 0));
@@ -129,12 +75,15 @@ int main(int argc, char* argv[])
         SaveAsBMP(bmpName.c_str());
     };
     auto jlambda = [&]() {
-        arm->jiggle();
+        arm->jiggle(0.05, 0.05);
     };
     keyboard.register_hotkey('i', ilambda);
     keyboard.register_hotkey('j', jlambda);
+
 
     MANAGER.drawElements();
 
     return 0;
 }
+
+

@@ -217,7 +217,6 @@ void Panel::draw()
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         _camera->pushRotation();
-        //glMultMatrixf(_camera->rotMatData());
         glTranslatef(-_camera->pos()[0], -_camera->pos()[1], -_camera->pos()[2]);
         _world->draw();
 
@@ -316,19 +315,9 @@ void Controls::Mouse::_motion(int x, int y)
     }
     else if(_buttons[2])
     {
-        //_camera->setTz(_camera->getTz() * exp(0.01f*diffy) + 0.0001);
-        /*glm::vec3 v((float)diffx, (float)diffy, 0.0f);
-        glm::vec3 vlast((float)diffxlast, (float)diffylast, 0.0f);
-        float r = glm::cross(v, vlast).z;
-        float dC = 0.1f * v.length();
-        if (r > 0) dC = -dC;
-        _meshObject->collapseTo(_meshObject->complexity() + dC);//*/
     }
     else if(_buttons[1])
     {
-        //_camera->setTz(_camera->getTz() * exp(0.01f*diffx) + 0.0001);
-        //_camera->setTx(_camera->getTx() + (float) 0.001f * diffx);
-        //_camera->setTy(_camera->getTy() - (float) 0.001f * diffy);
     }
     glutPostRedisplay();
 }
@@ -370,7 +359,6 @@ void Controls::Keyboard::init()
 
     hotkey_map['q'] = camRollLeft;
     hotkey_map['e'] = camRollRight;
-
 }
 
 void Controls::Keyboard::register_hotkey(unsigned char key, std::function<void(void)> func)
@@ -387,7 +375,6 @@ void Controls::Keyboard::_keyPress(unsigned char key, int x, int y)
     auto func = hotkey_map[key];
     if (func != nullptr)
     {
-        //std::cout << key << " pressed" << std::endl;
         func();
     }
 

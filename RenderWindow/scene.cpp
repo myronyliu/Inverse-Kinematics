@@ -380,19 +380,31 @@ _radius(*std::min_element(lengths.begin(), lengths.end()) / 8)
     _globalRotations.resize(nJoints);
     _globalTranslations.resize(nJoints);
     glm::mat3 R = rotationMat(); // start with the anchor
-    for (int i = 0; i < nJoints; i++) {
-        if (i == 0) {
-            _globalTranslations[i] = _translation;
-        }
-        else {
-            _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
-        }
+    _globalTranslations[0] = _translation;
+    R = rotationMatrix(_localRotations[0])*R;
+    _globalRotations[0] = axisAngle2(R);
+    for (int i = 1; i < nJoints; i++) {
+        _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
         R = rotationMatrix(_localRotations[i])*R;
         _globalRotations[i] = axisAngle2(R);
     }
     _tip = _globalTranslations.back() + R*glm::vec3(0, 0, _lengths.back());
 }
 
+void Arm::printRotations() const {
+    printf("base:  ");
+    printVec3(_rotation.axisAngleRotation3());
+    for (int i = 0; i < _lengths.size(); i++) {
+        std::string head = "    :  ";
+        std::string number = std::to_string(i);
+        head.replace(head.begin(), head.begin() + number.length(), number);
+        printf("%s", head.c_str());
+        printVec3(_localRotations[i].axisAngleRotation3(), false);
+        printf("  | ");
+        printVec3(_globalRotations[i].axisAngleRotation3());
+        printMat3(_globalRotations[i].rotationMatrix());
+    }
+}
 
 void Arm::append(const float& length, const int& type, const glm::vec3& wLocal) {
     _lengths.push_back(length);
@@ -420,22 +432,24 @@ void Arm::append(const float& length, const int& type, const AxisAngleRotation2&
 }
 
 void Arm::updateGlobalTransforms(const int& index) {
+    if (index == 2) {
+        int j = 0;
+    }
     int nJoints = _lengths.size();
     if (nJoints == 0) return;
     glm::mat3 R;
     if (index == 0) {
         R = rotationMat(); // starting at the anchor
+        _globalTranslations[0] = _translation;
     }
     else {
         R = rotationMatrix(_globalRotations[index - 1]);
+        _globalTranslations[index] = _globalTranslations[index - 1] + R*glm::vec3(0, 0, _lengths[index - 1]);
     }
-    for (int i = index; i < nJoints; i++) {
-        if (i == 0) {
-            _globalTranslations[i] = _translation;
-        }
-        else {
-            _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
-        }
+    R = rotationMatrix(_localRotations[index])*R;
+    _globalRotations[index] = AxisAngleRotation2(R);
+    for (int i = index + 1; i < nJoints; i++) {
+        _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
         R = rotationMatrix(_localRotations[i])*R;
         _globalRotations[i] = AxisAngleRotation2(R);
     }
@@ -482,9 +496,9 @@ void Arm::doDraw() {
     glPopMatrix();
 }
 
-void Arm::jiggle() {
+void Arm::jiggle(const float& dzArcLength, const float& dPolar) {
     for (int i = 0; i < _lengths.size(); i++) {
-        _localRotations[i].perturb(0.01, 0.01);
+        _localRotations[i].perturb(dzArcLength, dPolar);
     }
     //updateGlobalTransforms();
 }

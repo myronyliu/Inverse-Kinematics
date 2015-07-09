@@ -54,14 +54,84 @@ std::string zero_padded_name(std::string prefix, int number, int pad)
 
     return name.str();
 }
-
-void printVec3(glm::vec3 v) {
-    printf("%f %f %f\n", v[0], v[1], v[2]);
+void SaveAsBMP(const char *fileName)
+{
+    FILE *file;
+    unsigned long imageSize;
+    GLbyte *data = NULL;
+    GLint viewPort[4];
+    GLenum lastBuffer;
+    BITMAPFILEHEADER bmfh;
+    BITMAPINFOHEADER bmih;
+    bmfh.bfType = 'MB';
+    bmfh.bfReserved1 = 0;
+    bmfh.bfReserved2 = 0;
+    bmfh.bfOffBits = 54;
+    glGetIntegerv(GL_VIEWPORT, viewPort);
+    imageSize = ((viewPort[2] + ((4 - (viewPort[2] % 4)) % 4))*viewPort[3] * 3) + 2;
+    bmfh.bfSize = imageSize + sizeof(bmfh) + sizeof(bmih);
+    data = (GLbyte*)malloc(imageSize);
+    glPixelStorei(GL_PACK_ALIGNMENT, 4);
+    glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+    glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+    glPixelStorei(GL_PACK_SWAP_BYTES, 1);
+    glGetIntegerv(GL_READ_BUFFER, (GLint*)&lastBuffer);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, viewPort[2], viewPort[3], GL_BGR, GL_UNSIGNED_BYTE, data);
+    data[imageSize - 1] = 0;
+    data[imageSize - 2] = 0;
+    glReadBuffer(lastBuffer);
+    std::FILE* f;
+    fopen_s(&f, fileName, "wb");
+    file = f;
+    bmih.biSize = 40;
+    bmih.biWidth = viewPort[2];
+    bmih.biHeight = viewPort[3];
+    bmih.biPlanes = 1;
+    bmih.biBitCount = 24;
+    bmih.biCompression = 0;
+    bmih.biSizeImage = imageSize;
+    bmih.biXPelsPerMeter = 45089;
+    bmih.biYPelsPerMeter = 45089;
+    bmih.biClrUsed = 0;
+    bmih.biClrImportant = 0;
+    fwrite(&bmfh, sizeof(bmfh), 1, file);
+    fwrite(&bmih, sizeof(bmih), 1, file);
+    fwrite(data, imageSize, 1, file);
+    free(data);
+    fclose(file);
 }
-void printMat3(glm::mat3 M) {
-    printf("%f %f %f\n", M[0][0], M[1][0], M[2][0]);
-    printf("%f %f %f\n", M[0][1], M[1][1], M[2][1]);
-    printf("%f %f %f\n", M[0][2], M[1][2], M[2][2]);
+
+void printVec3(const glm::vec3& v, const bool& newLine) {
+    if (v[0] < 0) printf("%f", v[0]);
+    else printf(" %f", v[0]);
+
+    if (v[1] < 0) printf(" %f", v[1]);
+    else printf("  %f", v[1]);
+
+    if (v[2] < 0) printf(" %f", v[2]);
+    else printf("  %f", v[2]);
+
+    if (newLine) printf("\n");
+}
+void printMat3(const glm::mat3& M) {
+
+    std::cout << std::endl;
+
+    printf("| ");
+    printVec3(glm::vec3(M[0][0], M[1][0], M[2][0]), false);
+    printf(" |\n");
+
+    printf("| ");
+    printVec3(glm::vec3(M[0][1], M[1][1], M[2][1]), false);
+    printf(" |\n");
+
+    printf("| ");
+    printVec3(glm::vec3(M[0][2], M[1][2], M[2][2]), false);
+    printf(" |\n");
+
+    std::cout << std::endl;
 }
 
 
@@ -170,6 +240,7 @@ void AxisAngleRotation2::perturb(const float& dzArcLength, const float& dPolar) 
 
 glm::mat3 rotationMatrix(const glm::vec3& w) {
     float theta = glm::length(w);
+    if (theta == 0) return glm::mat3();
     glm::vec3 wHat = w / theta;
     glm::mat3 wCross(
         glm::vec3(0, wHat[2], -wHat[1]),
@@ -190,8 +261,24 @@ glm::mat3 rotationMatrix(const float& angle, const glm::vec2& axis) {
 
 glm::vec3 axisAngle3(const glm::mat3& R) {
     float theta = acos((R[0][0] + R[1][1] + R[2][2] - 1) / 2);
-    if (theta == 0) return glm::vec3(0, 0, 0);
-    return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
+    if (theta == 0) {
+        return glm::vec3(0, 0, 0);
+    }
+    else if (theta == M_PI) {
+        if (R[0][0] >= R[1][1] && R[0][0] >= R[2][2]) {
+            float x = sqrt((R[0][0] + 1) / 2);
+            return theta*glm::vec3(x, R[1][0] / (2 * x), R[2][0] / (2 * x));
+        }
+        else if (R[1][1] >= R[2][2] && R[1][1] >= R[0][0]) {
+            float y = sqrt((R[1][1] + 1) / 2);
+            return theta*glm::vec3(R[0][1] / (2 * y), y, R[2][1] / (2 * y));
+        }
+        else {
+            float z = sqrt((R[2][2] + 1) / 2);
+            return theta*glm::vec3(R[0][2] / (2 * z), R[1][2] / (2 * z), z);
+        }
+    }
+    else return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
 }
 AxisAngleRotation2 axisAngle2(const glm::mat3& R) {
     return axisAngleRotation2(axisAngle3(R));

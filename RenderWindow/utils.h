@@ -22,6 +22,10 @@ void _check_gl_error(const char *file, int line);
 
 std::string zero_padded_name(std::string, int, int);
 
+void SaveAsBMP(const char *fileName);
+void printMat3(const glm::mat3&);
+void printVec3(const glm::vec3&, const bool& = true);
+
 struct AxisAngleRotation2 {
     glm::vec2 _axis;
     float _angle;
@@ -38,11 +42,11 @@ struct AxisAngleRotation2 {
     // perturb(...) reorients this coordinate system slightly by...
     // jiggling its z-axis uniformly in a small "hemispherical cap" with geodesic-radius dzArcLength
     // and after having done so, rotates the new x-axis and new y-axis about the new z-axis uniformly in range [-dPolar,dPolar]
-    glm::vec3 axisAngleRotation3() const { return _angle*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[1])); }
+    glm::vec3 axisAngleRotation3() const { return _angle*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
     glm::mat3 rotationMatrix() const;
     glm::mat3 coordinateAxes() const;
+    AxisAngleRotation2 operator-() const { return AxisAngleRotation2(_axis, -_angle); }
 };
-
 
 glm::vec3 axisAngle3(const glm::mat3& R);
 AxisAngleRotation2 axisAngle2(const glm::mat3& R);

@@ -199,7 +199,7 @@ class Arrow : public Object{
 public:
     Arrow() : Object(), _length(1) {}
     Arrow(const glm::vec3& origin, const glm::vec3& displacement) :
-        Object(origin, axisAngleAlignZ2(displacement)), _length(glm::length(displacement)) {}
+        Object(origin, axisAngleAlignZ2(-displacement)), _length(glm::length(displacement)) {}
     void doDraw();
 private:
     float _length;
@@ -211,7 +211,7 @@ public:
     Box(const glm::vec3& center, const glm::vec3& rotation, const glm::vec3& dimensions) :
         Object(center, rotation), _dimensions(dimensions) {}
     Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
-        Object(center, axisAngleAlignZY2(z, y)), _dimensions(dimensions) {}
+        Object(center, -axisAngleAlignZY2(z, y)), _dimensions(dimensions) {}
     void doDraw();
 protected:
     glm::vec3 _dimensions;
@@ -231,7 +231,7 @@ class Cylinder : public Object {
 public:
     Cylinder() {}
     Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) :
-        Object(center, axisAngleAlignZ2(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
+        Object(center, -axisAngleAlignZ2(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
     void doDraw() { GlutDraw::drawCylinder(_translation, glm::vec3(0, 0, _height / 2), _radius); }
 private:
     float _radius;
@@ -296,12 +296,15 @@ public:
     void append(const float& length = 1, const int& type = BALL, const glm::vec3& wLocal = glm::vec3(0, 0, 0));
     void append(const float& length = 1, const int& type = BALL, const glm::vec2& axisLocal = glm::vec2(0, 0), const float& angleLocal = 0);
     void append(const float& length = 1, const int& type = BALL, const AxisAngleRotation2& axisAngleLocal = AxisAngleRotation2());
-    void setLocalRotation(const int& joint, const glm::vec3& wLocal);
     void updateGlobalTransforms(const int& index = 0);
+    void setLocalRotation(const int& joint, const glm::vec3& wLocal);
+    void setRotation(const glm::vec3& w) { _rotation = axisAngleRotation2(w); updateGlobalTransforms(); }
     float armLength();
     float armReach();
 
-    void jiggle();
+    void printRotations() const;
+
+    void jiggle(const float&, const float&);
 
     void doDraw();
 private:
