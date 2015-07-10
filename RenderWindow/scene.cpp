@@ -535,19 +535,19 @@ float Arm::armReach() {
 
 void Arm::doDraw() {
 
-    for (int i = 0; i < _lengths.size(); i++) {
-        GlutDraw::drawSphere(_globalTranslations[i], 4*_radius);
-        //glm::vec3 center;
-        //if (i == _lengths.size() - 1) {
-        //    center = (_globalTranslations[i] + _tip) / 2.0f;
-        //}
-        //else {
-        //    center = (_globalTranslations[i] + _globalTranslations[i + 1]) / 2.0f;
-        //}
-        //glm::vec3 halfAxis = center - _globalTranslations[i];
-        //GlutDraw::drawCylinder(center, halfAxis, _radius);
-    }
-    GlutDraw::drawSphere(_tip, 4*_radius);
+    //for (int i = 0; i < _lengths.size(); i++) {
+    //    GlutDraw::drawSphere(_globalTranslations[i], 4*_radius);
+    //    //glm::vec3 center;
+    //    //if (i == _lengths.size() - 1) {
+    //    //    center = (_globalTranslations[i] + _tip) / 2.0f;
+    //    //}
+    //    //else {
+    //    //    center = (_globalTranslations[i] + _globalTranslations[i + 1]) / 2.0f;
+    //    //}
+    //    //glm::vec3 halfAxis = center - _globalTranslations[i];
+    //    //GlutDraw::drawCylinder(center, halfAxis, _radius);
+    //}
+    //GlutDraw::drawSphere(_tip, 4*_radius);
 
     glPushMatrix();
 
@@ -563,14 +563,26 @@ void Arm::doDraw() {
             cos(theta));
 
         if (_types[i] == BALL) {
-            GlutDraw::drawSphere(glm::vec3(0, 0, 0), _radius);
+            if (i == 0) GlutDraw::drawSphere(glm::vec3(0, 0, 0), _lengths[i] / 8);
+            else GlutDraw::drawSphere(glm::vec3(0, 0, 0), fmin(_lengths[i - 1], _lengths[i]) / 8);
         }
         else if (_types[i] == PIN) {
-            GlutDraw::drawCylinder(glm::vec3(0, 0, 0), _radius*_localRotations[i].axis3(), _radius);
+            //GlutDraw::drawCylinder(glm::vec3(0, 0, 0), _radius*_localRotations[i].axis3(), 2 * _radius);
         }
-        GlutDraw::drawParallelepiped(glm::vec3(0, 0, _lengths[i] / 2), glm::vec3(_radius, 0, 0), glm::vec3(0, _radius, 0), glm::vec3(0, 0, _lengths[i] / 2 - _radius));
-        GlutDraw::drawParallelepiped(glm::vec3(2 * _radius, 0, _lengths[i] / 2), glm::vec3(0, _radius / 2, 0), glm::vec3(0, 0, _radius / 2), glm::vec3(_radius, 0, 0));
-        GlutDraw::drawParallelepiped(glm::vec3(0, 2 * _radius, _lengths[i] / 2), glm::vec3(0, 0, _radius / 2), glm::vec3(_radius / 2, 0, 0), glm::vec3(0, _radius, 0));
+        GlutDraw::drawDoublePyramid(
+            _lengths[i] * glm::vec3(0, 0, 1.0f / 2),
+            _lengths[i] * glm::vec3(0, 0, 1.0f / 2),
+            _lengths[i] * glm::vec3(0, 1.0f / 8, 0));
+        GlutDraw::drawParallelepiped(
+            _lengths[i] * glm::vec3(1.0f / 8, 0, 1.0f / 2),
+            _lengths[i] * glm::vec3(0, 1.0f / 64, 0),
+            _lengths[i] * glm::vec3(0, 0, 1.0f / 64),
+            _lengths[i] * glm::vec3(1.0f / 8, 0, 0));
+        GlutDraw::drawParallelepiped(
+            _lengths[i] * glm::vec3(0, 1.0f / 8, 1.0f / 2),
+            _lengths[i] * glm::vec3(0, 0, 1.0f / 64),
+            _lengths[i] * glm::vec3(1.0f / 64, 0, 0),
+            _lengths[i] * glm::vec3(0, 1.0f / 8, 0));
 
         glTranslatef(0, 0, _lengths[i]);
     }

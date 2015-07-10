@@ -20,6 +20,9 @@ namespace GlutDraw
 
     void drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis, glm::vec3 zAxis);
 
+    void drawPyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseToCorner, int nFaces = 4, bool mode = true);
+
+    void drawDoublePyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseToCorner, int nFaces = 4, bool mode = true);
 };
 
 #endif /* GLUTDRAW_H */

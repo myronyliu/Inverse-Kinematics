@@ -18,8 +18,8 @@ GlutUI::Manager MANAGER;
 int main(int argc, char* argv[])
 {
     MANAGER.init(argc, argv);
-    int windowWidth = 800;
-    int windowHeight = 800;
+    int windowWidth = 700;
+    int windowHeight = 700;
     GlutUI::Window & mainWindow = MANAGER.createWindow(windowWidth, windowHeight, "Render Window");
     GlutUI::Panel & mainPanel = MANAGER.createPanel(mainWindow, windowWidth, windowHeight, "Render Panel");
     Scene::World world = Scene::createWorld();
@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     path->setParameterization(PathParameterizations::circle);
     world.addObject(path);
 
-    arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
+    arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f/*, 0.5f, 0.4f/*, 0.3f, 0.2f, 0.1f */}));
     for (int i = 0; i < arm->nJoints(); i++) {
         arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
     }
@@ -66,7 +66,7 @@ int main(int argc, char* argv[])
     world.addObject(arm);
 
     Scene::Camera * cam = new Scene::Camera();
-    cam->setPos(glm::vec3(0, 0, 10));
+    cam->setPos(glm::vec3(0, 0, 8));
     cam->setDir(glm::vec3(0, 0, -1));
     mainPanel.setWorld(&world);
     mainPanel.setCamera(cam);
