@@ -246,7 +246,7 @@ public:
     Sphere() : Object(), _r(5) { }
     Sphere(const glm::vec3& translation, const float& radius) : Object(translation,glm::vec3(0,0,0)), _r(radius) { }
 
-    void doDraw() { GlutDraw::drawSphere(_translation, _r); }
+    void doDraw() { GlutDraw::drawSphere(glm::vec3(0, 0, 0), _r); }
 
 protected:
     float _r;
@@ -315,7 +315,7 @@ public:
     void setRotation(const glm::vec3&);
     void setTranslation(const glm::vec3&);
 
-
+    int nJoints() const { return _lengths.size(); }
     float armLength();
     float armReach();
 

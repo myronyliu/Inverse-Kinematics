@@ -282,6 +282,15 @@ void AxisAngleRotation2::randPerturbAxis(const float& dzArcLength, const float& 
 
 
 glm::mat3 rotationMatrix(const glm::vec3& w) {
+    /*float angle = glm::length(w);
+    glm::vec3 axis = w / angle;
+    glm::mat4 R4 = glm::rotate(angle, axis);
+    glm::vec3 x = glm::vec3(R4[0][0], R4[0][1], R4[0][2]);
+    glm::vec3 y = glm::vec3(R4[1][0], R4[1][1], R4[1][2]);
+    glm::vec3 z = glm::vec3(R4[2][0], R4[2][1], R4[2][2]);
+    return glm::mat3(x, y, z);*/
+
+
     float theta = glm::length(w);
     theta -= (2 * M_PI)*floor(theta / (2 * M_PI));
     if (theta == 0) return glm::mat3();
