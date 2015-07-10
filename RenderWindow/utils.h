@@ -22,29 +22,34 @@ void _check_gl_error(const char *file, int line);
 
 std::string zero_padded_name(std::string, int, int);
 
+
 void SaveAsBMP(const char *fileName);
 void printMat3(const glm::mat3&);
 void printVec3(const glm::vec3&, const bool& = true);
+template <class T>
+T clamp(const T& lowerBound, const T& value, const T& upperBound);
 
 struct AxisAngleRotation2 {
     glm::vec2 _axis;
     float _angle;
     AxisAngleRotation2() : _axis(glm::vec2(0, 0)), _angle(0) {}
-    AxisAngleRotation2(const glm::vec2& axis, const float& angle) : _axis(axis), _angle(angle) {}
-    AxisAngleRotation2(const float& angle, const glm::vec2& axis) : _axis(axis), _angle(angle) {}
-    AxisAngleRotation2(const glm::vec3& w) : _axis(glm::normalize(w)), _angle(glm::length(w)) {}
+    AxisAngleRotation2(const glm::vec2& axis, const float& angle);
+    AxisAngleRotation2(const float& angle, const glm::vec2& axis);
+    AxisAngleRotation2(const glm::vec3& w);
     AxisAngleRotation2(const glm::mat3& R);
     float theta() const { return _axis[0]; }
     float phi() const  { return _axis[1]; }
+    void clamp();
+    void clampPhi() { _axis[1] -= (2 * M_PI)*floor(_axis[1] / (2 * M_PI)); }
     void clampAngle() { _angle -= (2 * M_PI)*floor(_angle / (2 * M_PI)); }
-    void perturb(const float& dzArcLength, const float& dPolar);
+    void randPerturbAxis(const float& dzArcLength, const float& dPolar);
     // consider the rotation vector as specifying the orientation of a coordinate system
     // perturb(...) reorients this coordinate system slightly by...
     // jiggling its z-axis uniformly in a small "hemispherical cap" with geodesic-radius dzArcLength
     // and after having done so, rotates the new x-axis and new y-axis about the new z-axis uniformly in range [-dPolar,dPolar]
     glm::vec3 axisAngleRotation3() const { return _angle*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
+    glm::vec3 axis3() const { return glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
     glm::mat3 rotationMatrix() const;
-    glm::mat3 coordinateAxes() const;
     AxisAngleRotation2 operator-() const { return AxisAngleRotation2(_axis, -_angle); }
 };
 

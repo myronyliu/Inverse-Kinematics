@@ -7,8 +7,8 @@
 Scene::Arm* arm;
 
 void idle(void) {
-    //arm->jiggle(0.01, 0.01);
-    //glutPostRedisplay();
+    arm->jiggle(M_PI / 1024, M_PI / 1024);
+    glutPostRedisplay();
 }
 
 GlutUI::Manager MANAGER;
@@ -45,19 +45,21 @@ int main(int argc, char* argv[])
     linePath->setParameterization(PathParameterizations::circle);
     world.addObject(linePath);
 
-    //arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
-    //arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(1, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(2, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(3, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(4, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(5, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(6, glm::vec3(0.5*M_PI, 0, 0));
-    //arm->setLocalRotation(7, glm::vec3(0.5*M_PI, 0, 0));
-    ////arm->setRotation(glm::vec3(0.5*M_PI, 0, 0));
+    arm = new Scene::Arm(std::vector<float>({0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
+    /*arm->setLocalRotation(0, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(1, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(2, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(3, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(4, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(5, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(6, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setLocalRotation(7, glm::vec3(0.5*M_PI, 0, 0));
+    arm->setRotation(glm::vec3(0.25*M_PI, 0, 0));*/
     ////arm->setTranslation(glm::vec3(1, 1, 1));
+    //printVec3(arm->tipPosition());
 
-    arm = new Scene::Arm(std::vector<float>({ 1.0f }));
+    //arm = new Scene::Arm(std::vector<float>({ 1.0f, 1.0f }));
+    //arm->setLocalRotation(0,glm::vec3(0.1, 0.2, 0.3));
 
     world.addObject(arm);
 
@@ -77,10 +79,10 @@ int main(int argc, char* argv[])
         SaveAsBMP(bmpName.c_str());
     };
     auto jlambda = [&]() {
-        arm->jiggle(0.05, 0.05);
+        arm->jiggle(M_PI / 256, M_PI / 256);
     };
     auto nlambda = [&]() {
-        arm->nudgeTip(0.01f*glm::vec3(0, 1, 1));
+        arm->nudgeTip(0.001f*glm::vec3(0, 1, 1));
     };
     keyboard.register_hotkey('i', ilambda);
     keyboard.register_hotkey('j', jlambda);
