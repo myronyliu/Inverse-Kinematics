@@ -278,14 +278,22 @@ private:
 class Path : public Object
 {
 public:
-    Path() : Object() {};
-    void setParameterization(glm::vec3 (*axisAngleRotation)(const float&))
-    {
-        _axisAngleRotation = axisAngleRotation;
+    Path(const float& t = 0) : Object(), _t(t) {}
+
+    void setParameterization(glm::vec3 (*parameterization)(const float&)) { _parameterization = parameterization; }
+    void setT(const float& t) { _t = t - floor(t); }
+    glm::vec3 stepT(const float& dt = 1.0f / 1024) {
+        _t += dt;
+        _t -= floor(_t);
+        return _parameterization(_t);
     }
+    glm::vec3 point(const float& t) const { return _parameterization(t); }
+    glm::vec3 currentPoint() const { return _parameterization(_t); }
+
     void doDraw();
 private:
-    glm::vec3(*_axisAngleRotation)(const float&);
+    glm::vec3(*_parameterization)(const float&);
+    float _t;
 };
 
 class Arm : public Object
@@ -314,6 +322,8 @@ public:
     void setLocalRotationAngle(const int&, const float&);
     void setRotation(const glm::vec3&);
     void setTranslation(const glm::vec3&);
+    void setTip(const glm::vec3& target); // insofar as satisfied by the constraints
+    void nudgeTip(const glm::vec3&); // modifies the rotation angles such that (locally) the tip is nudged in the direction of "displacement"
 
     int nJoints() const { return _lengths.size(); }
     float armLength();
@@ -326,7 +336,7 @@ public:
     arma::mat forwardJacobian_analytic() const;
     arma::mat forwardJacobian_numeric();
 
-    void nudgeTip(const glm::vec3& displacement); // modifies the rotation angles such that (locally) the tip is nudged in the direction of "displacement"
+    
 
     void printRotations() const;
 

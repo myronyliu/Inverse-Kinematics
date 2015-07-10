@@ -360,7 +360,7 @@ void Path::doDraw() {
 
     glBegin(GL_LINE_STRIP);
     for (int i = 0; i <= n; i++) {
-        glm::vec3 pt = _axisAngleRotation((float)i / n);
+        glm::vec3 pt = _parameterization((float)i / n);
         glVertex3f(pt[0], pt[1], pt[2]);
     }
     glEnd();
@@ -845,13 +845,12 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
 
     arma::mat Jinv = forwardJacobian_numeric();
     arma::mat J;
+
     if (!arma::pinv(J, Jinv)) {
         printf("Not invertible. Jiggling tip\n");
         jigTip;
         return;
     }
-    //Jinv.print();
-    //J.print();
     for (int i = 0; i < J.n_rows; i++) {
         for (int j = 0; j < J.n_cols; j++) {
             if (!isfinite(J(i, j))) {
@@ -861,12 +860,12 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
             }
         }
     }
+
     arma::vec d(3);
     d[0] = displacement[0];
     d[1] = displacement[1];
     d[2] = displacement[2];
     arma::vec dParams = J*d;
-    //dParams.print();
     for (int joint = 0; joint < _lengths.size(); joint++) {
         _localRotations[joint]._axis[0] += dParams[3 * joint + 0];
         _localRotations[joint]._axis[1] += dParams[3 * joint + 1];
@@ -874,5 +873,51 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
         _localRotations[joint].clamp();
     }
     update();
-    //printVec3(_tip);
+}
+
+void Arm::setTip(const glm::vec3& target) {
+
+    std::vector<AxisAngleRotation2> localRotations;
+    std::vector<AxisAngleRotation2> globalRotations;
+    std::vector<glm::vec3> globalTranslations;
+    glm::vec3 tip;
+
+    auto stashTransforms = [&]() {
+        localRotations = _localRotations;
+        globalRotations = _globalRotations;
+        globalTranslations = _globalTranslations;
+        tip = _tip;
+    };
+    auto restoreTransforms = [&]() {
+        _localRotations = localRotations;
+        _globalRotations = globalRotations;
+        _globalTranslations = globalTranslations;
+        _tip = tip;
+    };
+
+    float thresh = armLength() / 1024; // satisfactory threshold for distance from target
+
+    while (true) {
+        glm::vec3 disp = target - _tip; // displacement to the target
+        float dist = glm::length(disp);
+
+        if (dist < thresh) break;
+
+        glm::vec3 dTip = disp;
+        int nAttempts = 0;
+        while (true) {
+            stashTransforms();
+            nudgeTip(dTip);
+
+            if (glm::length(target - _tip) < dist) break;
+
+            restoreTransforms();
+            nAttempts++;
+            if (nAttempts > 256) return;
+            if (fabs(dTip[0]) < 2 * FLT_MIN || fabs(dTip[1]) < 2 * FLT_MIN || fabs(dTip[2]) < 2 * FLT_MIN) {
+                return;
+            }
+            dTip /= 2;
+        }
+    }
 }
