@@ -278,18 +278,32 @@ void AxisAngleRotation2::randPerturbAxis(const float& dzArcLength, const float& 
     // No need to reset the angle, since any changes are purely from numerical error
 }
 
+glm::mat3 basisChangeMatrix(const glm::mat3& oldBasis, const glm::mat3& newBasis) {
+    return glm::inverse(newBasis)*oldBasis;
+}
 
-
+glm::mat3 composeLocalTransforms(const glm::mat3& A, const glm::mat3& B) {
+    // A defines a basis, so to convert B's columns (currently in standard basis [xHat,yHat,zHat]) to A's basis
+    // we left multiply B by the "basis-change-matrix from standard to A" : A_inv
+    // The result is A_inv.B, which after multiplying by the previous transformation A, gives...
+    return (glm::inverse(A)*B)*A;
+}
+glm::vec3 composeLocalRotations(const glm::vec3& w0, const glm::vec3& w1) {
+    float angle0 = glm::length(w0);
+    float angle1 = glm::length(w1);
+    if (angle0 == 0) return w1;
+    if (angle1 == 0) return w0;
+    glm::mat3 R0 = rotationMatrix(w0);
+    glm::vec3 w1_frame0 = R0*w1;
+    glm::mat3 R = rotationMatrix(w1_frame0)*R0;
+    return axisAngleRotation3(R);
+}
+AxisAngleRotation2 composeLocalRotations(const AxisAngleRotation2& axisAngle0, const AxisAngleRotation2& axisAngle1) {
+    glm::vec3 w = composeLocalRotations(axisAngle0.axisAngleRotation3(), axisAngle1.axisAngleRotation3());
+    return AxisAngleRotation2(w);
+}
 
 glm::mat3 rotationMatrix(const glm::vec3& w) {
-    /*float angle = glm::length(w);
-    glm::vec3 axis = w / angle;
-    glm::mat4 R4 = glm::rotate(angle, axis);
-    glm::vec3 x = glm::vec3(R4[0][0], R4[0][1], R4[0][2]);
-    glm::vec3 y = glm::vec3(R4[1][0], R4[1][1], R4[1][2]);
-    glm::vec3 z = glm::vec3(R4[2][0], R4[2][1], R4[2][2]);
-    return glm::mat3(x, y, z);*/
-
 
     float theta = glm::length(w);
     theta -= (2 * M_PI)*floor(theta / (2 * M_PI));
@@ -347,8 +361,7 @@ glm::vec3 axisAngleAlignZY3(const glm::vec3& zIn, const glm::vec3& yIn) {
     glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
     glm::vec3 x = glm::cross(y, z);
     glm::mat3 R = glm::inverse(glm::mat3(x, y, z));
-    float theta = acos(clamp(-1.0f, (R[0][0] + R[1][1] + R[2][2] - 1) / 2, 1.0f));
-    return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
+    return axisAngle3(R);
 }
 AxisAngleRotation2 axisAngleAlignZY2(const glm::vec3& z, const glm::vec3& y) {
     return axisAngleRotation2(axisAngleAlignZY3(z, y));
@@ -379,7 +392,8 @@ glm::vec3 axisAngleAlignZ3(const glm::vec3& axisIn) {
         return glm::vec3(0, 0, 0);
         }*/
     if (axis[0] == 0 && axis[1] == 0) {
-        return glm::vec3(0, 0, 0);
+        if (axis[2] >= 0) return glm::vec3(0, 0, 0);
+        else return glm::vec3(M_PI, 0, 0);
     }
     else {
         return (M_PI / 2.0f)*glm::cross(axis, glm::vec3(0, 0, 1));

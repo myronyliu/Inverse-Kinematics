@@ -48,7 +48,7 @@ int main(int argc, char* argv[])
     path->setParameterization(PathParameterizations::circle);
     world.addObject(path);
 
-    arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f/*, 0.5f, 0.4f/*, 0.3f, 0.2f, 0.1f */}));
+    arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f, 0.4f/*, 0.3f, 0.2f, 0.1f */}));
     for (int i = 0; i < arm->nJoints(); i++) {
         arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
     }
