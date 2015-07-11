@@ -17,7 +17,7 @@ inline glm::vec3 composeRotation(const glm::vec3& w0, const glm::vec3& w1) {
 /* Method Definitions */
 
 void Camera::pushRotation() const {
-    glm::vec3 w = axisAngleAlignZY3(-_dir, _up);
+    glm::vec3 w = axisAngleAlignVECStoZY3(-_dir, _up);
     float angle = glm::length(w);
     if (angle > 0) {
         w /= angle;

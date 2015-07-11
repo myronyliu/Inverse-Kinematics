@@ -68,8 +68,6 @@ glm::mat3 composeLocalTransforms(const glm::mat3&, const glm::mat3&);
 glm::vec3 composeLocalRotations(const glm::vec3&, const glm::vec3&);
 AxisAngleRotation2 composeLocalRotations(const AxisAngleRotation2&, const AxisAngleRotation2&);
 
-glm::vec3 axisAngleAlignZY3(const glm::vec3& zIn, const glm::vec3& yIn);
-AxisAngleRotation2 axisAngleAlignZY2(const glm::vec3& zIn, const glm::vec3& yIn);
 
 glm::vec3 axisAngleRotation3(const glm::vec2& axis, float angle);
 glm::vec3 axisAngleRotation3(float angle, const glm::vec2& axis);
@@ -77,6 +75,14 @@ glm::vec3 axisAngleRotation3(const AxisAngleRotation2& axisAngle);
 
 AxisAngleRotation2 axisAngleRotation2(const glm::vec3& w);
 
-glm::vec3 axisAngleAlignZ3(const glm::vec3& axisIn);
-AxisAngleRotation2 axisAngleAlignZ2(const glm::vec3& axis);
-glm::vec3 axisAngleAlignVectors(const glm::vec3& axis, const glm::vec3& target);
+glm::vec3 axisAngleAlignVECtoZ3(const glm::vec3&);
+glm::vec3 axisAngleAlignZTo3(const glm::vec3&);
+AxisAngleRotation2 axisAngleAlignVECtoZ2(const glm::vec3&);
+AxisAngleRotation2 axisAngleAlignZtoVEC2(const glm::vec3&);
+glm::vec3 axisAngleAlignFirstToSecond(const glm::vec3&, const glm::vec3&);
+
+glm::vec3 axisAngleAlignVECStoZY3(const glm::vec3& zIn, const glm::vec3& yIn);
+AxisAngleRotation2 axisAngleAlignVECStoZY2(const glm::vec3& zIn, const glm::vec3& yIn);
+
+glm::vec3 axisAngleAlignZYtoVECS3(const glm::vec3& zIn, const glm::vec3& yIn);
+AxisAngleRotation2 axisAngleAlignZYtoVECS2(const glm::vec3& zIn, const glm::vec3& yIn);

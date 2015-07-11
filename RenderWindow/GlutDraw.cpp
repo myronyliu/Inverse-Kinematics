@@ -189,7 +189,7 @@ void GlutDraw::drawPyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseTo
     glm::vec3 z = glm::normalize(baseToTip - glm::dot(baseToTip, y)*y);
 
     glm::vec3 baseToTip_local = baseToTip;
-    glm::vec3 rotAxis = axisAngleAlignZY3(z, y);
+    glm::vec3 rotAxis = axisAngleAlignVECStoZY3(z, y);
     float rotAngle = glm::length(rotAxis);
     if (rotAngle > 0) {
         rotAxis /= rotAngle;
@@ -241,7 +241,7 @@ void GlutDraw::drawDoublePyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 
     glm::vec3 z = glm::normalize(baseToTip - glm::dot(baseToTip, y)*y);
 
     glm::vec3 baseToTip_local = baseToTip;
-    glm::vec3 rotAxis = axisAngleAlignZY3(z, y);
+    glm::vec3 rotAxis = axisAngleAlignVECStoZY3(z, y);
     float rotAngle = glm::length(rotAxis);
     if (rotAngle > 0) {
         rotAxis /= rotAngle;

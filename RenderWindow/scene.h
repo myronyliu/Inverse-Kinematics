@@ -159,7 +159,7 @@ public:
     void setRotation(const glm::vec3& w) { _rotation = axisAngleRotation2(w); }
     void setRotationAxis(const glm::vec3& w) { _rotation._axis = axisAngleRotation2(w)._axis; }
     void setRotationAxis(const glm::vec2& rotAxis) { _rotation._axis = rotAxis; }
-    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = axisAngleAlignZY2(z, y); }
+    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = axisAngleAlignZYtoVECS2(z, y); }
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
 
@@ -200,7 +200,7 @@ class Arrow : public Object{
 public:
     Arrow() : Object(), _length(1) {}
     Arrow(const glm::vec3& origin, const glm::vec3& displacement) :
-        Object(origin, axisAngleAlignZ2(-displacement)), _length(glm::length(displacement)) {}
+        Object(origin, axisAngleAlignZtoVEC2(displacement)), _length(glm::length(displacement)) {}
     void doDraw();
 private:
     float _length;
@@ -212,7 +212,7 @@ public:
     Box(const glm::vec3& center, const glm::vec3& rotation, const glm::vec3& dimensions) :
         Object(center, rotation), _dimensions(dimensions) {}
     Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
-        Object(center, -axisAngleAlignZY2(z, y)), _dimensions(dimensions) {}
+        Object(center, axisAngleAlignZYtoVECS2(z, y)), _dimensions(dimensions) {}
     void doDraw();
 protected:
     glm::vec3 _dimensions;
@@ -232,7 +232,7 @@ class Cylinder : public Object {
 public:
     Cylinder() {}
     Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) :
-        Object(center, -axisAngleAlignZ2(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
+        Object(center, axisAngleAlignZtoVEC2(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
     void doDraw() { GlutDraw::drawCylinder(_translation, glm::vec3(0, 0, _height / 2), _radius); }
 private:
     float _radius;

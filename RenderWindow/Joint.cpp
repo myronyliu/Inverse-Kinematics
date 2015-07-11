@@ -3,7 +3,7 @@
 glm::mat3 BallJoint::rotRelPivR() const {
     glm::vec3 armAxisZ_relPivot(sin(_direction[0])*cos(_direction[0]), sin(_direction[0])*sin(_direction[1]), cos(_direction[0]));
     glm::vec3 armAxisY_relPivot(-sin(_spin), cos(_spin), 0); // BEFORE aligning
-    glm::vec3 wAlign = -axisAngleAlignZ3(armAxisZ_relPivot);
+    glm::vec3 wAlign = axisAngleAlignZTo3(armAxisZ_relPivot);
     float angle = glm::length(wAlign);
     if (angle>0) armAxisY_relPivot = glm::rotate(armAxisY_relPivot, angle, wAlign / angle);
     glm::vec3 armAxisX_relPivot = glm::cross(armAxisY_relPivot, armAxisZ_relPivot);
