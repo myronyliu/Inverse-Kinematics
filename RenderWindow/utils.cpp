@@ -169,6 +169,13 @@ void printVector(const std::vector<float>& v) {
     std::cout << std::endl;
 }
 
-
-
-
+void pushTranslation3(const glm::vec3& t) {
+    glTranslatef(t[0], t[1], t[2]);
+}
+void pushRotation3(const glm::vec3& w) {
+    float angle = glm::length(w);
+    if (angle > 0) {
+        glm::vec3 axis = w / angle;
+        glRotatef((180.0f / M_PI)*angle, axis[0], axis[1], axis[2]);
+    }
+}

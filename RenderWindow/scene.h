@@ -305,7 +305,7 @@ class Arm : public Object
 {
 public:
     Arm() : Object() {}
-    Arm(std::vector<float>& lengths);
+    Arm(std::vector<float>& lengths); // makes a bunch of axis aligned ball joints with local translation (0,0,length)
 
     void append(const Joint& joint = BallJoint(), const float& length = 1);
 
@@ -315,6 +315,7 @@ public:
     float localRotationTheta(const int& joint) const { return _joints[joint]->rotation2()._axis[0]; }
     float localRotationPhi(const int& joint) const { return _joints[joint]->rotation2()._axis[1]; }
     float localRotationAngle(const int& joint) const { return _joints[joint]->rotation2()._angle; }
+    glm::vec3 localTranslation(const int& joint) const { return _joints[joint]->translation(); }
     glm::vec3 tipPosition() const { return _tip; }
 
     // SETTERS
@@ -334,18 +335,19 @@ public:
     void setTip(const glm::vec3&); // insofar as satisfied by the constraints
     void setAnchor(const glm::vec3&);
 
-    int nJoints() const { return _lengths.size(); }
+    int nJoints() const { return _joints.size(); }
     float armLength();
     float armReach();
 
-    void updateGlobalTransforms(const int& joint = -1);
-    void update(const int& joint = -1) { updateGlobalTransforms(joint); }
+    void updateGlobalTransforms(const int& joint = 0);
+    void update(const int& joint = 0) { updateGlobalTransforms(joint); }
 
     arma::mat forwardJacobian_numeric();
 
     
 
     void printRotations() const;
+    void printTranslations() const { for (int i = 0; i < _joints.size(); i++) printVec3(_globalTranslations[i]); }
 
     void jiggle();
     void jiggle(const int& joint);
@@ -354,7 +356,6 @@ public:
 private:
     // _translation and _rotation refer to the anchor position and orientation as per usual
     std::vector<Joint*> _joints; // RELATIVE rotation axes
-    std::vector<float> _lengths; // lenghts of the arms
 
     std::vector<AxisAngleRotation2> _globalRotations; // GLOBAL rotation axis for each segment
     std::vector<glm::vec3> _globalTranslations;

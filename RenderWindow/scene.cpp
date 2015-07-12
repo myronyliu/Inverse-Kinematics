@@ -371,67 +371,68 @@ void Path::doDraw() {
 
 
 Arm::Arm(std::vector<float>& lengths) :
-Object(),
-_lengths(lengths)
+Object()
 {
-    int nJoints = _lengths.size();
+    int nJoints = lengths.size();
     if (nJoints == 0) return;
-    _globalRotations.resize(nJoints);
-    _globalTranslations.resize(nJoints);
+    _globalRotations.resize(nJoints + 1);
+    _globalTranslations.resize(nJoints + 1);
 
-    for (int i = 0; i < nJoints; i++) {
+    _joints.push_back(new BallJoint);
+    for (auto length: lengths) {
         _joints.push_back(new BallJoint);
+        _joints.back()->setRotation(AxisAngleRotation2());
+        _joints.back()->setTranslation(glm::vec3(0, 0, length));
     }
 
     glm::mat3 R;
     R = rotationMatrix(_rotation);
-    _globalTranslations[0] = _translation;
+    _globalTranslations[0] = _translation + R*localTranslation(0);
     glm::vec3 wLocal = localRotation3(0);
     glm::vec3 wLocal_world = R*wLocal;
     R = rotationMatrix(wLocal_world)*R;
     _globalRotations[0] = AxisAngleRotation2(R);
     for (int i = 1; i < nJoints; i++) {
-        _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
+        _globalTranslations[i] = _globalTranslations[i - 1] + R*localTranslation(i);
         wLocal = localRotation3(i);
         wLocal_world = R*wLocal;
         R = rotationMatrix(wLocal_world)*R;
         _globalRotations[i] = AxisAngleRotation2(R);
     }
-    _tip = _globalTranslations.back() + R*glm::vec3(0, 0, _lengths.back());
+    _tip = _globalTranslations.back();// +R*localTranslation(nJoints - 1);
 }
 
-void Arm::updateGlobalTransforms(const int& jointIn) {
-    if (jointIn < 0) _globalTranslations[0] = _translation;
-    int joint = fmax(0, jointIn);
-
-    int nJoints = _lengths.size();
+void Arm::updateGlobalTransforms(const int& joint) {
+    int nJoints = _joints.size();
     if (nJoints == 0) return;
     glm::mat3 R;
     if (joint == 0) {
         R = rotationMatrix(_rotation);
+        _globalTranslations[0] = _translation + R*localTranslation(0);
     }
     else {
         R = rotationMatrix(_globalRotations[joint - 1]);
+        _globalTranslations[joint] = _globalTranslations[joint - 1] + R*localTranslation(joint);
     }
     glm::vec3 wLocal = localRotation3(joint);
     glm::vec3 wLocal_world = R*wLocal; // wLocal in "world coordinates" (NOT the same as wGlobal)
     R = rotationMatrix(wLocal_world)*R;
     _globalRotations[joint] = AxisAngleRotation2(R);
     for (int i = joint + 1; i < nJoints; i++) {
-        _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
+        _globalTranslations[i] = _globalTranslations[i - 1] + R*localTranslation(i);
         wLocal = localRotation3(i);
         wLocal_world = R*wLocal;
         R = rotationMatrix(wLocal_world)*R;
         _globalRotations[i] = AxisAngleRotation2(R);
     }
-    _tip = _globalTranslations.back() + R*glm::vec3(0, 0, _lengths.back());
+    _tip = _globalTranslations.back();// +R*localTranslation(nJoints - 1);
 }
 
 void Arm::printRotations() const {
     printf("base:  ");
     printVec3(_rotation.axisAngleRotation3());
     printMat3(_rotation.rotationMatrix());
-    for (int i = 0; i < _lengths.size(); i++) {
+    for (int i = 0; i < _joints.size(); i++) {
         std::string head = "    :  ";
         std::string number = std::to_string(i);
         head.replace(head.begin(), head.begin() + number.length(), number);
@@ -449,10 +450,9 @@ void Arm::append(const Joint& joint, const float& length) {
     Joint* jointPtr = new Joint;
     *jointPtr = joint;
     _joints.push_back(jointPtr);
-    _lengths.push_back(length);
     _globalRotations.push_back(glm::vec3(0, 0, 0));
     _globalTranslations.push_back(glm::vec3(0, 0, 0));
-    update(_lengths.size() - 1);
+    update(_joints.size() - 1);
 }
 
 void Arm::setLocalRotation(const int& joint, const glm::vec3& wLocal) {
@@ -506,7 +506,7 @@ void Arm::setRotation(const glm::vec3& w) {
 void Arm::setTranslation(const glm::vec3& translation) {
     if (_translation == translation) return;
     _translation = translation;
-    for (int i = 0; i < _lengths.size(); i++) {
+    for (int i = 0; i < _joints.size(); i++) {
         _globalTranslations[i] += translation;
     }
     _tip += translation;
@@ -520,8 +520,8 @@ void Arm::setLocalTranslationRotation(const int& joint, const glm::vec3& transla
 
 float Arm::armLength() {
     float lengthSum = 0;
-    for (int i = 0; i < _lengths.size(); i++) {
-        lengthSum += _lengths[i];
+    for (int i = 0; i < _joints.size(); i++) {
+        lengthSum += glm::length(localTranslation(i)) + _joints[i]->reach();
     }
     return lengthSum;
 }
@@ -532,6 +532,8 @@ float Arm::armReach() {
 }
 
 void Arm::doDraw() {
+    
+    if (_joints.size() == 0) return;
 
     //for (int i = 0; i < _lengths.size(); i++) {
     //    GlutDraw::drawSphere(_globalTranslations[i], _lengths[i] / 4);
@@ -549,48 +551,25 @@ void Arm::doDraw() {
 
     glPushMatrix();
 
-    for (int i = 0; i < _lengths.size(); i++) {
+    for (int i = 0; i < _joints.size(); i++) {
 
-        float theta = localRotation2(i)._axis[0];
-        float phi = localRotation2(i)._axis[1];
+        glm::vec3 trans = _joints[i]->translation();
+        float length = glm::length(trans);
+        float nextLength;
+        if (i == _joints.size() - 1) nextLength = 0;
+        else nextLength = glm::length(_joints[i + 1]->translation());
 
-        glRotatef(
-            (180.0f / M_PI)*localRotation2(i)._angle,
-            sin(theta)*cos(phi),
-            sin(theta)*sin(phi),
-            cos(theta));
+        _joints[i]->draw(fmin(length, nextLength) / 8);
 
-
-        if (i == 0) {
-            _joints[i]->draw(_lengths[i] / 8);
-        }
-        else {
-            _joints[i]->draw(fmin(_lengths[i - 1], _lengths[i]) / 8);
-        }
-
-        GlutDraw::drawDoublePyramid(
-            _lengths[i] * glm::vec3(0, 0, 1.0f / 2),
-            _lengths[i] * glm::vec3(0, 0, 1.0f / 2),
-            _lengths[i] * glm::vec3(0, 1.0f / 8, 0));
-        GlutDraw::drawParallelepiped(
-            _lengths[i] * glm::vec3(1.0f / 8, 0, 1.0f / 2),
-            _lengths[i] * glm::vec3(0, 1.0f / 64, 0),
-            _lengths[i] * glm::vec3(0, 0, 1.0f / 64),
-            _lengths[i] * glm::vec3(1.0f / 8, 0, 0));
-        GlutDraw::drawParallelepiped(
-            _lengths[i] * glm::vec3(0, 1.0f / 8, 1.0f / 2),
-            _lengths[i] * glm::vec3(0, 0, 1.0f / 64),
-            _lengths[i] * glm::vec3(1.0f / 64, 0, 0),
-            _lengths[i] * glm::vec3(0, 1.0f / 8, 0));
-
-        glTranslatef(0, 0, _lengths[i]);
+        glTranslatef(trans[0], trans[1], trans[2]);
+        localRotation2(i).pushRotation();
     }
     glPopMatrix();
 }
 
 void Arm::jiggle() {
-    for (int i = 0; i < _lengths.size(); i++) {
-        _joints[i]->perturb();
+    for (auto joint : _joints) {
+        joint->perturb();
     }
     update();
 }
@@ -600,7 +579,7 @@ void Arm::jiggle(const int& joint) {
 }
 
 arma::mat Arm::forwardJacobian_numeric() {
-    int nJoints = _lengths.size();
+    int nJoints = _joints.size();
 
     std::vector<std::vector<float>> jointParams(nJoints);
 
@@ -679,7 +658,7 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
     _color = glm::vec4(1, 1, 1, 1);
 
     auto jigTip = [this]() {
-        jiggle(_lengths.size() - 1);
+        jiggle(_joints.size() - 1);
         _color = glm::vec4(1, 0, 0, 1);
     };
 
@@ -728,16 +707,16 @@ void Arm::setTip(const glm::vec3& target) {
     glm::vec3 tip;
 
     auto stashTransforms = [&]() {
-        for (int i = 0; i < _lengths.size(); i++) {
-            _joints[i]->backup();
+        for (auto joint : _joints) {
+            joint->backup();
         }
         globalRotations = _globalRotations;
         globalTranslations = _globalTranslations;
         tip = _tip;
     };
     auto restoreTransforms = [&]() {
-        for (int i = 0; i < _lengths.size(); i++) {
-            _joints[i]->restore();
+        for (auto joint : _joints) {
+            joint->restore();
         }
         _globalRotations = globalRotations;
         _globalTranslations = globalTranslations;

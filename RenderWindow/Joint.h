@@ -36,6 +36,7 @@ public:
     virtual void setParamsFreely(const std::vector<float>&) {};
     virtual void perturb() {};
     virtual void draw(const float&) const {};
+    virtual float reach() const { return 0; }
     virtual void backupExtras() {};
     virtual void restoreExtras() {};
 

@@ -25,7 +25,7 @@ struct AxisAngleRotation2 {
     glm::vec3 axisAngleRotation3() const { return _angle*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
     glm::vec3 axis3() const { return glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
     glm::mat3 rotationMatrix() const;
-    void pushRotation() const { if (_angle != 0) glRotatef(_angle, sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
+    void pushRotation() const { if (_angle != 0) glRotatef((180.0f / M_PI)*_angle, sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0])); }
     AxisAngleRotation2 operator-() const { return AxisAngleRotation2(_axis, -_angle); }
 
     bool operator ==(const AxisAngleRotation2& rhs) { return _axis[0] == rhs._axis[0] && _axis[1] == rhs._axis[1] && _angle == rhs._angle; }

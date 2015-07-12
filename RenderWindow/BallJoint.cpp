@@ -77,10 +77,43 @@ void BallJoint::setRotationFromPivot(const glm::mat3& R) {
 
 
 void BallJoint::draw(const float& radius) const {
+
+    //if (_previous != NULL) {
+
+    float transDist = glm::length(_translation);
+    if (transDist > 0) {
+        glm::vec3 w = axisAngleAlignVECtoZ3(_translation);
+
+        glPushMatrix();
+        pushRotation3(w);
+
+        GlutDraw::drawDoublePyramid(
+            transDist*glm::vec3(0, 0, 1.0f / 2),
+            transDist*glm::vec3(0, 0, 1.0f / 2),
+            transDist*glm::vec3(0, 1.0f / 8, 0));
+        GlutDraw::drawParallelepiped(
+            transDist*glm::vec3(1.0f / 8, 0, 1.0f / 2),
+            transDist*glm::vec3(0, 1.0f / 64, 0),
+            transDist*glm::vec3(0, 0, 1.0f / 64),
+            transDist*glm::vec3(1.0f / 8, 0, 0));
+        GlutDraw::drawParallelepiped(
+            transDist*glm::vec3(0, 1.0f / 8, 1.0f / 2),
+            transDist*glm::vec3(0, 0, 1.0f / 64),
+            transDist*glm::vec3(1.0f / 64, 0, 0),
+            transDist*glm::vec3(0, 1.0f / 8, 0));
+
+        glPopMatrix();
+    }
+
+    //}
+
     glPushMatrix();
+
     glTranslatef(_translation[0], _translation[1], _translation[2]);
     _rotation.pushRotation();
     GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius);
+
+    glPopMatrix();
 }
 
 void BallJoint::perturb() {

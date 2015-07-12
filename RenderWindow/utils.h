@@ -36,5 +36,5 @@ void printVec2(const glm::vec2&, const bool& = true);
 
 void printVector(const std::vector<float>&);
 
-
-
+void pushTranslation3(const glm::vec3&);
+void pushRotation3(const glm::vec3&);
