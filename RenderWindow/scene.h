@@ -279,22 +279,26 @@ private:
 class Path : public Object
 {
 public:
-    Path(const float& t = 0) : Object(), _t(t) {}
+    Path(const float& scale = 1, const float& t = 0) : Object(),_scale(scale), _t(t) {}
 
     void setParameterization(glm::vec3 (*parameterization)(const float&)) { _parameterization = parameterization; }
     void setT(const float& t) { _t = t - floor(t); }
     glm::vec3 stepT(const float& dt = 1.0f / 1024) {
         _t += dt;
         _t -= floor(_t);
-        return _parameterization(_t);
+        return point(_t);
     }
-    glm::vec3 point(const float& t) const { return _parameterization(t); }
+    glm::vec3 point(const float& t) const {
+        glm::vec3 pt = _scale*_parameterization(t);
+        return glm::rotate(pt, _rotation._angle, _rotation.axis3())+_translation;
+    }
     glm::vec3 currentPoint() const { return _parameterization(_t); }
 
     void doDraw();
 private:
     glm::vec3(*_parameterization)(const float&);
     float _t;
+    float _scale;
 };
 
 class Arm : public Object
@@ -325,18 +329,18 @@ public:
     void setRotation(const glm::vec3&);
     void setTranslation(const glm::vec3&);
     void setLocalTranslationRotation(const int&, const glm::vec3&, const AxisAngleRotation2&);
-    void setTip(const glm::vec3& target); // insofar as satisfied by the constraints
+
     void nudgeTip(const glm::vec3&); // modifies the rotation angles such that (locally) the tip is nudged in the direction of "displacement"
+    void setTip(const glm::vec3&); // insofar as satisfied by the constraints
+    void setAnchor(const glm::vec3&);
 
     int nJoints() const { return _lengths.size(); }
     float armLength();
     float armReach();
 
-    //void updateRotationDerivative(const int& joint = -1);
     void updateGlobalTransforms(const int& joint = -1);
-    void update(const int& joint = -1) { updateGlobalTransforms(joint); /*updateRotationDerivative(joint);*/ }
+    void update(const int& joint = -1) { updateGlobalTransforms(joint); }
 
-    //arma::mat forwardJacobian_analytic() const;
     arma::mat forwardJacobian_numeric();
 
     
@@ -356,9 +360,7 @@ private:
     std::vector<glm::vec3> _globalTranslations;
     glm::vec3 _tip;
 
-    std::vector<glm::mat3> _dR_dTheta; // local derivatives
-    std::vector<glm::mat3> _dR_dPhi;
-    std::vector<glm::mat3> _dR_dAngle;
+    float _anchor; // 0 for the zeroth joint, 1 for the oneth joint, 0.5 for halfway between the zeroth and oneth joint
 
 };
 

@@ -5,12 +5,13 @@
 #include "Paths.h"
 
 Scene::Arm* arm;
-Scene::Path* path;
+Scene::Path* tipPath;
+Scene::Path* anchorPath;
 
 void idle(void) {
-    //arm->nudgeTip(0.001f*glm::vec3(0, 1, 0));
-    //arm->jiggle(0);
-    arm->setTip(path->stepT());
+    arm->setTranslation(anchorPath->stepT(1.0f/888));
+    arm->updateGlobalTransforms();
+    arm->setTip(tipPath->stepT(1.0f/1024));
     glutPostRedisplay();
 }
 
@@ -45,22 +46,24 @@ int main(int argc, char* argv[])
     world.addObject(yAxis);
     world.addObject(zAxis);
 
-    path = new Scene::Path;
-    path->setParameterization(PathParameterizations::circle);
-    world.addObject(path);
+    tipPath = new Scene::Path(1.5);
+    anchorPath = new Scene::Path(1);
+    tipPath->setParameterization(PathParameterizations::circle);
+    anchorPath->setParameterization(PathParameterizations::line);
+    //anchorPath->setRotation(glm::vec3(0, M_PI / 2, 0));
+    anchorPath->setTranslation(glm::vec3(0, 0, 0));
+
+    world.addObject(tipPath);
+    world.addObject(anchorPath);
 
     arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f, 0.4f, 0.3f, 0.2f, 0.1f }));
     for (int i = 0; i < arm->nJoints(); i++) {
-        //arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
-        if (i == 2) {
-            //std::cout << std::endl;
-        }
-        if (i % 2 == 0) arm->setLocalRotation(i, glm::vec3(M_PI/4, 0, 0));
-        else arm->setLocalRotation(i, glm::vec3(0, M_PI/4, 0));
-        //arm->localRotation2(i).print();
+        arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+        /*if (i % 2 == 0) arm->setLocalRotation(i, glm::vec3(M_PI/4, 0, 0));
+        else arm->setLocalRotation(i, glm::vec3(0, M_PI/4, 0));*/
     }
-    //arm->printRotations();
-    //arm->setTranslation(glm::vec3(0.1, 0.2, 0.3));
+    arm->setRotation(2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+    arm->setTranslation(glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
 
     //arm = new Scene::Arm(std::vector<float>({ 1.0f, 1.0f }));
     //arm->setLocalRotation(0,glm::vec3(0.1, 0.2, 0.3));

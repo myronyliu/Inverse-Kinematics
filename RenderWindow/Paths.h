@@ -5,7 +5,12 @@
 
 namespace PathParameterizations {
 
-    glm::vec3 line(const float& t) { return (1 - t)*glm::vec3(0, 0, 0) + t*glm::vec3(0, 0, 1); }
+    glm::vec3 line(const float& t) {
+        float s;
+        if (t < 0.5) s = 2 * t;
+        else s = 2 * (1 - t);
+        return (1 - s)*glm::vec3(0, 0, -0.5) + s*glm::vec3(0, 0, 0.5);
+    }
     glm::vec3 circle(const float& t) { return glm::vec3(cos(2 * M_PI*t), sin(2 * M_PI*t), 0); }
 }
 
