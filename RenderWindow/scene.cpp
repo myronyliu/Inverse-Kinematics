@@ -3,6 +3,8 @@
 using namespace Scene;
 using namespace std;
 using namespace glm;
+using namespace Math;
+
 /** Global variables **/
 int Object::NEXTID = 0;
 float jointRadius = 0.1;
@@ -11,7 +13,7 @@ float jointRadius = 0.1;
 
 
 inline glm::vec3 composeRotation(const glm::vec3& w0, const glm::vec3& w1) {
-    return axisAngle3(rotationMatrix(w1)*rotationMatrix(w0));
+    return axisAngleRotation3(rotationMatrix(w1)*rotationMatrix(w0));
 }
 
 /* Method Definitions */
@@ -369,26 +371,27 @@ void Path::doDraw() {
 
 Arm::Arm(std::vector<float>& lengths) :
 Object(),
-_lengths(lengths),
-_localRotations(std::vector<AxisAngleRotation2>(lengths.size(), AxisAngleRotation2(glm::vec2(0, 0), 0))),
-_types(std::vector<int>(lengths.size(), BALL)),
-_radius(*std::min_element(lengths.begin(), lengths.end()) / 8)
+_lengths(lengths)
 {
     int nJoints = _lengths.size();
     if (nJoints == 0) return;
     _globalRotations.resize(nJoints);
     _globalTranslations.resize(nJoints);
 
+    for (int i = 0; i < nJoints; i++) {
+        _joints.push_back(new BallJoint);
+    }
+
     glm::mat3 R;
     R = rotationMatrix(_rotation);
     _globalTranslations[0] = _translation;
-    glm::vec3 wLocal = _localRotations[0].axisAngleRotation3();
+    glm::vec3 wLocal = localRotation3(0);
     glm::vec3 wLocal_world = R*wLocal; // wLocal in "world coordinates" (NOT the same as wGlobal)
     R = rotationMatrix(wLocal_world)*R;
     _globalRotations[0] = AxisAngleRotation2(R);
     for (int i = 1; i < nJoints; i++) {
         _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
-        wLocal = _localRotations[i].axisAngleRotation3();
+        wLocal = localRotation3(i);
         wLocal_world = R*wLocal;
         R = rotationMatrix(wLocal_world)*R;
         _globalRotations[i] = AxisAngleRotation2(R);
@@ -416,13 +419,13 @@ void Arm::updateGlobalTransforms(const int& joint) {
         R = rotationMatrix(_globalRotations[joint - 1]);
         _globalTranslations[joint] = _globalTranslations[joint - 1] + R*glm::vec3(0, 0, _lengths[joint - 1]);
     }
-    glm::vec3 wLocal = _localRotations[joint].axisAngleRotation3();
+    glm::vec3 wLocal = localRotation3(joint);
     glm::vec3 wLocal_world = R*wLocal; // wLocal in "world coordinates" (NOT the same as wGlobal)
     R = rotationMatrix(wLocal_world)*R;
     _globalRotations[joint] = AxisAngleRotation2(R);
     for (int i = joint + 1; i < nJoints; i++) {
         _globalTranslations[i] = _globalTranslations[i - 1] + R*glm::vec3(0, 0, _lengths[i - 1]);
-        wLocal = _localRotations[i].axisAngleRotation3();
+        wLocal = localRotation3(i);
         wLocal_world = R*wLocal;
         R = rotationMatrix(wLocal_world)*R;
         _globalRotations[i] = AxisAngleRotation2(R);
@@ -439,73 +442,68 @@ void Arm::printRotations() const {
         std::string number = std::to_string(i);
         head.replace(head.begin(), head.begin() + number.length(), number);
         printf("%s", head.c_str());
-        printVec3(_localRotations[i].axisAngleRotation3(), false);
+        printVec3(localRotation3(i), false);
         printf("  | ");
         printVec3(_globalRotations[i].axisAngleRotation3());
         printMat3(_globalRotations[i].rotationMatrix());
     }
 }
 
-void Arm::append(const float& length, const int& type, const glm::vec3& wLocal) {
+void Arm::append(const Joint& joint, const float& length) {
+    Joint* jointPtr = new Joint;
+    *jointPtr = joint;
+    _joints.push_back(jointPtr);
     _lengths.push_back(length);
-    _types.push_back(type);
-    _localRotations.push_back(axisAngleRotation2(wLocal));
     _globalRotations.push_back(glm::vec3(0, 0, 0));
     _globalTranslations.push_back(glm::vec3(0, 0, 0));
     update(_lengths.size() - 1);
 }
-void Arm::append(const float& length, const int& type, const glm::vec2& axisLocal, const float& angleLocal) {
-    _lengths.push_back(length);
-    _types.push_back(type);
-    _localRotations.push_back(AxisAngleRotation2(axisLocal, angleLocal));
-    _globalRotations.push_back(glm::vec3(0, 0, 0));
-    _globalTranslations.push_back(glm::vec3(0, 0, 0));
-    update(_lengths.size() - 1);
-}
-void Arm::append(const float& length, const int& type, const AxisAngleRotation2& axisAngleLocal) {
-    _lengths.push_back(length);
-    _types.push_back(type);
-    _localRotations.push_back(axisAngleLocal);
-    _globalRotations.push_back(glm::vec3(0, 0, 0));
-    _globalTranslations.push_back(glm::vec3(0, 0, 0));
-    _localRotations.back().clamp();
-    update(_lengths.size() - 1);
-}
-
 
 void Arm::setLocalRotation(const int& joint, const glm::vec3& wLocal) {
-    _localRotations[joint] = axisAngleRotation2(wLocal);
-    _localRotations[joint].clamp();
+    _joints[joint]->setRotation(wLocal);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotation(const int& joint, const AxisAngleRotation2& axisAngle) {
-    _localRotations[joint] = axisAngle;
-    _localRotations[joint].clamp();
+    if (_joints[joint]->rotation2() == axisAngle) return;
+    _joints[joint]->setRotation(axisAngle);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotationAxis(const int& joint, const glm::vec3& axis) {
-    _localRotations[joint]._axis = glm::vec2(acos(axis[2] / glm::length(axis)), atan2(axis[1], axis[0]));
-    _localRotations[joint].clamp();
+    glm::vec2 thetaPhi = glm::vec2(acos(axis[2] / glm::length(axis)), atan2(axis[1], axis[0]));
+    _joints[joint]->setRotationAxis(thetaPhi);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotationAxis(const int& joint, const glm::vec2& axis) {
-    _localRotations[joint]._axis = axis;
-    _localRotations[joint].clamp();
+    if (axis == _joints[joint]->rotation2()._axis) return;
+    _joints[joint]->setRotationAxis(axis);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotationTheta(const int& joint, const float& theta) {
-    _localRotations[joint]._axis[0] = theta;
-    _localRotations[joint].clamp();
+    if (theta == _joints[joint]->rotation2()._axis[0]) return;
+    _joints[joint]->setRotationTheta(theta);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotationPhi(const int& joint, const float& phi) {
-    _localRotations[joint]._axis[1] = phi;
-    _localRotations[joint].clamp();
+    if (phi == _joints[joint]->rotation2()._axis[1]) return;
+    _joints[joint]->setRotationPhi(phi);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotationAngle(const int& joint, const float& angle) {
-    _localRotations[joint]._angle = angle;
-    _localRotations[joint].clamp();
+    if (angle == _joints[joint]->rotation2()._angle) return;
+    _joints[joint]->setRotationAngle(angle);
+    _joints[joint]->clamp();
+    update(joint);
+}
+void Arm::setLocalTranslation(const int& joint, const glm::vec3& translation) {
+    if (translation == _joints[joint]->translation()) return;
+    _joints[joint]->setTranslation(translation);
+    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setRotation(const glm::vec3& w) {
@@ -513,11 +511,19 @@ void Arm::setRotation(const glm::vec3& w) {
     updateGlobalTransforms();
 }
 void Arm::setTranslation(const glm::vec3& translation) {
+    if (_translation == translation) return;
     _translation = translation;
     for (int i = 0; i < _lengths.size(); i++) {
         _globalTranslations[i] += translation;
     }
     _tip += translation;
+}
+void Arm::setLocalTranslationRotation(const int& joint, const glm::vec3& translation, const AxisAngleRotation2& rotation) {
+    if (translation == _joints[joint]->translation() && rotation == _joints[joint]->rotation2()) return;
+    _translation == translation;
+    _rotation == rotation;
+    _joints[joint]->clamp();
+    update(joint);
 }
 
 float Arm::armLength() {
@@ -536,7 +542,7 @@ float Arm::armReach() {
 void Arm::doDraw() {
 
     //for (int i = 0; i < _lengths.size(); i++) {
-    //    GlutDraw::drawSphere(_globalTranslations[i], 4*_radius);
+    //    GlutDraw::drawSphere(_globalTranslations[i], _lengths[i] / 4);
     //    //glm::vec3 center;
     //    //if (i == _lengths.size() - 1) {
     //    //    center = (_globalTranslations[i] + _tip) / 2.0f;
@@ -547,28 +553,29 @@ void Arm::doDraw() {
     //    //glm::vec3 halfAxis = center - _globalTranslations[i];
     //    //GlutDraw::drawCylinder(center, halfAxis, _radius);
     //}
-    //GlutDraw::drawSphere(_tip, 4*_radius);
+    //GlutDraw::drawSphere(_tip, _lengths.back() / 4);
 
     glPushMatrix();
 
     for (int i = 0; i < _lengths.size(); i++) {
 
-        float theta = _localRotations[i]._axis[0];
-        float phi = _localRotations[i]._axis[1];
+        float theta = localRotation2(i)._axis[0];
+        float phi = localRotation2(i)._axis[1];
 
         glRotatef(
-            (180.0f / M_PI)*_localRotations[i]._angle,
+            (180.0f / M_PI)*localRotation2(i)._angle,
             sin(theta)*cos(phi),
             sin(theta)*sin(phi),
             cos(theta));
 
-        if (_types[i] == BALL) {
-            if (i == 0) GlutDraw::drawSphere(glm::vec3(0, 0, 0), _lengths[i] / 8);
-            else GlutDraw::drawSphere(glm::vec3(0, 0, 0), fmin(_lengths[i - 1], _lengths[i]) / 8);
+
+        if (i == 0) {
+            _joints[i]->draw(_lengths[i] / 8);
         }
-        else if (_types[i] == PIN) {
-            //GlutDraw::drawCylinder(glm::vec3(0, 0, 0), _radius*_localRotations[i].axis3(), 2 * _radius);
+        else {
+            _joints[i]->draw(fmin(_lengths[i - 1], _lengths[i]) / 8);
         }
+
         GlutDraw::drawDoublePyramid(
             _lengths[i] * glm::vec3(0, 0, 1.0f / 2),
             _lengths[i] * glm::vec3(0, 0, 1.0f / 2),
@@ -589,195 +596,150 @@ void Arm::doDraw() {
     glPopMatrix();
 }
 
-void Arm::jiggle(const float& dzArcLength, const float& dPolar) {
-    float dAngle = M_PI / 1024;
+void Arm::jiggle() {
     for (int i = 0; i < _lengths.size(); i++) {
-        if (_types[i] == BALL) {
-            _localRotations[i].randPerturbAxis(dzArcLength, dPolar);
-            if ((float)rand() / RAND_MAX < 0.5) {
-                _localRotations[i]._angle -= dAngle;
-            }
-            else {
-                _localRotations[i]._angle += dAngle;
-            }
-            _localRotations[i].clampAngle();
-        }
-        else if (_types[i] == PIN) {
-            if ((float)rand() / RAND_MAX < 0.5) {
-                _localRotations[i]._angle -= dAngle;
-            }
-            else {
-                _localRotations[i]._angle += dAngle;
-            }
-            _localRotations[i].clampAngle();
-        }
+        _joints[i]->perturb();
     }
     update();
 }
-void Arm::jiggle(const int& joint, const float& dzArcLength, const float&dPolar) {
-    float dAngle = M_PI / 1024;
-    if (_types[joint] == BALL) {
-        _localRotations[joint].randPerturbAxis(dzArcLength, dPolar);
-        if ((float)rand() / RAND_MAX < 0.5) {
-            _localRotations[joint]._angle -= dAngle;
-        }
-        else {
-            _localRotations[joint]._angle += dAngle;
-        }
-        _localRotations[joint].clampAngle();
-    }
-    else if (_types[joint] == PIN) {
-        if ((float)rand() / RAND_MAX < 0.5) {
-            _localRotations[joint]._angle -= dAngle;
-        }
-        else {
-            _localRotations[joint]._angle += dAngle;
-        }
-        _localRotations[joint].clampAngle();
-    }
+void Arm::jiggle(const int& joint) {
+    _joints[joint]->perturb();
     update(joint);
 }
 
 
-void Arm::updateRotationDerivative(const int& joint) {
-    if (joint < 0) {
-        for (int i = 0; i < _lengths.size(); i++) {
-            updateRotationDerivative(i);
-        }
-        return;
-    }
+//void Arm::updateRotationDerivative(const int& joint) {
+//    if (joint < 0) {
+//        for (int i = 0; i < _lengths.size(); i++) {
+//            updateRotationDerivative(i);
+//        }
+//        return;
+//    }
+//
+//    float theta = _localRotations[joint]._axis[0];
+//    float phi = _localRotations[joint]._axis[1];
+//    float angle = _localRotations[joint]._angle;
+//
+//    _dR_dAngle[joint][0][0] = 0;
+//    _dR_dAngle[joint][0][1] = cos(theta)*(cos(theta)*sin(angle) + cos(angle));
+//    _dR_dAngle[joint][0][2] = sin(theta)*sin(phi)*(sin(theta)*sin(phi)*sin(angle) - cos(angle));
+//
+//    _dR_dAngle[joint][1][0] = cos(theta)*(cos(theta)*sin(angle) - cos(angle));
+//    _dR_dAngle[joint][1][1] = 0;
+//    _dR_dAngle[joint][1][2] = sin(theta)*cos(phi)*(sin(theta)*cos(phi)*sin(angle) + cos(angle));
+//
+//    _dR_dAngle[joint][2][0] = sin(theta)*sin(phi)*(sin(theta)*sin(phi)*sin(angle) + cos(angle));
+//    _dR_dAngle[joint][2][1] = sin(theta)*cos(phi)*(sin(theta)*cos(phi)*sin(angle) - cos(angle));
+//    _dR_dAngle[joint][2][2] = 0;
+//
+//    if (_types[joint] == BALL) {
+//        _dR_dTheta[joint][0][0] = 0;
+//        _dR_dTheta[joint][0][1] = (2 * (cos(angle) - 1)*cos(theta) - sin(angle))*sin(theta);
+//        _dR_dTheta[joint][0][2] = cos(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) - sin(angle));
+//
+//        _dR_dTheta[joint][1][0] = (2 * (cos(angle) - 1)*cos(theta) + sin(angle))*sin(theta);
+//        _dR_dTheta[joint][1][1] = 0;
+//        _dR_dTheta[joint][1][2] = cos(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) + sin(angle));
+//
+//        _dR_dTheta[joint][2][0] = cos(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) + sin(angle));
+//        _dR_dTheta[joint][2][1] = cos(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) - sin(angle));
+//        _dR_dTheta[joint][2][2] = 0;
+//
+//        //////////////////////////////////////////////////////////////////////////////////////////////
+//
+//        _dR_dPhi[joint][0][0] = 0;
+//        _dR_dPhi[joint][0][1] = 0;
+//        _dR_dPhi[joint][0][2] = sin(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) - sin(angle));
+//
+//        _dR_dPhi[joint][1][0] = 0;
+//        _dR_dPhi[joint][1][1] = 0;
+//        _dR_dPhi[joint][1][2] = sin(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) - sin(angle));
+//
+//        _dR_dPhi[joint][2][0] = sin(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) + sin(angle));
+//        _dR_dPhi[joint][2][1] = sin(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) + sin(angle));
+//        _dR_dPhi[joint][2][2] = 0;
+//    }
+//}
 
-    float theta = _localRotations[joint]._axis[0];
-    float phi = _localRotations[joint]._axis[1];
-    float angle = _localRotations[joint]._angle;
-
-    _dR_dAngle[joint][0][0] = 0;
-    _dR_dAngle[joint][0][1] = cos(theta)*(cos(theta)*sin(angle) + cos(angle));
-    _dR_dAngle[joint][0][2] = sin(theta)*sin(phi)*(sin(theta)*sin(phi)*sin(angle) - cos(angle));
-
-    _dR_dAngle[joint][1][0] = cos(theta)*(cos(theta)*sin(angle) - cos(angle));
-    _dR_dAngle[joint][1][1] = 0;
-    _dR_dAngle[joint][1][2] = sin(theta)*cos(phi)*(sin(theta)*cos(phi)*sin(angle) + cos(angle));
-
-    _dR_dAngle[joint][2][0] = sin(theta)*sin(phi)*(sin(theta)*sin(phi)*sin(angle) + cos(angle));
-    _dR_dAngle[joint][2][1] = sin(theta)*cos(phi)*(sin(theta)*cos(phi)*sin(angle) - cos(angle));
-    _dR_dAngle[joint][2][2] = 0;
-
-    if (_types[joint] == BALL) {
-        _dR_dTheta[joint][0][0] = 0;
-        _dR_dTheta[joint][0][1] = (2 * (cos(angle) - 1)*cos(theta) - sin(angle))*sin(theta);
-        _dR_dTheta[joint][0][2] = cos(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) - sin(angle));
-
-        _dR_dTheta[joint][1][0] = (2 * (cos(angle) - 1)*cos(theta) + sin(angle))*sin(theta);
-        _dR_dTheta[joint][1][1] = 0;
-        _dR_dTheta[joint][1][2] = cos(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) + sin(angle));
-
-        _dR_dTheta[joint][2][0] = cos(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) + sin(angle));
-        _dR_dTheta[joint][2][1] = cos(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) - sin(angle));
-        _dR_dTheta[joint][2][2] = 0;
-
-        //////////////////////////////////////////////////////////////////////////////////////////////
-
-        _dR_dPhi[joint][0][0] = 0;
-        _dR_dPhi[joint][0][1] = 0;
-        _dR_dPhi[joint][0][2] = sin(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) - sin(angle));
-
-        _dR_dPhi[joint][1][0] = 0;
-        _dR_dPhi[joint][1][1] = 0;
-        _dR_dPhi[joint][1][2] = sin(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) - sin(angle));
-
-        _dR_dPhi[joint][2][0] = sin(theta)*cos(phi)*(2 * (cos(angle) - 1)*sin(theta)*sin(phi) + sin(angle));
-        _dR_dPhi[joint][2][1] = sin(theta)*sin(phi)*(2 * (cos(angle) - 1)*sin(theta)*cos(phi) + sin(angle));
-        _dR_dPhi[joint][2][2] = 0;
-    }
-}
-
-arma::mat Arm::forwardJacobian_analytic() const {
-    int nJoints = _lengths.size();
-    if (nJoints == 0) return arma::mat();
-    std::vector<glm::mat3> Rs(nJoints);
-    std::vector<std::vector<glm::mat3>> R_accum(nJoints);
-    Rs[0] = rotationMatrix(_localRotations[0])*rotationMat(); // the first R is R_0*R_base
-    for (int i = 1; i < nJoints; i++) {
-        Rs[i] = rotationMatrix(_localRotations[i]);
-    }
-    for (int i = 0; i < nJoints; i++) {
-        R_accum[i].push_back(Rs[i]);
-        for (int j = i + 1; j < nJoints; j++) {
-            R_accum[i].push_back(Rs[j] * R_accum[i].back());
-        }
-    }
-
-    auto Rproduct = [&](const int& i, const int& j) {
-        if (j < i) return glm::mat3();
-        else return R_accum[i][j - i];
-    };
-
-    // set the size for the jacobian matrix
-    int nParams = 0;
-    for (int i = 0; i < nJoints; i++) {
-        if (_types[i] == BALL) {
-            nParams += 3;
-        }
-        else if (_types[i] == PIN) {
-            nParams += 1;
-        }
-        else if (_types[i] == PRISM) {
-            nParams += 1;
-        }
-    }
-    arma::mat J(3, nParams);
-
-    nParams = 0;
-    glm::mat3 M;
-    glm::vec3 dTip_dParam;
-    for (int joint = 0; joint < nJoints; joint++) {
-        for (int p = 0; p < 3; p++) {
-            dTip_dParam = glm::vec3(0, 0, 0);
-            if (p == 0) M = _dR_dTheta[joint] * Rproduct(0, joint - 1);
-            else if (p == 1) M = _dR_dPhi[joint] * Rproduct(0, joint - 1);
-            else M = _dR_dAngle[joint] * Rproduct(0, joint - 1);
-            for (int i = joint; i < nJoints; i++) {
-                dTip_dParam += _lengths[i] * (Rproduct(joint + 1, i) * M)[2];
-            }
-            J(0, nParams) = dTip_dParam[0];
-            J(1, nParams) = dTip_dParam[1];
-            J(2, nParams) = dTip_dParam[2];
-            nParams++;
-        }
-    }
-    J.print();
-    return J;
-}
+//arma::mat Arm::forwardJacobian_analytic() const {
+//    int nJoints = _lengths.size();
+//    if (nJoints == 0) return arma::mat();
+//    std::vector<glm::mat3> Rs(nJoints);
+//    std::vector<std::vector<glm::mat3>> R_accum(nJoints);
+//    Rs[0] = rotationMatrix(_localRotations[0])*rotationMat(); // the first R is R_0*R_base
+//    for (int i = 1; i < nJoints; i++) {
+//        Rs[i] = rotationMatrix(_localRotations[i]);
+//    }
+//    for (int i = 0; i < nJoints; i++) {
+//        R_accum[i].push_back(Rs[i]);
+//        for (int j = i + 1; j < nJoints; j++) {
+//            R_accum[i].push_back(Rs[j] * R_accum[i].back());
+//        }
+//    }
+//
+//    auto Rproduct = [&](const int& i, const int& j) {
+//        if (j < i) return glm::mat3();
+//        else return R_accum[i][j - i];
+//    };
+//
+//    // set the size for the jacobian matrix
+//    int nParams = 0;
+//    for (int i = 0; i < nJoints; i++) {
+//        if (_types[i] == BALL) {
+//            nParams += 3;
+//        }
+//        else if (_types[i] == PIN) {
+//            nParams += 1;
+//        }
+//        else if (_types[i] == PRISM) {
+//            nParams += 1;
+//        }
+//    }
+//    arma::mat J(3, nParams);
+//
+//    nParams = 0;
+//    glm::mat3 M;
+//    glm::vec3 dTip_dParam;
+//    for (int joint = 0; joint < nJoints; joint++) {
+//        for (int p = 0; p < 3; p++) {
+//            dTip_dParam = glm::vec3(0, 0, 0);
+//            if (p == 0) M = _dR_dTheta[joint] * Rproduct(0, joint - 1);
+//            else if (p == 1) M = _dR_dPhi[joint] * Rproduct(0, joint - 1);
+//            else M = _dR_dAngle[joint] * Rproduct(0, joint - 1);
+//            for (int i = joint; i < nJoints; i++) {
+//                dTip_dParam += _lengths[i] * (Rproduct(joint + 1, i) * M)[2];
+//            }
+//            J(0, nParams) = dTip_dParam[0];
+//            J(1, nParams) = dTip_dParam[1];
+//            J(2, nParams) = dTip_dParam[2];
+//            nParams++;
+//        }
+//    }
+//    J.print();
+//    return J;
+//}
 
 arma::mat Arm::forwardJacobian_numeric() {
     int nJoints = _lengths.size();
+
+    std::vector<std::vector<float>> jointParams(nJoints);
+
     // set the size for the jacobian matrix
-    int nParams = 0;
+    int dof = 0;
     for (int i = 0; i < nJoints; i++) {
-        if (_types[i] == BALL) {
-            nParams += 3;
-        }
-        else if (_types[i] == PIN) {
-            nParams += 1;
-        }
-        else if (_types[i] == PRISM) {
-            nParams += 1;
-        }
+        std::vector<float> params = _joints[i]->getParams();
+        jointParams[i] = params;
+        dof += params.size();
     }
-    arma::mat J(3, nParams);
+    arma::mat J(3, dof);
 
-    float dTheta = M_PI / 128;
-    float dPhi = M_PI / 128;
-    float dAngle = M_PI / 128;
+    float dParam = M_PI / 256;
 
-    std::vector<AxisAngleRotation2> localRotations = _localRotations;
     std::vector<AxisAngleRotation2> globalRotations = _globalRotations;
     std::vector<glm::vec3> globalTranslations = _globalTranslations;
     glm::vec3 tip = _tip;
 
     auto restoreTransforms = [&]() {
-        _localRotations = localRotations;
         _globalRotations = globalRotations;
         _globalTranslations = globalTranslations;
         _tip = tip;
@@ -785,10 +747,6 @@ arma::mat Arm::forwardJacobian_numeric() {
 
     glm::vec3 dTip_dParam;
     auto warn = [&]() {
-        if (glm::length(dTip_dParam) > 2) {
-            printf("WTF... ");
-            printVec3(dTip_dParam);
-        }
     };
 
     auto printTip = [this]() {
@@ -797,54 +755,27 @@ arma::mat Arm::forwardJacobian_numeric() {
         printVec3(_tip);
     };
 
+    glm::vec3 trans;
+    AxisAngleRotation2 rot;
+    dof = 0;
     for (int joint = 0; joint < nJoints; joint++) {
-
-        float theta = _localRotations[joint]._axis[0];
-        float phi = _localRotations[joint]._axis[1];
-        float angle = _localRotations[joint]._angle;
-
-        //printf("rot: %f %f %f\n", theta, phi, angle);
-
-        setLocalRotationTheta(joint, theta + dTheta);
-        printTip();
-        dTip_dParam = _tip;
-        setLocalRotationTheta(joint, theta - dTheta);
-        printTip();
-        dTip_dParam -= _tip;
-        warn();
-        dTip_dParam /= (2 * dTheta);
-        J(0, 3 * joint + 0) = dTip_dParam[0];
-        J(1, 3 * joint + 0) = dTip_dParam[1];
-        J(2, 3 * joint + 0) = dTip_dParam[2];
-        restoreTransforms();
-
-        setLocalRotationPhi(joint, phi + dPhi);
-        printTip();
-        dTip_dParam = _tip;
-        setLocalRotationPhi(joint, phi - dPhi);
-        printTip();
-        dTip_dParam -= _tip;
-        warn();
-        dTip_dParam /= (2 * dPhi);
-        J(0, 3 * joint + 1) = dTip_dParam[0];
-        J(1, 3 * joint + 1) = dTip_dParam[1];
-        J(2, 3 * joint + 1) = dTip_dParam[2];
-        restoreTransforms();
-
-        setLocalRotationAngle(joint, angle + dAngle);
-        printTip();
-        dTip_dParam = _tip;
-        setLocalRotationAngle(joint, angle - dAngle);
-        printTip();
-        dTip_dParam -= _tip;
-        warn();
-        dTip_dParam /= (2 * dAngle);
-        J(0, 3 * joint + 2) = dTip_dParam[0];
-        J(1, 3 * joint + 2) = dTip_dParam[1];
-        J(2, 3 * joint + 2) = dTip_dParam[2];
-        restoreTransforms();
-
-        //cout << "-----------------------------------" << endl;
+        std::vector<float> params = jointParams[joint];
+        for (int param = 0; param < params.size(); param++) {
+            params[param] += dParam;
+            tie(trans, rot) = _joints[joint]->tryParams(params);
+            setLocalTranslationRotation(joint, trans, rot);
+            dTip_dParam = _tip;
+            params[param] -= 2 * dParam;
+            tie(trans, rot) = _joints[joint]->tryParams(params);
+            setLocalTranslationRotation(joint, trans, rot);
+            dTip_dParam -= _tip;
+            dTip_dParam /= 2 * dParam;
+            J(0, dof) = dTip_dParam[0];
+            J(1, dof) = dTip_dParam[1];
+            J(2, dof) = dTip_dParam[2];
+            restoreTransforms();
+            dof++;
+        }
     }
     return J;
 }
@@ -852,7 +783,7 @@ arma::mat Arm::forwardJacobian_numeric() {
 void Arm::nudgeTip(const glm::vec3& displacement) {
 
     auto jigTip = [this]() {
-        jiggle(_lengths.size() - 1, M_PI / 1024, M_PI / 1024);
+        jiggle(_lengths.size() - 1);
     };
 
     arma::mat Jinv = forwardJacobian_numeric();
@@ -878,30 +809,36 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
     d[1] = displacement[1];
     d[2] = displacement[2];
     arma::vec dParams = J*d;
+    int dof = 0;
     for (int joint = 0; joint < _lengths.size(); joint++) {
-        _localRotations[joint]._axis[0] += dParams[3 * joint + 0];
-        _localRotations[joint]._axis[1] += dParams[3 * joint + 1];
-        _localRotations[joint]._angle += dParams[3 * joint + 2];
-        _localRotations[joint].clamp();
+        std::vector<float> params = _joints[joint]->getParams();
+        for (int param = 0; param < params.size(); param++) {
+            params[param] += dParams[dof];
+            dof++;
+        }
+        _joints[joint]->setParams(params);
     }
     update();
 }
 
 void Arm::setTip(const glm::vec3& target) {
 
-    std::vector<AxisAngleRotation2> localRotations;
     std::vector<AxisAngleRotation2> globalRotations;
     std::vector<glm::vec3> globalTranslations;
     glm::vec3 tip;
 
     auto stashTransforms = [&]() {
-        localRotations = _localRotations;
+        for (int i = 0; i < _lengths.size(); i++) {
+            _joints[i]->backup();
+        }
         globalRotations = _globalRotations;
         globalTranslations = _globalTranslations;
         tip = _tip;
     };
     auto restoreTransforms = [&]() {
-        _localRotations = localRotations;
+        for (int i = 0; i < _lengths.size(); i++) {
+            _joints[i]->restore();
+        }
         _globalRotations = globalRotations;
         _globalTranslations = globalTranslations;
         _tip = tip;

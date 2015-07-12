@@ -4,13 +4,13 @@
 #include "GlutUI.h"
 #include "Paths.h"
 
-Scene::Arm* arm;
+//Scene::Arm* arm;
 Scene::Path* path;
 
 void idle(void) {
     //arm->nudgeTip(0.001f*glm::vec3(0, 1, 1));
     //arm->jiggle(M_PI / 1024, M_PI / 1024);
-    arm->setTip(path->stepT());
+    //arm->setTip(path->stepT());
     glutPostRedisplay();
 }
 
@@ -48,14 +48,13 @@ int main(int argc, char* argv[])
     path->setParameterization(PathParameterizations::circle);
     world.addObject(path);
 
-    arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f, 0.4f/*, 0.3f, 0.2f, 0.1f */}));
+    Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f, 0.4f/*, 0.3f, 0.2f, 0.1f */ }));
     for (int i = 0; i < arm->nJoints(); i++) {
         arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
     }
-    //arm->setRotation(glm::vec3(0.25*M_PI, 0, 0));
-    ///arm->setLocalRotationAxis(0, glm::vec3(0, 1, 0));
-    //arm->setLocalRotation(0, glm::vec3(0, 0.25*M_PI, 0));
-    //arm->setTranslation(glm::vec3(1, 1, 1));
+    //arm->printRotations();
+    //arm->setTranslation(glm::vec3(0.1, 0.2, 0.3));
+
 
     Scene::Sphere* sphere = new Scene::Sphere(glm::vec3(0,0,-0.566),0.05);
     //world.addObject(sphere);
