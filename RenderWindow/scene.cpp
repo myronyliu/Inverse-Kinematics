@@ -68,6 +68,7 @@ Shader * World::findShader(Object * obj)
 
 void Object::draw()
 {
+
     if (!_visible) return;
 
     GLfloat color[] = { _color[0], _color[1], _color[2], _color[3] };
@@ -413,11 +414,11 @@ void Arm::updateGlobalTransforms(const int& joint) {
     glm::mat3 R;
     if (joint == 0) {
         R = rotationMatrix(_rotation);
-        _globalTranslations[0] = _translation;
+        //_globalTranslations[0] = _translation;
     }
     else {
         R = rotationMatrix(_globalRotations[joint - 1]);
-        _globalTranslations[joint] = _globalTranslations[joint - 1] + R*glm::vec3(0, 0, _lengths[joint - 1]);
+        //_globalTranslations[joint] = _globalTranslations[joint - 1] + R*glm::vec3(0, 0, _lengths[joint - 1]);
     }
     glm::vec3 wLocal = localRotation3(joint);
     glm::vec3 wLocal_world = R*wLocal; // wLocal in "world coordinates" (NOT the same as wGlobal)
@@ -491,19 +492,16 @@ void Arm::setLocalRotationTheta(const int& joint, const float& theta) {
 void Arm::setLocalRotationPhi(const int& joint, const float& phi) {
     if (phi == _joints[joint]->rotation2()._axis[1]) return;
     _joints[joint]->setRotationPhi(phi);
-    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalRotationAngle(const int& joint, const float& angle) {
     if (angle == _joints[joint]->rotation2()._angle) return;
     _joints[joint]->setRotationAngle(angle);
-    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setLocalTranslation(const int& joint, const glm::vec3& translation) {
     if (translation == _joints[joint]->translation()) return;
     _joints[joint]->setTranslation(translation);
-    _joints[joint]->clamp();
     update(joint);
 }
 void Arm::setRotation(const glm::vec3& w) {
@@ -520,9 +518,8 @@ void Arm::setTranslation(const glm::vec3& translation) {
 }
 void Arm::setLocalTranslationRotation(const int& joint, const glm::vec3& translation, const AxisAngleRotation2& rotation) {
     if (translation == _joints[joint]->translation() && rotation == _joints[joint]->rotation2()) return;
-    _translation == translation;
-    _rotation == rotation;
-    _joints[joint]->clamp();
+    _joints[joint]->setTranslation(translation);
+    _joints[joint]->setRotation(rotation);
     update(joint);
 }
 
@@ -541,19 +538,19 @@ float Arm::armReach() {
 
 void Arm::doDraw() {
 
-    //for (int i = 0; i < _lengths.size(); i++) {
-    //    GlutDraw::drawSphere(_globalTranslations[i], _lengths[i] / 4);
-    //    //glm::vec3 center;
-    //    //if (i == _lengths.size() - 1) {
-    //    //    center = (_globalTranslations[i] + _tip) / 2.0f;
-    //    //}
-    //    //else {
-    //    //    center = (_globalTranslations[i] + _globalTranslations[i + 1]) / 2.0f;
-    //    //}
-    //    //glm::vec3 halfAxis = center - _globalTranslations[i];
-    //    //GlutDraw::drawCylinder(center, halfAxis, _radius);
-    //}
-    //GlutDraw::drawSphere(_tip, _lengths.back() / 4);
+    for (int i = 0; i < _lengths.size(); i++) {
+        GlutDraw::drawSphere(_globalTranslations[i], _lengths[i] / 4);
+        //glm::vec3 center;
+        //if (i == _lengths.size() - 1) {
+        //    center = (_globalTranslations[i] + _tip) / 2.0f;
+        //}
+        //else {
+        //    center = (_globalTranslations[i] + _globalTranslations[i + 1]) / 2.0f;
+        //}
+        //glm::vec3 halfAxis = center - _globalTranslations[i];
+        //GlutDraw::drawCylinder(center, halfAxis, _radius);
+    }
+    GlutDraw::drawSphere(_tip, _lengths.back() / 4);
 
     glPushMatrix();
 
@@ -745,8 +742,13 @@ arma::mat Arm::forwardJacobian_numeric() {
         _tip = tip;
     };
 
+    glm::vec3 trans;
+    AxisAngleRotation2 rot;
     glm::vec3 dTip_dParam;
     auto warn = [&]() {
+        if (trans != glm::vec3(0, 0, 0)) {
+            std::cout << std::endl;
+        }
     };
 
     auto printTip = [this]() {
@@ -755,18 +757,18 @@ arma::mat Arm::forwardJacobian_numeric() {
         printVec3(_tip);
     };
 
-    glm::vec3 trans;
-    AxisAngleRotation2 rot;
     dof = 0;
     for (int joint = 0; joint < nJoints; joint++) {
         std::vector<float> params = jointParams[joint];
         for (int param = 0; param < params.size(); param++) {
             params[param] += dParam;
             tie(trans, rot) = _joints[joint]->tryParams(params);
+            warn();
             setLocalTranslationRotation(joint, trans, rot);
             dTip_dParam = _tip;
             params[param] -= 2 * dParam;
             tie(trans, rot) = _joints[joint]->tryParams(params);
+            warn();
             setLocalTranslationRotation(joint, trans, rot);
             dTip_dParam -= _tip;
             dTip_dParam /= 2 * dParam;
@@ -777,13 +779,17 @@ arma::mat Arm::forwardJacobian_numeric() {
             dof++;
         }
     }
+    //J.print();
     return J;
 }
 
 void Arm::nudgeTip(const glm::vec3& displacement) {
+    _color = glm::vec4(1, 1, 1, 1);
 
     auto jigTip = [this]() {
         jiggle(_lengths.size() - 1);
+        _color = glm::vec4(1, 0, 0, 1);
+
     };
 
     arma::mat Jinv = forwardJacobian_numeric();
@@ -791,7 +797,7 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
 
     if (!arma::pinv(J, Jinv)) {
         printf("Not invertible. Jiggling tip\n");
-        jigTip;
+        jigTip();
         return;
     }
     for (int i = 0; i < J.n_rows; i++) {

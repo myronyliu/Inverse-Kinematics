@@ -1,5 +1,7 @@
+
 #include "Math.h"
 #include "utils.h"
+
 
 template <class T>
 T Math::clamp(const T& lowerBound, const T& value, const T& upperBound) {
@@ -42,6 +44,7 @@ glm::mat3 Math::rotationMatrix(const glm::vec3& w) {
         glm::vec3(0, wHat[2], -wHat[1]),
         glm::vec3(-wHat[2], 0, wHat[0]),
         glm::vec3(wHat[1], -wHat[0], 0));
+    //if (fabs(theta - M_PI) < 0.000001) {
     if (theta == M_PI) {
         return glm::mat3() + 2.0f * wCross*wCross;
     }
@@ -61,6 +64,31 @@ glm::mat3 Math::rotationMatrix(const float& angle, const glm::vec2& axis) {
 
 
 glm::vec3 Math::axisAngleRotation3(const glm::mat3& R) {
+    /*float acosArg = (R[0][0] + R[1][1] + R[2][2] - 1) / 2;
+    if (fabs(acosArg) >= 0.999999) {
+        float theta = (acosArg > 0) ? M_PI : -M_PI;
+        if (R[0][0] >= R[1][1] && R[0][0] >= R[2][2]) {
+            float x = sqrt((R[0][0] + 1) / 2);
+            return theta*glm::vec3(x, R[1][0] / (2 * x), R[2][0] / (2 * x));
+        }
+        else if (R[1][1] >= R[2][2] && R[1][1] >= R[0][0]) {
+            float y = sqrt((R[1][1] + 1) / 2);
+            return theta*glm::vec3(R[0][1] / (2 * y), y, R[2][1] / (2 * y));
+        }
+        else {
+            float z = sqrt((R[2][2] + 1) / 2);
+            return theta*glm::vec3(R[0][2] / (2 * z), R[1][2] / (2 * z), z);
+        }
+    }
+    else {
+        float theta = acos(acosArg);
+        if (theta == 0) {
+            return glm::vec3(0, 0, 0);
+        }
+        else {
+            return glm::vec3(R[1][2] - R[2][1], R[2][0] - R[0][2], R[0][1] - R[1][0])*theta / (2 * sin(theta));
+        }
+    }*/
     float theta = acos(clamp(-1.0f, (R[0][0] + R[1][1] + R[2][2] - 1) / 2, 1.0f));
     if (theta == 0) {
         return glm::vec3(0, 0, 0);

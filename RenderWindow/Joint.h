@@ -28,7 +28,7 @@ public:
 
     // FUNCTIONS THAT MUST BE DEFINED IN CHILDREN CLASSES
     virtual void constrain() {};
-    std::vector<float> getParams() const { return std::vector<float>(0); };
+    virtual std::vector<float> getParams() const { return std::vector<float>(0); };
     virtual void setParamsFreely(const std::vector<float>&) {};
     virtual void perturb() {};
     virtual void draw(const float&) const {};
@@ -51,25 +51,24 @@ public:
     }
 
 
-    std::pair<glm::vec3, AxisAngleRotation2> tryParams(const std::vector<float>& params) {
-        Joint copy = *this;
-        copy.setParams(params);
-        return std::pair<glm::vec3, AxisAngleRotation2>(copy.translation(), copy.rotation2());
-    }
+    std::pair<glm::vec3, AxisAngleRotation2> tryParams(const std::vector<float>&) ;
 
     int nParams() const { return getParams().size(); }
     
     // The following are virtual, because sometimes they affect the inherited class's member variables as well
     // ... in which case, we need to redefine these functions
     virtual void setTranslation(const glm::vec3& translation) { _translation = translation; }
-    virtual void setRotation(const AxisAngleRotation2& rotation) { _rotation = rotation; }
-    virtual void setRotation(const glm::vec3& w) { _rotation = AxisAngleRotation2(w); }
-    virtual void setRotation(const glm::mat3& R) { _rotation = AxisAngleRotation2(R); }
-    virtual void setRotationAxis(const glm::vec3& w) { _rotation._axis = glm::vec2(acos(w[2] / glm::length(w)), atan2(w[1], w[0])); }
-    virtual void setRotationAxis(const glm::vec2& axis) { _rotation._axis = axis; }
-    virtual void setRotationTheta(const float& theta) { _rotation._axis[0] = theta; }
-    virtual void setRotationPhi(const float& phi) { _rotation._axis[1] = phi; }
-    virtual void setRotationAngle(const float& angle) { _rotation._angle = angle; }
+    virtual void setRotation(const AxisAngleRotation2& rotation) { _rotation = rotation; _rotation.clamp(); }
+    virtual void setRotation(const glm::vec3& w) { _rotation = AxisAngleRotation2(w); _rotation.clamp(); }
+    virtual void setRotation(const glm::mat3& R) { _rotation = AxisAngleRotation2(R); _rotation.clamp(); }
+    virtual void setRotationAxis(const glm::vec3& w) {
+        _rotation._axis = glm::vec2(acos(w[2] / glm::length(w)), atan2(w[1], w[0]));
+        _rotation.clamp();
+    }
+    virtual void setRotationAxis(const glm::vec2& axis) { _rotation._axis = axis; _rotation.clamp(); }
+    virtual void setRotationTheta(const float& theta) { _rotation._axis[0] = theta; _rotation.clamp(); }
+    virtual void setRotationPhi(const float& phi) { _rotation._axis[1] = phi; _rotation.clamp(); }
+    virtual void setRotationAngle(const float& angle) { _rotation._angle = angle; _rotation.clamp(); }
 
     glm::vec3 translation() const { return _translation; }
     AxisAngleRotation2 rotation2() const { return _rotation; }
@@ -108,14 +107,14 @@ public:
     void setRotationFromPivot(const glm::vec3&);
     void setRotationFromPivot(const glm::mat3&);
 
-    virtual void setRotation(const AxisAngleRotation2&);
-    virtual void setRotation(const glm::vec3& w) { setRotation(AxisAngleRotation2(w)); }
-    virtual void setRotation(const glm::mat3& R) { setRotation(AxisAngleRotation2(R)); }
-    virtual void setRotationAxis(const glm::vec3&);
-    virtual void setRotationAxis(const glm::vec2& axis);
-    virtual void setRotationTheta(const float& theta) { _rotation._axis[0] = theta; setRotationAxis(_rotation._axis); }
-    virtual void setRotationPhi(const float& phi) { _rotation._axis[1] = phi; setRotationAxis(_rotation._axis); }
-    virtual void setRotationAngle(const float& angle);
+    void setRotation(const AxisAngleRotation2&);
+    void setRotation(const glm::vec3& w) { setRotation(AxisAngleRotation2(w)); }
+    void setRotation(const glm::mat3& R) { setRotation(AxisAngleRotation2(R)); }
+    void setRotationAxis(const glm::vec3&);
+    void setRotationAxis(const glm::vec2& axis);
+    void setRotationTheta(const float& theta) { _rotation._axis[0] = theta; setRotationAxis(_rotation._axis); }
+    void setRotationPhi(const float& phi) { _rotation._axis[1] = phi; setRotationAxis(_rotation._axis); }
+    void setRotationAngle(const float& angle);
 
 
     glm::mat3 pivotAxes() const { return _rotationToPivot.rotationMatrix(); }
@@ -130,7 +129,10 @@ public:
     void perturb();
     void constrain();
     void setParamsFreely(const std::vector<float>&);
-    std::vector<float> getParams() const { return std::vector<float>({ _directionFromPivot[0], _directionFromPivot[1], _spin }); }
+    std::vector<float> getParams() const {
+        //return std::vector<float>({ _directionFromPivot[0], _directionFromPivot[1], _spin });
+        return std::vector<float>({ _rotation._axis[0], _rotation._axis[1], _rotation._angle });
+    }
     virtual void draw(const float&) const;
     void backupExtras() {
         _rotationToPivot_stash = _rotationToPivot;

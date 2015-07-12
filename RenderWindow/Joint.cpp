@@ -3,6 +3,16 @@
 
 using namespace Math;
 
+std::pair<glm::vec3, AxisAngleRotation2> Joint::tryParams(const std::vector<float>& params)  {
+    backup();
+    setParams(params);
+    glm::vec3 translation = _translation;
+    AxisAngleRotation2 rotation = _rotation;
+    restore();
+    return std::pair<glm::vec3, AxisAngleRotation2>(translation, rotation);
+}
+
+
 glm::mat3 BallJoint::rotationFromPivotR() const {
     glm::vec3 armAxisZ_relPivot(sin(_directionFromPivot[0])*cos(_directionFromPivot[0]), sin(_directionFromPivot[0])*sin(_directionFromPivot[1]), cos(_directionFromPivot[0]));
     glm::vec3 armAxisY_relPivot(-sin(_spin), cos(_spin), 0); // BEFORE aligning
@@ -96,8 +106,11 @@ void BallJoint::constrain() {
 }
 
 void BallJoint::setParamsFreely(const std::vector<float>& params) {
-    _directionFromPivot[0] = params[0];
+    /*_directionFromPivot[0] = params[0];
     _directionFromPivot[1] = params[1];
     _spin = params[2];
-    _rotation = composeLocalRotations(_rotationToPivot, rotationFromPivot2());
+    _rotation = composeLocalRotations(_rotationToPivot, rotationFromPivot2());*/
+    _rotation._axis[0] = params[0];
+    _rotation._axis[1] = params[1];
+    _rotation._angle = params[2];
 }

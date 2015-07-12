@@ -4,12 +4,12 @@
 #include "GlutUI.h"
 #include "Paths.h"
 
-//Scene::Arm* arm;
+Scene::Arm* arm;
 Scene::Path* path;
 
 void idle(void) {
-    //arm->nudgeTip(0.001f*glm::vec3(0, 1, 1));
-    //arm->jiggle(M_PI / 1024, M_PI / 1024);
+    //arm->nudgeTip(0.001f*glm::vec3(1, 1, 0));
+    //arm->jiggle(0);
     //arm->setTip(path->stepT());
     glutPostRedisplay();
 }
@@ -27,7 +27,8 @@ int main(int argc, char* argv[])
     std::cout << std::string((char *)glGetString(GL_RENDERER)) << std::endl;
     std::cout << "OpenGL " << std::string((char *)glGetString(GL_VERSION)) << std::endl;
     std::cout << "====================================================" << std::endl;
-
+    
+    
     glutIdleFunc(idle);
 
     glShadeModel(GL_FLAT);
@@ -48,22 +49,23 @@ int main(int argc, char* argv[])
     path->setParameterization(PathParameterizations::circle);
     world.addObject(path);
 
-    Scene::Arm* arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f, 0.4f/*, 0.3f, 0.2f, 0.1f */ }));
+    arm = new Scene::Arm(std::vector<float>({ 0.8f, 0.7f, 0.6f, 0.5f/*, 0.4f, 0.3f, 0.2f, 0.1f*/ }));
     for (int i = 0; i < arm->nJoints(); i++) {
-        arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+        //arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+        if (i == 2) {
+            //std::cout << std::endl;
+        }
+        if (i % 2 == 0) arm->setLocalRotation(i, glm::vec3(M_PI/2, 0, 0));
+        else arm->setLocalRotation(i, glm::vec3(0, M_PI/2, 0));
+        arm->localRotation2(i).print();
     }
-    //arm->printRotations();
+    arm->printRotations();
     //arm->setTranslation(glm::vec3(0.1, 0.2, 0.3));
-
-
-    Scene::Sphere* sphere = new Scene::Sphere(glm::vec3(0,0,-0.566),0.05);
-    //world.addObject(sphere);
 
     //arm = new Scene::Arm(std::vector<float>({ 1.0f, 1.0f }));
     //arm->setLocalRotation(0,glm::vec3(0.1, 0.2, 0.3));
 
     world.addObject(arm);
-
     Scene::Camera * cam = new Scene::Camera();
     cam->setPos(glm::vec3(0, 0, 8));
     cam->setDir(glm::vec3(0, 0, -1));
@@ -80,12 +82,14 @@ int main(int argc, char* argv[])
         SaveAsBMP(bmpName.c_str());
     };
     auto jlambda = [&]() {
-        glm::vec3 pt = path->stepT();
-        printVec3(pt);
-        arm->setTip(pt);
+        for (int i = 0; i < arm->nJoints(); i++) {
+            arm->setLocalRotation(i, 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+            //arm->setLocalTranslationRotation(i,glm::vec3(0,0,0), 2 * M_PI*glm::vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX));
+            //arm->localRotation2(i).print();
+        }
     };
     auto nlambda = [&]() {
-        arm->nudgeTip(0.01f*glm::vec3(0, 1, 1));
+        arm->nudgeTip(0.001f*glm::vec3(0, 1, 1));
     };
     keyboard.register_hotkey('i', ilambda);
     keyboard.register_hotkey('j', jlambda);
