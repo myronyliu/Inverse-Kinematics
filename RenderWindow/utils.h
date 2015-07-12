@@ -34,5 +34,7 @@ void printMat3(const glm::mat3&);
 void printVec3(const glm::vec3&, const bool& = true);
 void printVec2(const glm::vec2&, const bool& = true);
 
+void printVector(const std::vector<float>&);
+
 
 

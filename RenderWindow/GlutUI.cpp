@@ -354,7 +354,7 @@ void Controls::Keyboard::init()
     hotkey_map['w'] = camForward;
     hotkey_map['a'] = camLeft;
     hotkey_map['d'] = camRight;
-    hotkey_map['c'] = camDown;
+    hotkey_map['f'] = camDown;
     hotkey_map['r'] = camUp;
 
     hotkey_map['q'] = camRollLeft;

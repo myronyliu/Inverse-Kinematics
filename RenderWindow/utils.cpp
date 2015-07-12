@@ -157,5 +157,18 @@ void printMat3(const glm::mat3& M) {
 }
 
 
+void printVector(const std::vector<float>& v) {
+    if (v.size() == 0) {
+        std::cout << std::endl;
+        return;
+    }
+    std::cout << v[0];
+    for (int i = 1; i < v.size(); i++) {
+        std::cout << ", " << v[i];
+    }
+    std::cout << std::endl;
+}
+
+
 
 

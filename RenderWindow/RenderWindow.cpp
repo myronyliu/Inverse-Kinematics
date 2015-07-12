@@ -8,9 +8,9 @@ Scene::Arm* arm;
 Scene::Path* path;
 
 void idle(void) {
-    //arm->nudgeTip(0.001f*glm::vec3(1, 1, 0));
+    //arm->nudgeTip(0.001f*glm::vec3(0, 1, 0));
     //arm->jiggle(0);
-    //arm->setTip(path->stepT());
+    arm->setTip(path->stepT());
     glutPostRedisplay();
 }
 
@@ -55,11 +55,11 @@ int main(int argc, char* argv[])
         if (i == 2) {
             //std::cout << std::endl;
         }
-        if (i % 2 == 0) arm->setLocalRotation(i, glm::vec3(M_PI/2, 0, 0));
-        else arm->setLocalRotation(i, glm::vec3(0, M_PI/2, 0));
-        arm->localRotation2(i).print();
+        if (i % 2 == 0) arm->setLocalRotation(i, glm::vec3(M_PI/4, 0, 0));
+        else arm->setLocalRotation(i, glm::vec3(0, M_PI/4, 0));
+        //arm->localRotation2(i).print();
     }
-    arm->printRotations();
+    //arm->printRotations();
     //arm->setTranslation(glm::vec3(0.1, 0.2, 0.3));
 
     //arm = new Scene::Arm(std::vector<float>({ 1.0f, 1.0f }));
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
         }
     };
     auto nlambda = [&]() {
-        arm->nudgeTip(0.001f*glm::vec3(0, 1, 1));
+        arm->nudgeTip(0.001f*glm::vec3(0, 1, 0));
     };
     keyboard.register_hotkey('i', ilambda);
     keyboard.register_hotkey('j', jlambda);

@@ -387,7 +387,7 @@ _lengths(lengths)
     R = rotationMatrix(_rotation);
     _globalTranslations[0] = _translation;
     glm::vec3 wLocal = localRotation3(0);
-    glm::vec3 wLocal_world = R*wLocal; // wLocal in "world coordinates" (NOT the same as wGlobal)
+    glm::vec3 wLocal_world = R*wLocal;
     R = rotationMatrix(wLocal_world)*R;
     _globalRotations[0] = AxisAngleRotation2(R);
     for (int i = 1; i < nJoints; i++) {
@@ -408,17 +408,18 @@ _lengths(lengths)
 
 }
 
-void Arm::updateGlobalTransforms(const int& joint) {
+void Arm::updateGlobalTransforms(const int& jointIn) {
+    if (jointIn < 0) _joints[0]->setTranslation(_translation);
+    int joint = fmax(0, jointIn);
+
     int nJoints = _lengths.size();
     if (nJoints == 0) return;
     glm::mat3 R;
     if (joint == 0) {
         R = rotationMatrix(_rotation);
-        //_globalTranslations[0] = _translation;
     }
     else {
         R = rotationMatrix(_globalRotations[joint - 1]);
-        //_globalTranslations[joint] = _globalTranslations[joint - 1] + R*glm::vec3(0, 0, _lengths[joint - 1]);
     }
     glm::vec3 wLocal = localRotation3(joint);
     glm::vec3 wLocal_world = R*wLocal; // wLocal in "world coordinates" (NOT the same as wGlobal)
@@ -443,9 +444,11 @@ void Arm::printRotations() const {
         std::string number = std::to_string(i);
         head.replace(head.begin(), head.begin() + number.length(), number);
         printf("%s", head.c_str());
-        printVec3(localRotation3(i), false);
-        printf("  | ");
-        printVec3(_globalRotations[i].axisAngleRotation3());
+        //printVec3(localRotation3(i), false);
+        localRotation2(i).print();
+        //printf("  | ");
+        //printVec3(_globalRotations[i].axisAngleRotation3());
+        _globalRotations[i].print();
         printMat3(_globalRotations[i].rotationMatrix());
     }
 }
@@ -758,20 +761,30 @@ arma::mat Arm::forwardJacobian_numeric() {
     };
 
     dof = 0;
+
     for (int joint = 0; joint < nJoints; joint++) {
         std::vector<float> params = jointParams[joint];
         for (int param = 0; param < params.size(); param++) {
-            params[param] += dParam;
-            tie(trans, rot) = _joints[joint]->tryParams(params);
-            warn();
-            setLocalTranslationRotation(joint, trans, rot);
+            float oldParam = params[param];
+
+            params[param] = oldParam + dParam;
+            
+            _joints[joint]->backup();
+
+            _joints[joint]->setParams(params);
+            update(joint);
             dTip_dParam = _tip;
-            params[param] -= 2 * dParam;
-            tie(trans, rot) = _joints[joint]->tryParams(params);
-            warn();
-            setLocalTranslationRotation(joint, trans, rot);
+            _joints[joint]->restore();
+
+            params[param] = oldParam - dParam;
+            _joints[joint]->setParams(params);
+            update(joint);
             dTip_dParam -= _tip;
+            _joints[joint]->restore();
             dTip_dParam /= 2 * dParam;
+
+            params[param] = oldParam;
+
             J(0, dof) = dTip_dParam[0];
             J(1, dof) = dTip_dParam[1];
             J(2, dof) = dTip_dParam[2];
@@ -779,7 +792,6 @@ arma::mat Arm::forwardJacobian_numeric() {
             dof++;
         }
     }
-    //J.print();
     return J;
 }
 
@@ -789,20 +801,19 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
     auto jigTip = [this]() {
         jiggle(_lengths.size() - 1);
         _color = glm::vec4(1, 0, 0, 1);
-
     };
 
-    arma::mat Jinv = forwardJacobian_numeric();
-    arma::mat J;
+    arma::mat forwardJ = forwardJacobian_numeric(); // "forwardJ" for FORWARD kinematics
+    arma::mat inverseJ;                             // "inverseJ" for INVERSE kinematics
 
-    if (!arma::pinv(J, Jinv)) {
+    if (!arma::pinv(inverseJ, forwardJ)) {
         printf("Not invertible. Jiggling tip\n");
         jigTip();
         return;
     }
-    for (int i = 0; i < J.n_rows; i++) {
-        for (int j = 0; j < J.n_cols; j++) {
-            if (!isfinite(J(i, j))) {
+    for (int i = 0; i < inverseJ.n_rows; i++) {
+        for (int j = 0; j < inverseJ.n_cols; j++) {
+            if (!isfinite(inverseJ(i, j))) {
                 printf("Nonfinite terms found. Jiggling tip\n");
                 jigTip();
                 return;
@@ -814,17 +825,20 @@ void Arm::nudgeTip(const glm::vec3& displacement) {
     d[0] = displacement[0];
     d[1] = displacement[1];
     d[2] = displacement[2];
-    arma::vec dParams = J*d;
+    arma::vec dParams = inverseJ*d;
     int dof = 0;
-    for (int joint = 0; joint < _lengths.size(); joint++) {
-        std::vector<float> params = _joints[joint]->getParams();
+
+    for (auto joint : _joints) {
+        std::vector<float> params = joint->getParams();
         for (int param = 0; param < params.size(); param++) {
-            params[param] += dParams[dof];
+            printf("%f ", dParams[dof]);
+            params[param] += dParams(dof);
             dof++;
         }
-        _joints[joint]->setParams(params);
+        cout << endl;
+        joint->setParams(params);
     }
-    update();
+    updateGlobalTransforms();
 }
 
 void Arm::setTip(const glm::vec3& target) {

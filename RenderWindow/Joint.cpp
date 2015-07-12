@@ -4,11 +4,23 @@
 using namespace Math;
 
 std::pair<glm::vec3, AxisAngleRotation2> Joint::tryParams(const std::vector<float>& params)  {
+
+    glm::vec3 oldTranslation = _translation;
+    AxisAngleRotation2 oldRotation = _rotation;
+
     backup();
     setParams(params);
     glm::vec3 translation = _translation;
     AxisAngleRotation2 rotation = _rotation;
     restore();
+
+    if (_translation != oldTranslation || !(_rotation == oldRotation)) {
+        std::cout << std::endl;
+    }
+
+    printVec3(_translation);
+    _rotation.print();
+
     return std::pair<glm::vec3, AxisAngleRotation2>(translation, rotation);
 }
 
@@ -113,4 +125,5 @@ void BallJoint::setParamsFreely(const std::vector<float>& params) {
     _rotation._axis[0] = params[0];
     _rotation._axis[1] = params[1];
     _rotation._angle = params[2];
+    clamp();
 }

@@ -333,8 +333,8 @@ public:
     float armReach();
 
     //void updateRotationDerivative(const int& joint = -1);
-    void updateGlobalTransforms(const int& index = 0);
-    void update(const int& joint = -1) { updateGlobalTransforms(fmax(0, joint)); /*updateRotationDerivative(joint);*/ }
+    void updateGlobalTransforms(const int& joint = -1);
+    void update(const int& joint = -1) { updateGlobalTransforms(joint); /*updateRotationDerivative(joint);*/ }
 
     //arma::mat forwardJacobian_analytic() const;
     arma::mat forwardJacobian_numeric();
