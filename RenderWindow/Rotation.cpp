@@ -54,26 +54,13 @@ AxisAngleRotation2::AxisAngleRotation2(const glm::vec3& w) {
     _angle = angle - (2 * M_PI)*floor(angle / (2 * M_PI));
 }
 glm::mat3 AxisAngleRotation2::rotationMatrix() const {
-    /*glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
-    glm::mat3 wCross(
-        glm::vec3(0, wHat[2], -wHat[1]),
-        glm::vec3(-wHat[2], 0, wHat[0]),
-        glm::vec3(wHat[1], -wHat[0], 0));
-    float clampedAngle = _angle - (2 * M_PI)*floor(_angle / (2 * M_PI));
-    if (fabs(clampedAngle - M_PI) < 0.000001) {
-        return glm::mat3() + 2.0f * wCross*wCross;
-    }
-    else {
-        return glm::mat3() + sin(_angle)*wCross + (1 - cos(_angle))*wCross*wCross;
-    }*/
-
     glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
     glm::mat3 wCross(
         glm::vec3(0, wHat[2], -wHat[1]),
         glm::vec3(-wHat[2], 0, wHat[0]),
         glm::vec3(wHat[1], -wHat[0], 0));
     float clampedAngle = _angle - (2 * M_PI)*floor(_angle / (2 * M_PI));
-    if (clampedAngle == M_PI) {
+    if (fabs(clampedAngle - M_PI) < 0.000001) {
         return glm::mat3() + 2.0f * wCross*wCross;
     }
     else {
