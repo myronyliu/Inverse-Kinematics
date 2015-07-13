@@ -6,8 +6,12 @@
 
 namespace Math {
 
-    template <class T>
-    T clamp(const T& lowerBound, const T& value, const T& upperBound);
+    template <class T0, class T1, class T2>
+    float clamp(const T0& lowerBound, const T1& value, const T2& upperBound);
+    template <class T0, class T1>
+    float mod(const T0& value, const T1& modulus);
+    template <class T0, class T1, class T2, class T3>
+    float periodicClamp(const T0&, const T1&, const T2&, const T3&);
 
     glm::mat3 rotationMatrix(const glm::vec3&);
     glm::mat3 rotationMatrix(const AxisAngleRotation2&);

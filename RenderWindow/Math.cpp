@@ -3,10 +3,24 @@
 #include "utils.h"
 
 
-template <class T>
-T Math::clamp(const T& lowerBound, const T& value, const T& upperBound) {
+template < class T0, class T1, class T2 >
+float Math::clamp(const T0& lowerBound, const T1& value, const T2& upperBound) {
     if (value < lowerBound) return lowerBound;
     else if (value > upperBound) return upperBound;
+    else return value;
+}
+template <class T0, class T1>
+float Math::mod(const T0& value, const T1& modulus) {
+    return (float)value - floor((float)value / (float)modulus)*(float)modulus;
+}
+template <class T0, class T1, class T2, class T3>
+float Math::periodicClamp(const T0& lowerBoundIn, const T1& valueIn, const T2& upperBoundIn, const T3& period) {
+    float value = mod(valueIn, period);
+    float lowerBound = mod(lowerBoundIn, period);
+    float upperBound = mod(upperBoundIn, period);
+    if (upperBound < lowerBound) upperBound += period;
+    if (value < lowerBound) value += period;
+    return clamp(lowerBound, value, upperBound);
 }
 
 glm::mat3 Math::basisChangeMatrix(const glm::mat3& oldBasis, const glm::mat3& newBasis) {

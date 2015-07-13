@@ -3,11 +3,10 @@
 
 #include "stdafx.h"
 #include "Rotation.h"
-#include "Joint.h"
+#include "HalfJoint.h"
 #include "utils.h"
 
-class Joint;
-
+class HalfJoint;
 
 class Body
 {
@@ -24,14 +23,14 @@ public:
     virtual void doDraw(const float& scale = 1) const {
         GlutDraw::drawSphere(glm::vec3(0, 0, 0), scale);
     }
-    void attach(Joint* joint) {
-        _joints.insert(joint);
+    void attach(HalfJoint* halfJoint) {
+        _halfJoints.insert(halfJoint);
     }
-    void dettach(Joint* joint) {
-        _joints.erase(joint);
+    void dettach(HalfJoint* halfJoint) {
+        _halfJoints.erase(halfJoint);
     }
-    std::set<Joint*> joints() const {
-        return _joints;
+    std::set<HalfJoint*> halfJoints() const {
+        return _halfJoints;
     }
 private:
     // The following are relative to some global system
@@ -40,7 +39,9 @@ private:
     glm::vec3 _translation;
     AxisAngleRotation2 _rotation;
 
-    std::set<Joint*> _joints;
+    std::set<HalfJoint*> _halfJoints;   // Moving around a "non-cyclic" skeleton of bodies and joints amounts to tree traversal
+                                        // Starting from any root Body, access _halfJoints[i].partner().anchor() to get the ...
+                                        // ... bodies adjacent to this one
 };
 
 #endif
