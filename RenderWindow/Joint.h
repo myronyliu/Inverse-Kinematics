@@ -5,12 +5,12 @@
 #include "utils.h"
 #include "math.h"
 #include "GlutDraw.h"
+#include "Body.h"
+
+class Body;
 
 // TODO: add Track-Joint class (similar to PRISM except with translation along a specified path)
 // NOTE: try to limit all "clamping of _rotation" to root Joint class
-
-class BallJoint;
-//class PrismJoint;
 
 class Joint
 {
@@ -81,8 +81,16 @@ public:
     glm::mat3 rotationR() const { return _rotation.rotationMatrix(); }
 
 protected:
-    glm::vec3 _translation; // relative to the previous axes
-    AxisAngleRotation2 _rotation; // relative to the current axes
+    Body* _left;
+    Body* _right;
+
+    // Relative to the LEFT Body
+    glm::vec3 _translation;
+    AxisAngleRotation2 _rotation;
+
+    // Relative to the RIGHT Body
+    glm::vec3 _leftTranslation;
+    AxisAngleRotation2 _rightTranslation;
 
     // STASHES for backup and restore
     glm::vec3 _translation_stash;

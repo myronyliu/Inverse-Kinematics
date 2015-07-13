@@ -85,7 +85,7 @@ void BallJoint::draw(const float& radius) const {
         glm::vec3 w = axisAngleAlignVECtoZ3(_translation);
 
         glPushMatrix();
-        pushRotation3(w);
+        pushRotation(w);
 
         GlutDraw::drawDoublePyramid(
             transDist*glm::vec3(0, 0, 1.0f / 2),

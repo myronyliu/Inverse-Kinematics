@@ -1,7 +1,7 @@
 #pragma once
 
 #include "stdafx.h"
-
+#include "Rotation.h"
 
 // Utility functions
 char * textFileRead(const char *);
@@ -36,5 +36,6 @@ void printVec2(const glm::vec2&, const bool& = true);
 
 void printVector(const std::vector<float>&);
 
-void pushTranslation3(const glm::vec3&);
-void pushRotation3(const glm::vec3&);
+void pushTranslation(const glm::vec3&);
+void pushRotation(const glm::vec3&);
+void pushRotation(const AxisAngleRotation2&);

@@ -68,22 +68,14 @@ Shader * World::findShader(Object * obj)
 
 void Object::draw()
 {
-
     if (!_visible) return;
 
     GLfloat color[] = { _color[0], _color[1], _color[2], _color[3] };
     glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
 
-    float theta = _rotation._axis[0];
-    float phi = _rotation._axis[1];
-
     glPushMatrix();
-    glTranslated(_translation[0], _translation[1], _translation[2]);
-    glRotatef(
-        (180.0f / M_PI)*_rotation._angle,
-        sin(theta)*cos(phi),
-        sin(theta)*sin(phi),
-        cos(theta));
+    pushTranslation(_translation);
+    pushRotation(_rotation);
 
     doDraw();
 
@@ -93,16 +85,9 @@ void Object::draw(Shader * shader)
 {
     if (!_visible) return;
 
-    float theta = _rotation._axis[0];
-    float phi = _rotation._axis[1];
-
     glPushMatrix();
-    glTranslated(_translation[0], _translation[1], _translation[2]);
-    glRotatef(
-        (180.0f / M_PI)*_rotation._angle,
-        sin(theta)*cos(phi),
-        sin(theta)*cos(phi),
-        cos(theta));
+    pushTranslation(_translation);
+    pushRotation(_rotation);
 
     shader->link();
     doDraw();
@@ -553,16 +538,16 @@ void Arm::doDraw() {
 
     for (int i = 0; i < _joints.size(); i++) {
 
-        glm::vec3 trans = _joints[i]->translation();
-        float length = glm::length(trans);
+        float length = glm::length(_joints[i]->translation());
+
         float nextLength;
         if (i == _joints.size() - 1) nextLength = 0;
         else nextLength = glm::length(_joints[i + 1]->translation());
 
         _joints[i]->draw(fmin(length, nextLength) / 8);
 
-        glTranslatef(trans[0], trans[1], trans[2]);
-        localRotation2(i).pushRotation();
+        pushTranslation(_joints[i]->translation());
+        pushRotation(_joints[i]->rotation2());
     }
     glPopMatrix();
 }
