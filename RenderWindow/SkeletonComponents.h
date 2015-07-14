@@ -141,14 +141,22 @@ public:
     virtual AxisAngleRotation2 halfJointRotation() const { return AxisAngleRotation2(); }
 
     std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const {
-        glm::vec3 t = -_opposingHalfJoint->translationToTargetBone();
         glm::mat3 R0 = (-_opposingHalfJoint->rotationToTargetBone()).rotationMatrix();
         glm::mat3 R1 = (-_opposingHalfJoint->halfJointRotation()).rotationMatrix();
-        glm::mat3 R = Math::composeLocalTransforms(R0, R1);
-        t += R*translationToTargetBone();
-        R = Math::composeLocalTransforms(R, halfJointRotation().rotationMatrix());
-        R = Math::composeLocalTransforms(R, rotationToTargetBone().rotationMatrix());
-        return std::pair<glm::vec3, AxisAngleRotation2>(t, AxisAngleRotation2(R));
+        glm::mat3 AnchorToJoint = Math::composeLocalTransforms(R0, R1);
+        glm::mat3 R2 = halfJointRotation().rotationMatrix();
+        glm::mat3 R3 = rotationToTargetBone().rotationMatrix();
+        glm::mat3 JointToTarget = Math::composeLocalTransforms(R2, R3);
+
+        glm::mat3 AnchorToTarget = Math::composeLocalTransforms(AnchorToJoint, JointToTarget);
+
+        glm::vec3 t = -_opposingHalfJoint->translationToTargetBone();
+        t += JointToTarget*translationToTargetBone();
+        // Express the "translation from this halfjoint to its target" from the target-coordinates (default)...
+        // ... to the joint-coordinates.
+        // NOTE that this changing coordinates is inverse(targetAxes-->jointAxes), hence "jointToTarget"
+
+        return std::pair<glm::vec3, AxisAngleRotation2>(t, AxisAngleRotation2(AnchorToTarget));
     }
     std::pair<glm::vec3, AxisAngleRotation2> alignTargetToAnchor() const {
         glm::vec3 t;

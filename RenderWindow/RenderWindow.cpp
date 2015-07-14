@@ -55,8 +55,8 @@ int main(int argc, char* argv[])
 
     Bone* root = new Bone();
     Bone* neighbor = new Bone();
-    HalfBallJoint* hj0 = new HalfBallJoint(glm::vec3(0, 0, 0.5), glm::vec3(0, 0, 0));
-    HalfBallJoint* hj1 = new HalfBallJoint(glm::vec3(0, 0, -0.5), glm::vec3(M_PI/4, 0, 0));
+    HalfBallJoint* hj0 = new HalfBallJoint(glm::vec3(0, 0, 0.5), glm::vec3(0, M_PI/6, 0));
+    HalfBallJoint* hj1 = new HalfBallJoint(glm::vec3(0, 0, -0.5), glm::vec3(M_PI/8, 0, 0));
 
     root->attach(hj0);
     neighbor->attach(hj1);
