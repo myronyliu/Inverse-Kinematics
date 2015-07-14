@@ -10,12 +10,16 @@ using namespace Math;
 void Skeleton::doDraw() {
     if (_root == NULL) return;
 
-    vector<tuple<Bone*, HalfJoint*, int>> stack({ tuple<Bone*, HalfJoint*, int>(_root, NULL, 0) });
+    _root->draw(0.2);
 
-    set<Bone*> drawn;
+    vector<tuple<Bone*, HalfJoint*, int>> stack;
+    set<Bone*> drawn({ _root });
 
     for (auto halfJoint : _root->halfJoints()) {
-        stack.push_back(tuple<Bone*, HalfJoint*, int>(halfJoint->anchor(), halfJoint->partner(), 1));
+        Bone* neighbor = halfJoint->anchorBone();
+        if (neighbor != NULL) {
+            stack.push_back(tuple<Bone*, HalfJoint*, int>(neighbor, halfJoint->opposingHalfJoint(), 1));
+        }
     }
 
     vec3 translation;
@@ -24,35 +28,38 @@ void Skeleton::doDraw() {
     Bone* bone;
     HalfJoint* edge; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
     int depth;
-    int previousDepth = 0;
+    int previousDepth = 0; // the depth of the root, which has already been drawn
     while (stack.size() > 0) {
+
         tie(bone, edge, depth) = stack.back();
         stack.pop_back();
 
+
         for (auto halfJoint : bone->halfJoints()) {
-            Bone* neighbor = halfJoint->anchor();
-            HalfJoint* halfJointToPrevious = halfJoint->partner();
-            if (drawn.find(neighbor) != drawn.end()) {
-                stack.push_back(tuple<Bone*, HalfJoint*, int>(neighbor, halfJointToPrevious, depth + 1));
+            Bone* neighbor = halfJoint->anchorBone();
+            HalfJoint* halfJointToCurrent = halfJoint->opposingHalfJoint();
+            // ^ the halfJoint on the neighbor that points back to this Bone
+            if (neighbor != NULL && drawn.find(neighbor) == drawn.end()) {
+                stack.push_back(tuple<Bone*, HalfJoint*, int>(neighbor, halfJointToCurrent, depth + 1));
             }
         }
 
         if (depth < previousDepth) {
             glPopMatrix();
-            bone->draw();
+            bone->draw(0.2);
         }
         else if (depth == previousDepth) {
-            bone->draw();
+            bone->draw(0.2);
         }
         else {
             tie(translation, rotation) = edge->alignAnchorToTarget();
             glPushMatrix();
             pushTranslation(translation);
             pushRotation(rotation);
-            bone->draw();
+            bone->draw(0.2);
         }
         drawn.insert(bone);
-    }
+        previousDepth = depth;
 
-    glPopMatrix();
+    }
 }

@@ -49,9 +49,11 @@ AxisAngleRotation2::AxisAngleRotation2(const glm::vec3& w) {
         _axis = glm::vec2(0, 0);
         _angle = 0;
     }
-    _axis[0] = acos(w[2] / angle);
-    _axis[1] = atan2(w[1], w[0]);
-    _angle = angle - (2 * M_PI)*floor(angle / (2 * M_PI));
+    else {
+        _axis[0] = acos(w[2] / angle);
+        _axis[1] = atan2(w[1], w[0]);
+        _angle = angle - (2 * M_PI)*floor(angle / (2 * M_PI));
+    }
 }
 glm::mat3 AxisAngleRotation2::rotationMatrix() const {
     glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));

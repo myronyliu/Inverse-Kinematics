@@ -13,6 +13,9 @@ namespace Scene {
         Skeleton() : Object(), _root(NULL) {}
         Skeleton(Bone* root) : Object(), _root(root) {}
 
+        Bone* root() const { return _root; }
+        void setRoot(Bone* root) { _root = root; }
+
         void doDraw();
     private:
         Bone* _root;

@@ -51,7 +51,7 @@ public:
     void constrain();
     void setParamsFreely(std::map<int, float>);
     std::map<int, float> getParams();
-    virtual void draw(const float&) const;
+    void doDraw(const float& radius) const { GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius); }
 
     void backup() { _mainAxis_stash = _mainAxis; _spin_stash = _spin; }
     void restore() { _mainAxis = _mainAxis_stash; _spin = _spin_stash; }

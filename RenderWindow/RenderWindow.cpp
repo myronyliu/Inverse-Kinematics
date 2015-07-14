@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "GlutUI.h"
 #include "Paths.h"
+#include "Skeleton.h"
 
 Scene::Path* tipPath;
 Scene::Path* anchorPath;
@@ -47,17 +48,30 @@ int main(int argc, char* argv[])
     anchorPath = new Scene::Path(1);
     tipPath->setParameterization(PathParameterizations::circle);
     anchorPath->setParameterization(PathParameterizations::line);
-    //anchorPath->setRotation(glm::vec3(0, M_PI / 2, 0));
     anchorPath->setTranslation(glm::vec3(0, 0, 0));
-
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
+
+    Bone* root = new Bone();
+    Bone* neighbor = new Bone();
+    HalfBallJoint* hj0 = new HalfBallJoint(glm::vec3(0, 0, 0.5), glm::vec3(0, 0, 0));
+    HalfBallJoint* hj1 = new HalfBallJoint(glm::vec3(0, 0, -0.5), glm::vec3(M_PI/4, 0, 0));
+
+    root->attach(hj0);
+    neighbor->attach(hj1);
+
+    hj0->setOpposingHalfJoint(hj1);
     
+    
+    Scene::Skeleton* skeleton = new Scene::Skeleton();
+    skeleton->setRoot(root);
+    world.addObject(skeleton);
+
 
     Scene::Camera * cam = new Scene::Camera();
-    cam->setPos(glm::vec3(0, 0, 8));
-    cam->setDir(glm::vec3(0, 0, -1));
+    cam->setPos(glm::vec3(8, 0, 0));
+    cam->setDir(glm::vec3(-1, 0, 0));
     mainPanel.setWorld(&world);
     mainPanel.setCamera(cam);
     GlutUI::Controls::Keyboard keyboard(&mainPanel, mainPanel.getCamera());

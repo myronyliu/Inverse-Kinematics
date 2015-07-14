@@ -12,9 +12,6 @@ glm::mat3 HalfBallJoint::halfJointRotationR() const {
     return composeLocalTransforms(R0, R1);
 }
 
-void HalfBallJoint::draw(const float& radius) const {
-}
-
 void HalfBallJoint::perturbFreely() {
     float dArc = M_PI / 1024;
     float randPhi = 2 * M_PI*rand() / RAND_MAX;
