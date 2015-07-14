@@ -2,7 +2,7 @@
 #define _HALFBALLJOINT_H_
 
 #include "stdafx.h"
-#include "HalfJoint.h"
+#include "SkeletonComponents.h"
 #include "Rotation.h"
 #include "Math.h"
 
@@ -42,10 +42,10 @@ public:
     //// DERIVED QUANTITIES ////
     ////////////////////////////
 
-    glm::vec3 translationFromPivot() const { return glm::vec3(0,0,0); }
-    glm::mat3 rotationFromPivotR() const;
-    glm::vec3 rotationFromPivot3() const { return Math::axisAngleRotation3(rotationFromPivotR()); }
-    AxisAngleRotation2 rotationFromPivot2() const { return AxisAngleRotation2(rotationFromPivotR()); }
+    glm::vec3 halfJointTranslation() const { return glm::vec3(0,0,0); }
+    glm::mat3 halfJointRotationR() const;
+    glm::vec3 halfJointRotation3() const { return Math::axisAngleRotation3(halfJointRotationR()); }
+    AxisAngleRotation2 halfJointRotation2() const { return AxisAngleRotation2(halfJointRotationR()); }
 
     void perturbFreely();
     void constrain();

@@ -3,18 +3,17 @@
 #include "utils.h"
 
 
-template < class T0, class T1, class T2 >
-float Math::clamp(const T0& lowerBound, const T1& value, const T2& upperBound) {
+float Math::clamp(const float& lowerBound, const float& value, const float& upperBound) {
     if (value < lowerBound) return lowerBound;
     else if (value > upperBound) return upperBound;
     else return value;
 }
-template <class T0, class T1>
-float Math::mod(const T0& value, const T1& modulus) {
-    return (float)value - floor((float)value / (float)modulus)*(float)modulus;
+
+float Math::mod(const float& value, const float& modulus) {
+    return value - floor(value / modulus)*modulus;
 }
-template <class T0, class T1, class T2, class T3>
-float Math::periodicClamp(const T0& lowerBoundIn, const T1& valueIn, const T2& upperBoundIn, const T3& period) {
+
+float Math::periodicClamp(const float& lowerBoundIn, const float& valueIn, const float& upperBoundIn, const float& period) {
     float value = mod(valueIn, period);
     float lowerBound = mod(lowerBoundIn, period);
     float upperBound = mod(upperBoundIn, period);

@@ -3,7 +3,7 @@
 
 using namespace Math;
 
-glm::mat3 HalfBallJoint::rotationFromPivotR() const {
+glm::mat3 HalfBallJoint::halfJointRotationR() const {
     glm::mat3 R0 = matrixAlignZtoVEC(mainAxis3());
     glm::mat3 R1 = glm::mat3(
         glm::vec3(cos(_spin), sin(_spin), 0),
@@ -11,44 +11,8 @@ glm::mat3 HalfBallJoint::rotationFromPivotR() const {
         glm::vec3(0, 0, 1));
     return composeLocalTransforms(R0, R1);
 }
+
 void HalfBallJoint::draw(const float& radius) const {
-
-    //if (_previous != NULL) {
-
-    float transDist = glm::length(_translation);
-    if (transDist > 0) {
-        glm::vec3 w = axisAngleAlignVECtoZ3(_translation);
-
-        glPushMatrix();
-        pushRotation(w);
-
-        GlutDraw::drawDoublePyramid(
-            transDist*glm::vec3(0, 0, 1.0f / 2),
-            transDist*glm::vec3(0, 0, 1.0f / 2),
-            transDist*glm::vec3(0, 1.0f / 8, 0));
-        GlutDraw::drawParallelepiped(
-            transDist*glm::vec3(1.0f / 8, 0, 1.0f / 2),
-            transDist*glm::vec3(0, 1.0f / 64, 0),
-            transDist*glm::vec3(0, 0, 1.0f / 64),
-            transDist*glm::vec3(1.0f / 8, 0, 0));
-        GlutDraw::drawParallelepiped(
-            transDist*glm::vec3(0, 1.0f / 8, 1.0f / 2),
-            transDist*glm::vec3(0, 0, 1.0f / 64),
-            transDist*glm::vec3(1.0f / 64, 0, 0),
-            transDist*glm::vec3(0, 1.0f / 8, 0));
-
-        glPopMatrix();
-    }
-
-    //}
-
-    glPushMatrix();
-
-    glTranslatef(_translation[0], _translation[1], _translation[2]);
-    _rotation.pushRotation();
-    GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius);
-
-    glPopMatrix();
 }
 
 void HalfBallJoint::perturbFreely() {
@@ -59,7 +23,7 @@ void HalfBallJoint::perturbFreely() {
     glm::vec3 dAxis = glm::vec3(sin(dArc)*cos(randPhi), sin(dArc)*cos(randPhi), cos(dArc));
 
     glm::mat3 R1 = matrixAlignZtoVEC(dAxis);
-    glm::mat3 R = composeLocalTransforms(rotationFromPivotR(), R1);
+    glm::mat3 R = composeLocalTransforms(halfJointRotationR(), R1);
     glm::vec3 newAxis = glm::normalize(R[3]);
 
     _mainAxis[0] = acos(newAxis[2]);
@@ -78,8 +42,8 @@ void HalfBallJoint::constrain() {
     if (_constraints.size() > 0) {
         // constrain THETA
         if (_constraints[0] != NULL && _constraints[1] != NULL) {
-            _constraints[0] = Math::clamp(0, mod(_constraints[0], 2 * M_PI), M_PI);
-            _constraints[1] = Math::clamp(0, mod(_constraints[1], 2 * M_PI), M_PI);
+            _constraints[0] = Math::clamp(0.0f, mod(_constraints[0], 2 * M_PI), M_PI);
+            _constraints[1] = Math::clamp(0.0f, mod(_constraints[1], 2 * M_PI), M_PI);
             if (_constraints[0] < _constraints[1]) {
                 theta = Math::clamp(_constraints[0], theta, _constraints[1]);
             }
@@ -93,11 +57,11 @@ void HalfBallJoint::constrain() {
             }
         }
         else if (_constraints[0] != NULL) {
-            _constraints[0] = Math::clamp(0, mod(_constraints[0], 2 * M_PI), M_PI);
+            _constraints[0] = Math::clamp(0.0f, mod(_constraints[0], 2 * M_PI), M_PI);
             if (theta < _constraints[0]) theta = _constraints[0];
         }
         else if (_constraints[1] != NULL) {
-            _constraints[1] = Math::clamp(0, mod(_constraints[1], 2 * M_PI), M_PI);
+            _constraints[1] = Math::clamp(0.0f, mod(_constraints[1], 2 * M_PI), M_PI);
             if (theta > _constraints[0]) theta = _constraints[1];
         }
         // constrain PHI
@@ -137,16 +101,16 @@ std::map<int, float> HalfBallJoint::getParams() {
             params[0] = _mainAxis[0];
         }
         else if (_constraints[0] != NULL && _constraints[1] != NULL) {
-            _constraints[0] = Math::clamp(0, mod(_constraints[0], 2 * M_PI), M_PI);
-            _constraints[1] = Math::clamp(0, mod(_constraints[1], 2 * M_PI), M_PI);
+            _constraints[0] = Math::clamp(0.0f, mod(_constraints[0], 2 * M_PI), M_PI);
+            _constraints[1] = Math::clamp(0.0f, mod(_constraints[1], 2 * M_PI), M_PI);
             if (_constraints[0] < _constraints[1]) params[0] = _mainAxis[0];
         }
         else if (_constraints[0] != NULL) {
-            _constraints[0] = Math::clamp(0, mod(_constraints[0], 2 * M_PI), M_PI);
+            _constraints[0] = Math::clamp(0.0f, mod(_constraints[0], 2 * M_PI), M_PI);
             if (_constraints[0]<M_PI) params[0] = _mainAxis[0];
         }
         else if (_constraints[1] != NULL) {
-            _constraints[1] = Math::clamp(0, mod(_constraints[1], 2 * M_PI), M_PI);
+            _constraints[1] = Math::clamp(0.0f, mod(_constraints[1], 2 * M_PI), M_PI);
             if (_constraints[0]>0) params[0] = _mainAxis[0];
         }
         // ... PHI ...
