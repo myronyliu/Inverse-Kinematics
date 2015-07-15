@@ -4,7 +4,8 @@
 
 
 float Math::clamp(const float& lowerBound, const float& value, const float& upperBound) {
-    if (value < lowerBound) return lowerBound;
+    if (lowerBound >= upperBound) return value;
+    else if (value < lowerBound) return lowerBound;
     else if (value > upperBound) return upperBound;
     else return value;
 }
@@ -19,7 +20,7 @@ float Math::periodicClamp(const float& lowerBoundIn, const float& valueIn, const
     float upperBound = mod(upperBoundIn, period);
     if (upperBound < lowerBound) upperBound += period;
     if (value < lowerBound) value += period;
-    return clamp(lowerBound, value, upperBound);
+    return mod(clamp(lowerBound, value, upperBound), period);
 }
 
 glm::mat3 Math::basisChangeMatrix(const glm::mat3& oldBasis, const glm::mat3& newBasis) {

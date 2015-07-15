@@ -3,14 +3,20 @@
 
 #include "stdafx.h"
 
-struct AxisAngleRotation2 {
+class AxisSpinRotation;
+
+class AxisAngleRotation2 {
+public:
     glm::vec2 _axis;
     float _angle;
+
     AxisAngleRotation2() : _axis(glm::vec2(0, 0)), _angle(0) {}
     AxisAngleRotation2(const glm::vec2& axis, const float& angle);
     AxisAngleRotation2(const float& angle, const glm::vec2& axis);
     AxisAngleRotation2(const glm::vec3& w);
     AxisAngleRotation2(const glm::mat3& R);
+    AxisAngleRotation2(const AxisSpinRotation& axisSpin);
+
     float theta() const { return _axis[0]; }
     float phi() const  { return _axis[1]; }
     void clamp();
@@ -32,5 +38,20 @@ struct AxisAngleRotation2 {
     void print() const;
 };
 bool operator == (const AxisAngleRotation2&, const AxisAngleRotation2&);
+
+
+class AxisSpinRotation
+{
+public:
+    glm::vec2 _axis;
+    float _spin;
+
+    AxisSpinRotation(const glm::vec2& axis, const float& spin) : _axis(axis), _spin(spin) {}
+    AxisSpinRotation(const float& spin, const glm::vec2& axis) : _axis(axis), _spin(spin) {}
+    AxisSpinRotation(const glm::vec3& w);
+    AxisSpinRotation(const glm::mat3& R);
+    AxisSpinRotation(const AxisAngleRotation2& axisAngle);
+};
+
 
 #endif

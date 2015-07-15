@@ -7,56 +7,31 @@
 #include "utils.h"
 #include "Math.h"
 
-class HalfJoint;
+static GLfloat red[] = { 1, 0, 0, 1 };
+static GLfloat green[] = { 0, 1, 0, 1 };
+static GLfloat blue[] = { 0, 0, 1, 1 };
+static GLfloat white[] = { 1, 1, 1, 1 };
+
+class Joint;
 
 class Bone
 {
-    friend class HalfJoint;
+    friend class Joint;
 public:
-    Bone() :
-        _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()) {}
+    Bone() {}
     void draw(const float& scale = 1) const;
-    virtual void doDraw(const float& scale = 0.2) const {
-        GLfloat r[] = { 1.0f, 0.0f, 0.0f, 1.0f };
-        GLfloat g[] = { 0.0f, 1.0f, 0.0f, 1.0f };
-        GLfloat b[] = { 0.0f, 0.0f, 0.0f, 1.0f };
-        GLfloat white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, r);
-        GlutDraw::drawParallelepiped(glm::vec3(scale, 0, 0), glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0));
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, g);
-        GlutDraw::drawParallelepiped(glm::vec3(0, scale, 0), glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0));
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, b);
-        GlutDraw::drawParallelepiped(glm::vec3(0, 0, scale), glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale));
+    virtual void doDraw(const float& scale = 0.2) const;
 
-
-        glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-        GlutDraw::drawSphere(glm::vec3(0, 0, 0), scale);
+    void attach(Joint* halfJoint);
+    void dettach(Joint* halfJoint);
+    std::set<Joint*> joints() const {
+        return _joints;
     }
-
-    void attach(HalfJoint* halfJoint);
-    void dettach(HalfJoint* halfJoint);
-    std::set<HalfJoint*> halfJoints() const {
-        return _halfJoints;
-    }
-    std::map<HalfJoint*, Bone*> neighbors() const;
-    HalfJoint* getLink(Bone* neighbor) const;
-
-    glm::vec3 translation() const { return _translation; }
-    AxisAngleRotation2 rotation2() const { return _rotation; }
-    glm::vec3 rotation3() const { return _rotation.axisAngleRotation3(); }
-    glm::mat3 rotationR() const { return _rotation.rotationMatrix(); }
+    std::map<Joint*, Bone*> jointTargets() const;
+    Joint* getLink(Bone* neighbor) const;
 
 protected:
-    // The following are relative to some global system
-    // I don't think these are really necessary since it can be reclaimed by traversing the joints elsewhere all the way to this Body
-    // However, this is convenient as it will serve the function of _globalRotations and _globalTranslations that was once in Scene::Arm
-    glm::vec3 _translation;
-    AxisAngleRotation2 _rotation;
-
-    std::set<HalfJoint*> _halfJoints;
-    // Moving around a "non-cyclic" skeleton of bodies and joints amounts to tree traversal (with a list of visited nodes)
-    // Starting from any root Body, access _halfJoints[i].opposingHalfJoint().anchor() to get the bodies adjacent to this one.
-    // Once a body has been processed, add it to the list of
+    std::set<Joint*> _joints; // these are the joints that are ANCHORED to this body
 private:
 };
 
@@ -64,141 +39,126 @@ private:
 
 
 
-class HalfJoint
+class Joint
 {
     friend class Bone;
 public:
-    HalfJoint() :
-        _translationToTargetBone(glm::vec3(0, 0, 0)), _rotationToTargetBone(AxisAngleRotation2(glm::vec2(0, 0), 0)) {}
-    HalfJoint(const glm::vec3& translation, const AxisAngleRotation2& rotation) :
-        _translationToTargetBone(translation), _rotationToTargetBone(rotation) {}
-    HalfJoint(const glm::vec3& translation, const glm::vec3& w) :
-        _translationToTargetBone(translation), _rotationToTargetBone(AxisAngleRotation2(w)) {}
-    HalfJoint(const glm::vec3& translation, const glm::mat3& R) :
-        _translationToTargetBone(translation), _rotationToTargetBone(AxisAngleRotation2(R)) {}
+    Joint();
+    Joint(const glm::vec3&, const glm::vec3&, const glm::vec3&, const glm::vec3&);
 
-    // FUNCTIONS THAT MUST BE DEFINED IN CHILDREN CLASSES
-    virtual void constrain() {}
-    virtual std::map<int, float> getParams() const { return std::map<int, float>(); }
-    virtual void setParamsFreely(std::map<int, float>) {}
-    virtual void perturbFreely() {}
-    virtual float reach() const { return 0; }
+    /////////////////
+    //// DRAWING ////
+    /////////////////
+
+    void draw(const float& scale) const;
     virtual void doDraw(const float&) const {}
-    
-    void draw(const float& scale) const {
 
-        GlutDraw::drawCylinder(_translationToTargetBone / 2.0f, _translationToTargetBone / 2.0f, 0.02);
+    //////////////////////////
+    //// PARAMETERIZATION ////
+    //////////////////////////
 
-        doDraw(scale);
-
-    }
+    virtual void constrainParams() {}
+    virtual std::map<int, float> adjustableParams() const { return _params; }
+    void setParams(const std::map<int, float>& params_unconstrained);
+    void setParam(const int& key, const float& value);
     void setConstraint(const int& key, const float& value) { _constraints[key] = value; }
-    void perturb() { perturbFreely(); constrain(); }
-    void setParams(const std::map<int, float>& params) { setParamsFreely(params); constrain(); }
-    void restore() {}
-    void backup() {}
 
-    int nParams() const { return getParams().size(); }
+    void restore() { _params = _stashedParams; }
+    void backup() { _stashedParams = _params; }
+
+    void perturb() { perturbParams(); constrainParams(); buildTransformsFromParams(); }
+    virtual float reach() const { return 0; }
 
     /////////////////
     //// SETTERS ////
     /////////////////
 
-    void setTranslationToTarget(const glm::vec3& translation) { _translationToTargetBone = translation; }
+    void setTranslationFromAnchor(const glm::vec3& translation) { _translationFromAnchor = translation; }
+    void setRotationFromAnchor(const AxisAngleRotation2& rotation) { _rotationFromAnchor = rotation; _rotationFromAnchor.clamp(); }
+    void setRotationFromAnchor(const glm::vec3& w) { _rotationFromAnchor = AxisAngleRotation2(w); _rotationFromAnchor.clamp(); }
+    void setRotationFromAnchor(const glm::mat3& R) { _rotationFromAnchor = AxisAngleRotation2(R); _rotationFromAnchor.clamp(); }
+    void couple(Bone* target) { _target = target; }
+    void decouple() { _target = NULL; }
 
-    void setRotationToTarget(const AxisAngleRotation2& rotation) {
-        _rotationToTargetBone = rotation;
-        _rotationToTargetBone.clamp();
-    }
-    void setRotationToTarget(const glm::vec3& w) {
-        _rotationToTargetBone = AxisAngleRotation2(w);
-        _rotationToTargetBone.clamp();
-    }
-    void setRotationToTarget(const glm::mat3& R) {
-        _rotationToTargetBone = AxisAngleRotation2(R);
-        _rotationToTargetBone.clamp();
-    }
-    void setOpposingHalfJoint(HalfJoint* opposingHalfJoint) {
-        _opposingHalfJoint = opposingHalfJoint;
-        opposingHalfJoint->setOpposingHalfJoint_dummy(this);
-    }
-    void setTargetBone(Bone*);
+    void setTranslationToTarget(const glm::vec3& translation) { _translationFromAnchor = translation; }
+    void setRotationToTarget(const AxisAngleRotation2& rotation) { _rotationFromAnchor = rotation; _rotationFromAnchor.clamp(); }
+    void setRotationToTarget(const glm::vec3& w) { _rotationFromAnchor = AxisAngleRotation2(w); _rotationFromAnchor.clamp(); }
+    void setRotationToTarget(const glm::mat3& R) { _rotationFromAnchor = AxisAngleRotation2(R); _rotationFromAnchor.clamp(); }
     void attach(Bone* target);
-    void dettach();
+    void detach();
+
+    void setJointTranslation(const glm::vec3& translation);
+    void setJointRotation(const AxisAngleRotation2& rotation);
+    void setJointRotation(const glm::vec3& w);
+    void setJointRotation(const glm::mat3& R);
 
     /////////////////
     //// GETTERS ////
     /////////////////
 
-    glm::vec3 translationToTargetBone() const { return _translationToTargetBone; }
-    AxisAngleRotation2 rotationToTargetBone() const { return _rotationToTargetBone; }
-    AxisAngleRotation2 rotationToTargetBone2() const { return _rotationToTargetBone; }
-    glm::vec3 rotationToTargetBone3() const { return _rotationToTargetBone.axisAngleRotation3(); }
-    glm::mat3 rotationToTargetBoneR() const { return _rotationToTargetBone.rotationMatrix(); }
-    HalfJoint* opposingHalfJoint() const { return _opposingHalfJoint; }
-    Bone* targetBone() const { return _targetBone; }
-    Bone* anchorBone() const {
-        if (_opposingHalfJoint == NULL) return NULL;
-        else return _opposingHalfJoint->targetBone();
-    }
+    std::map<int, float> params() const { return _params; }
+    bool getConstraint(const int& key, float& value) const;
+    bool getParam(const int& key, float& value) const;
 
-    //////////////////////////// These depend on the parameterization of the rotation, so they are actually pure virtual functions in concept
-    //// DERIVED QUANTITIES //// The "pivot" is simply "RotationMatrix(_rotation)" i.e. the local coordinate system relative to the body
+    Bone* anchor() const { return _anchor; }
+    glm::vec3 translationFromAnchor() const { return _translationFromAnchor; }
+    AxisAngleRotation2 rotationFromAnchor() const { return _rotationFromAnchor; }
+    AxisAngleRotation2 rotationFromAnchor2() const { return _rotationFromAnchor; }
+    glm::vec3 rotationFromAnchor3() const { return _rotationFromAnchor.axisAngleRotation3(); }
+    glm::mat3 rotationFromAnchorR() const { return _rotationFromAnchor.rotationMatrix(); }
+
+    Bone* target() const { return _target; }
+    glm::vec3 translationToTarget() const { return _translationToTarget; }
+    AxisAngleRotation2 rotationToTarget() const { return _rotationToTarget; }
+    AxisAngleRotation2 rotationToTarget2() const { return _rotationToTarget; }
+    glm::vec3 rotationToTarget3() const { return _rotationToTarget.axisAngleRotation3(); }
+    glm::mat3 rotationToTargetR() const { return _rotationToTarget.rotationMatrix(); }
+
+    glm::vec3 jointTranslation() const { return _jointTranslation; }
+    AxisAngleRotation2 jointRotation() const { return _jointRotation; }
+    AxisAngleRotation2 jointRotation2() const { return _jointRotation; }
+    glm::vec3 jointRotation3() const { return _jointRotation.axisAngleRotation3(); }
+    glm::mat3 jointRotationR() const { return _jointRotation.rotationMatrix(); }
+
+    ////////////////////////////
+    //// DERIVED QUANTITIES ////
     ////////////////////////////
 
-    virtual glm::vec3 halfJointTranslation() const { return glm::vec3(); }
-    virtual glm::mat3 halfJointRotationR() const { return glm::mat3(); }
-    virtual glm::vec3 halfJointRotation3() const { return glm::vec3(); }
-    virtual AxisAngleRotation2 halfJointRotation2() const { return AxisAngleRotation2(); }
-    virtual AxisAngleRotation2 halfJointRotation() const { return AxisAngleRotation2(); }
-
-    std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const {
-        glm::mat3 R0 = (-_opposingHalfJoint->rotationToTargetBone()).rotationMatrix();
-        glm::mat3 R1 = (-_opposingHalfJoint->halfJointRotation()).rotationMatrix();
-        glm::mat3 AnchorToJoint = Math::composeLocalTransforms(R0, R1);
-        glm::mat3 R2 = halfJointRotation().rotationMatrix();
-        glm::mat3 R3 = rotationToTargetBone().rotationMatrix();
-        glm::mat3 JointToTarget = Math::composeLocalTransforms(R2, R3);
-
-        glm::mat3 AnchorToTarget = Math::composeLocalTransforms(AnchorToJoint, JointToTarget);
-
-        glm::vec3 t = R0*(-_opposingHalfJoint->translationToTargetBone());
-        t += Math::composeLocalTransforms(AnchorToJoint, R2)*translationToTargetBone();
-        // Express the "translation from this halfjoint to its target" from the target-coordinates (default)...
-        // ... to the joint-coordinates.
-        // NOTE that this changing coordinates is inverse(targetAxes-->jointAxes), hence "jointToTarget"
-
-        return std::pair<glm::vec3, AxisAngleRotation2>(t, AxisAngleRotation2(AnchorToTarget));
-    }
-    std::pair<glm::vec3, AxisAngleRotation2> alignTargetToAnchor() const {
-        return _opposingHalfJoint->alignAnchorToTarget();
-    }
-
-
-    void attach_dummy(Bone* targetBone) { _targetBone = targetBone; }
+    std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const;
 
 protected:
-    HalfJoint* _opposingHalfJoint;
-    // The other half of the joint that, together with this one, ...
-    // ... defines a full joint: with separate degrees of freedom on either side
+    //////////////////////////////////////////////////////////////////
+    //// DANGEROUS FUNCTIONS THAT SHOULD NOT BE ACCESSED PUBLICLY ////
+    //////////////////////////////////////////////////////////////////
 
-    Bone* _targetBone;
-    // _anchor is the Body that the HalfJoint is anchored to.
-    // "Anchored" means that modifying the joint parameters
-    // ... (e.g. _mainAxis and _spin for HalfBallJoint)
-    // ... has no effect on the orientation and position of _anchor.
-    // To get the Body that is "hinged" to this HalfJoint ...
-    // ... access _opposingHalfJoint's _anchor
+    virtual void perturbParams() {}
+    virtual void buildTransformsFromParams() {}
+    virtual void buildParamsFromTransforms() {}
 
-    glm::vec3 _translationToTargetBone;         // These are the translation and orientation of the targetBone ...
-    AxisAngleRotation2 _rotationToTargetBone;   // ... as expressed in the local coordinate system of this halfJoint
+    //////////////////////////
+    //// MEMBER VARIABLES ////
+    //////////////////////////
+
+    Bone* _anchor;
+    Bone* _target;
+
+    glm::vec3 _translationFromAnchor;       // IN THE COORDINATE FRAME OF THE ANCHOR
+    AxisAngleRotation2 _rotationFromAnchor;
+
+    glm::vec3 _jointTranslation;            // IN THE COORDINATE FRAME OF THE JOINT's "BASE" (in "default" configuration)
+    AxisAngleRotation2 _jointRotation;
+
+    glm::vec3 _translationToTarget;         // IN THE COORDINATE FRAME OF THE JOINT's "TIP"
+    AxisAngleRotation2 _rotationToTarget;
+
+
 
     std::map<int, float> _constraints;  // Constraints are keyed on indices of our choosing
+    std::map<int, float> _params;
 
-private:
-    void setOpposingHalfJoint_dummy(HalfJoint* opposingHalfJoint) { _opposingHalfJoint = opposingHalfJoint; }
+    std::map<int, float> _stashedParams;
 };
 
-#include "HalfBallJoint.h"
+#include "BallJoint.h"
 
 #endif

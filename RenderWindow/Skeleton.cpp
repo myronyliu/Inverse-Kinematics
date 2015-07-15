@@ -12,35 +12,30 @@ void Skeleton::doDraw() {
 
     _root->draw(0.2);
 
-    vector<tuple<Bone*, HalfJoint*, int>> stack;
+    vector<tuple<Bone*, Joint*, int>> stack;
     set<Bone*> drawn({ _root });
 
-    for (auto halfJoint : _root->halfJoints()) {
-        Bone* neighbor = halfJoint->anchorBone();
-        if (neighbor != NULL) {
-            stack.push_back(tuple<Bone*, HalfJoint*, int>(neighbor, halfJoint->opposingHalfJoint(), 1));
-        }
+    for (auto target : _root->jointTargets()) {
+        stack.push_back(tuple<Bone*, Joint*, int>(target.second, target.first, 1));
     }
 
     vec3 translation;
     AxisAngleRotation2 rotation;
 
     Bone* bone;
-    HalfJoint* edge; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
+    Joint* joint; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
     int depth;
     int previousDepth = 0; // the depth of the root, which has already been drawn
     while (stack.size() > 0) {
 
-        tie(bone, edge, depth) = stack.back();
+        tie(bone, joint, depth) = stack.back();
         stack.pop_back();
 
 
-        for (auto halfJoint : bone->halfJoints()) {
-            Bone* neighbor = halfJoint->anchorBone();
-            HalfJoint* halfJointToCurrent = halfJoint->opposingHalfJoint();
-            // ^ the halfJoint on the neighbor that points back to this Bone
-            if (neighbor != NULL && drawn.find(neighbor) == drawn.end()) {
-                stack.push_back(tuple<Bone*, HalfJoint*, int>(neighbor, halfJointToCurrent, depth + 1));
+        for (auto target : bone->jointTargets()) {
+            // the Bone from which "target" descended in the tree is just the variable "Bone* bone"
+            if (drawn.find(target.second) == drawn.end()) {
+                stack.push_back(tuple<Bone*, Joint*, int>(target.second, target.first, depth + 1));
             }
         }
 
@@ -52,7 +47,7 @@ void Skeleton::doDraw() {
             bone->draw(0.2);
         }
         else {
-            tie(translation, rotation) = edge->alignAnchorToTarget();
+            tie(translation, rotation) = joint->alignAnchorToTarget();
             glPushMatrix();
             pushTranslation(translation);
             pushRotation(rotation);

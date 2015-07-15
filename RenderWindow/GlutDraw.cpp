@@ -67,21 +67,90 @@ void GlutDraw::drawRectangle(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxisD
     drawParallelogram(center, xAxis, yAxis);
 }
 
-void GlutDraw::drawSphere(glm::vec3 center, float r, int n, int m)
+void GlutDraw::drawSphere(glm::vec3 center, float r, int m, int n)
 {
-    glPushMatrix();
-    glTranslatef(center[0], center[1], center[2]);
-    glutSolidSphere(r, n, m);
-    glPopMatrix();
+    //glPushMatrix();
+    //glTranslatef(center[0], center[1], center[2]);
+    //glutSolidSphere(r, m, n);
+    //glPopMatrix();
+
+    if (r == 0 || m < 2 || n < 3) return;
+
+    float dTheta = M_PI / m;
+    float dPhi = 2 * M_PI / n;
+
+    glBegin(GL_TRIANGLE_FAN);
+    glNormal3f(0, 0, 1);
+    glVertex3f(center[0], center[1], center[2] + r);
+    for (int j = 0; j <= n; j++) {
+        float phi = j*dPhi;
+        float x = sin(dTheta)*cos(phi);
+        float y = sin(dTheta)*sin(phi);
+        float z = cos(dTheta);
+        glNormal3f(x, y, z);
+        glVertex3f(
+            center[0] + r*x,
+            center[1] + r*y,
+            center[2] + r*z);
+        glVertex3f(
+            center[0] + r*x,
+            center[1] + r*y,
+            center[2] + r*z);
+    }
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    glNormal3f(0, 0, -1);
+    glVertex3f(center[0], center[1], center[2] + -r);
+    for (int j = 0; j <= n; j++) {
+        float phi = j*dPhi;
+        float x = sin(M_PI-dTheta)*cos(phi);
+        float y = sin(M_PI-dTheta)*sin(phi);
+        float z = cos(M_PI-dTheta);
+        glNormal3f(x, y, z);
+        glVertex3f(
+            center[0] + r*x,
+            center[1] + r*y,
+            center[2] + r*z);
+        glVertex3f(
+            center[0] + r*x,
+            center[1] + r*y,
+            center[2] + r*z);
+    }
+    glEnd();
+
+    for (int i = 1; i < m-1; i++) {
+
+        glBegin(GL_QUAD_STRIP);
+        float theta = i*dTheta;
+        for (int j = 0; j <= n; j++) {
+            float phi = j*dPhi;
+            float x = sin(theta)*cos(phi);
+            float y = sin(theta)*sin(phi);
+            float z = cos(theta);
+            glNormal3f(x, y, z);
+            glVertex3f(
+                center[0] + r*x,
+                center[1] + r*y,
+                center[2] + r*z);
+            x = sin(theta+dTheta)*cos(phi);
+            y = sin(theta+dTheta)*sin(phi);
+            z = cos(theta+dTheta);
+            glVertex3f(
+                center[0] + r*x,
+                center[1] + r*y,
+                center[2] + r*z);
+        }
+        glEnd();
+    }
 }
 
 void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n)
 {
     float h = glm::length(halfAxis);
+    if (h == 0) return;
     glm::vec3 topNormal = halfAxis / h;
     glm::vec3 w = axisAngleAlignZtoVEC3(topNormal);
-
-    glm::vec3 asdf = rotationMatrix(w)[2];
 
     float dTheta = 2 * M_PI / n;
 

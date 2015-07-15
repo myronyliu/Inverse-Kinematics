@@ -2,6 +2,10 @@
 #include "Math.h"
 #include "utils.h"
 
+using namespace std;
+using namespace glm;
+using namespace Math;
+
 bool operator == (const AxisAngleRotation2& lhs, const AxisAngleRotation2& rhs) {
     return lhs._axis[0] == rhs._axis[0] && lhs._axis[1] == rhs._axis[1] && lhs._angle == rhs._angle;
 }
@@ -55,6 +59,33 @@ AxisAngleRotation2::AxisAngleRotation2(const glm::vec3& w) {
         _angle = angle - (2 * M_PI)*floor(angle / (2 * M_PI));
     }
 }
+AxisAngleRotation2::AxisAngleRotation2(const AxisSpinRotation& axisSpin) {
+
+    float theta = axisSpin._axis[0];
+    float phi = axisSpin._axis[1];
+    float spin = axisSpin._spin;
+
+    glm::vec3 x(cos(spin), sin(spin), 0);
+    glm::vec3 y(-sin(spin), cos(spin), 0);
+    glm::vec3 z(0, 0, 1);
+
+    glm::vec3 v(-sin(phi), cos(phi), 0);
+
+    glm::rotate(x, theta, v);
+    glm::rotate(y, theta, v);
+    glm::rotate(z, theta, v);
+
+    glm::vec3 w = Math::axisAngleRotation3(glm::mat3(x, y, z));
+
+    _angle = glm::length(w);
+    _axis[0] = acos(w[2] / _angle);
+    _axis[1] = atan2(w[1], w[0]);
+}
+
+
+
+
+
 glm::mat3 AxisAngleRotation2::rotationMatrix() const {
     glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
     glm::mat3 wCross(

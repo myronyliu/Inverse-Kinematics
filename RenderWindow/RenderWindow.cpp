@@ -52,14 +52,11 @@ int main(int argc, char* argv[])
     world.addObject(anchorPath);
 
     Bone* root = new Bone();
-    Bone* neighbor = new Bone();
-    HalfBallJoint* hj0 = new HalfBallJoint(glm::vec3(0, 0, 0.5), glm::vec3(0,0,0));
-    HalfBallJoint* hj1 = new HalfBallJoint(glm::vec3(0.5, 0.5, 0.5), glm::vec3(0, M_PI / 2, 0));
+    Bone* child = new Bone();
+    BallJoint* joint0 = new BallJoint(glm::vec3(0, 1, 1), glm::vec3(M_PI/4, 0, 0), glm::vec3(0, -1, 1), glm::vec3(M_PI/2, 0, 0));
 
-    root->attach(hj0);
-    neighbor->attach(hj1);
-
-    hj0->setOpposingHalfJoint(hj1);
+    joint0->attach(root);
+    joint0->couple(child);
     
     
     Scene::Skeleton* skeleton = new Scene::Skeleton();
@@ -85,7 +82,7 @@ int main(int argc, char* argv[])
         SaveAsBMP(bmpName.c_str());
     };
     auto jlambda = [&]() {
-        hj0->perturb();
+        joint0->perturb();
     };
     auto nlambda = [&]() {
         

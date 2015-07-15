@@ -1,61 +1,81 @@
 #include "SkeletonComponents.h"
 
 //////////////////////////////////////////////////////////////////////////////
-//// Functions for making/breaking connections between Bone and HalfJoint ////
+//// Functions for making/breaking connections between Bone and Joint ////
 //////////////////////////////////////////////////////////////////////////////
 
-void Bone::attach(HalfJoint* halfJoint) {
-    if (halfJoint == NULL) return;
-    _halfJoints.insert(halfJoint);
-    halfJoint->_targetBone = this;
+void Bone::attach(Joint* joint) {
+    if (joint == NULL) return;
+    _joints.insert(joint);
+    joint->_anchor = this;
+    if (joint->_target == this) {
+        joint->_target = NULL;
+    }
 }
-void Bone::dettach(HalfJoint* halfJoint) {
-    _halfJoints.erase(halfJoint);
-    halfJoint->_targetBone = NULL;
+void Bone::dettach(Joint* joint) {
+    _joints.erase(joint);
+    joint->_anchor = NULL;
 }
-void HalfJoint::setTargetBone(Bone* targetBone) {
-    if (targetBone != NULL)targetBone->attach(this);
+void Joint::attach(Bone* anchor) {
+    _anchor = anchor;
+    if (anchor!=NULL) anchor->_joints.insert(this);
 }
-void HalfJoint::attach(Bone* targetBone) {
-    if (targetBone != NULL)targetBone->attach(this);
+void Joint::detach() {
+    if (_anchor != NULL) {
+        _anchor->_joints.erase(this);
+        _anchor = NULL;
+    }
 }
 
 ///////////////////////////////////////////////////
 //// Note the "duality" in the functions ABOVE ////
 ///////////////////////////////////////////////////
 
-
-void Bone::draw(const float& scale) const {
-    
-    doDraw();
-
-    for (auto halfJoint : _halfJoints) {
-
-        glPushMatrix();
-        pushRotation(-halfJoint->rotationToTargetBone());
-        pushTranslation(-halfJoint->translationToTargetBone());
-
-        halfJoint->draw(0.1);
-
-        glPopMatrix();
-    }
+void Joint::setParams(const std::map<int, float>& params_unconstrained) {
+    _params = params_unconstrained;
+    constrainParams();
+    buildTransformsFromParams();
+}
+void Joint::setParam(const int& key, const float& value) {
+    _params[key] = value;
+    constrainParams();
+    buildTransformsFromParams();
 }
 
 
+bool Joint::getParam(const int& key, float& value) const {
+    std::map<int, float>::const_iterator it = _params.find(key);
+    if (it == _params.end()) {
+        return false;
+    }
+    else {
+        value = it->second;
+        return true;
+    }
+}
+bool Joint::getConstraint(const int& key, float& value) const {
+    std::map<int, float>::const_iterator it = _constraints.find(key);
+    if (it == _constraints.end()) {
+        return false;
+    }
+    else {
+        value = it->second;
+        return true;
+    }
+}
 
-std::map<HalfJoint*, Bone*> Bone::neighbors() const {
-    std::map<HalfJoint*, Bone*> map;
-    for (auto halfJoint : _halfJoints) {
-        halfJoint->opposingHalfJoint();
-        map[halfJoint] = halfJoint->opposingHalfJoint()->anchorBone();
+std::map<Joint*, Bone*> Bone::jointTargets() const {
+    std::map<Joint*, Bone*> map;
+    for (auto joint : _joints) {
+        map[joint] = joint->target();
     }
     return map;
 }
 
-HalfJoint* Bone::getLink(Bone* neighbor) const {
-    for (auto halfJoint : _halfJoints) {
-        if (halfJoint->opposingHalfJoint()->anchorBone() == neighbor) {
-            return halfJoint;
+Joint* Bone::getLink(Bone* neighbor) const {
+    for (auto joint : _joints) {
+        if (joint->target() == neighbor) {
+            return joint;
         }
     }
     return NULL;
