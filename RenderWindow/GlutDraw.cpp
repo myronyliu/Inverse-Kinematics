@@ -1,6 +1,8 @@
 #include "GlutDraw.h"
 #include "Math.h"
+#include "utils.h"
 
+using namespace Math;
 
 void GlutDraw::drawLine(glm::vec3 tail, glm::vec3 head)
 {
@@ -13,16 +15,13 @@ void GlutDraw::drawLine(glm::vec3 tail, glm::vec3 head)
 void GlutDraw::drawCone(glm::vec3 base, float r, glm::vec3 axis, int n) {
     float h = glm::length(axis);
     glm::vec3 baseNormal = -axis / h;
-    glm::vec3 w = glm::cross(glm::vec3(0, 0, 1), -baseNormal);
-    float phi = glm::length(w);
-    if (phi > 0) w /= phi;
-    phi *= 90.0f;
+    glm::vec3 w = axisAngleAlignZtoVEC3(-baseNormal);
 
     float dTheta = 2 * M_PI / n;
 
     glPushMatrix();
-    glTranslatef(base[0], base[1], base[2]);
-    glRotatef(phi, w[0], w[1], w[2]);
+    pushRotation(base);
+    pushRotation(w);
 
     glBegin(GL_TRIANGLE_FAN);
     glNormal3f(-baseNormal[0], -baseNormal[1], -baseNormal[2]);
@@ -80,16 +79,15 @@ void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n
 {
     float h = glm::length(halfAxis);
     glm::vec3 topNormal = halfAxis / h;
-    glm::vec3 w = glm::cross(glm::vec3(0, 0, 1), topNormal);
-    float phi = glm::length(w);
-    if (phi > 0) w /= phi;
-    phi *= 90.0f;
+    glm::vec3 w = axisAngleAlignZtoVEC3(topNormal);
+
+    glm::vec3 asdf = rotationMatrix(w)[2];
 
     float dTheta = 2 * M_PI / n;
 
     glPushMatrix();
-    glTranslatef(center[0], center[1], center[2]);
-    glRotatef(phi, w[0], w[1], w[2]);
+    pushTranslation(center);
+    pushRotation(w);
 
     glBegin(GL_QUAD_STRIP);
     for (int i = 0; i <= n; i++) {

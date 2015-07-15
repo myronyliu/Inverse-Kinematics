@@ -9,7 +9,6 @@ Scene::Path* tipPath;
 Scene::Path* anchorPath;
 
 void idle(void) {
-    
     glutPostRedisplay();
 }
 
@@ -32,7 +31,7 @@ int main(int argc, char* argv[])
 
     glShadeModel(GL_FLAT);
     glEnable(GL_LIGHTING);
-    world.addLight(glm::vec3(0, 10, 0), glm::vec4(1, 1, 1, 1));
+    world.addLight(glm::vec3(10, 10, 10), glm::vec4(1, 1, 1, 1));
 
     Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(1, 0, 0));
     Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 1, 0));
@@ -52,11 +51,10 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-
     Bone* root = new Bone();
     Bone* neighbor = new Bone();
-    HalfBallJoint* hj0 = new HalfBallJoint(glm::vec3(0, 0, 0.5), glm::vec3(0, M_PI/6, 0));
-    HalfBallJoint* hj1 = new HalfBallJoint(glm::vec3(0, 0, -0.5), glm::vec3(M_PI/8, 0, 0));
+    HalfBallJoint* hj0 = new HalfBallJoint(glm::vec3(0, 0, 0.5), glm::vec3(0,0,0));
+    HalfBallJoint* hj1 = new HalfBallJoint(glm::vec3(0.5, 0.5, 0.5), glm::vec3(0, M_PI / 2, 0));
 
     root->attach(hj0);
     neighbor->attach(hj1);
@@ -66,6 +64,8 @@ int main(int argc, char* argv[])
     
     Scene::Skeleton* skeleton = new Scene::Skeleton();
     skeleton->setRoot(root);
+    //skeleton->setRotation(glm::vec3(M_PI / 4, 0, 0));
+    //skeleton->setTranslation(glm::vec3(0.1, 0.2, 0.3));
     world.addObject(skeleton);
 
 
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         SaveAsBMP(bmpName.c_str());
     };
     auto jlambda = [&]() {
-        
+        hj0->perturb();
     };
     auto nlambda = [&]() {
         

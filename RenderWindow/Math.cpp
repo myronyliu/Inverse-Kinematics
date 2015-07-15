@@ -125,14 +125,18 @@ glm::vec3 Math::axisAngleRotation3(const AxisAngleRotation2& axisAngle) {
     return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
 
-glm::vec3 Math::axisAngleAlignVECtoZ3(const glm::vec3& axisIn) {
-    glm::vec3 axis = glm::normalize(axisIn);
-    if (axis[0] == 0 && axis[1] == 0) {
-        if (axis[2] >= 0) return glm::vec3(0, 0, 0);
+glm::vec3 Math::axisAngleAlignVECtoZ3(const glm::vec3& zIn) {
+    glm::vec3 z = glm::normalize(zIn);
+    if (z[0] == 0 && z[1] == 0) {
+        if (z[2] >= 0) return glm::vec3(0, 0, 0);
         else return glm::vec3(M_PI, 0, 0);
     }
     else {
-        return (M_PI / 2.0f)*glm::cross(axis, glm::vec3(0, 0, 1));
+        glm::vec3 axis = glm::cross(z, glm::vec3(0, 0, 1));
+        float sinAngle = clamp(0.0f, glm::length(axis), 1.0f);
+        float angle = asin(sinAngle);
+        if (z[2] < 0) angle = M_PI - angle;
+        return angle*glm::normalize(axis);
     }
 }
 

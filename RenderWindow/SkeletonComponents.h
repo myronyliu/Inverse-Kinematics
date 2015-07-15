@@ -17,6 +17,19 @@ public:
         _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()) {}
     void draw(const float& scale = 1) const;
     virtual void doDraw(const float& scale = 0.2) const {
+        GLfloat r[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat g[] = { 0.0f, 1.0f, 0.0f, 1.0f };
+        GLfloat b[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, r);
+        GlutDraw::drawParallelepiped(glm::vec3(scale, 0, 0), glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0));
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, g);
+        GlutDraw::drawParallelepiped(glm::vec3(0, scale, 0), glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0));
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, b);
+        GlutDraw::drawParallelepiped(glm::vec3(0, 0, scale), glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale));
+
+
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
         GlutDraw::drawSphere(glm::vec3(0, 0, 0), scale);
     }
 
@@ -73,12 +86,11 @@ public:
     virtual void doDraw(const float&) const {}
     
     void draw(const float& scale) const {
-        GlutDraw::drawCylinder(-_translationToTargetBone / 2.0f, -_translationToTargetBone / 2.0f, 0.02);
-        glPushMatrix();
-        pushTranslation(-_translationToTargetBone);
-        pushRotation(-_rotationToTargetBone);
+
+        GlutDraw::drawCylinder(_translationToTargetBone / 2.0f, _translationToTargetBone / 2.0f, 0.02);
+
         doDraw(scale);
-        glPopMatrix();
+
     }
     void setConstraint(const int& key, const float& value) { _constraints[key] = value; }
     void perturb() { perturbFreely(); constrain(); }
@@ -150,8 +162,8 @@ public:
 
         glm::mat3 AnchorToTarget = Math::composeLocalTransforms(AnchorToJoint, JointToTarget);
 
-        glm::vec3 t = -_opposingHalfJoint->translationToTargetBone();
-        t += JointToTarget*translationToTargetBone();
+        glm::vec3 t = R0*(-_opposingHalfJoint->translationToTargetBone());
+        t += Math::composeLocalTransforms(AnchorToJoint, R2)*translationToTargetBone();
         // Express the "translation from this halfjoint to its target" from the target-coordinates (default)...
         // ... to the joint-coordinates.
         // NOTE that this changing coordinates is inverse(targetAxes-->jointAxes), hence "jointToTarget"
@@ -159,10 +171,7 @@ public:
         return std::pair<glm::vec3, AxisAngleRotation2>(t, AxisAngleRotation2(AnchorToTarget));
     }
     std::pair<glm::vec3, AxisAngleRotation2> alignTargetToAnchor() const {
-        glm::vec3 t;
-        AxisAngleRotation2 aa;
-        std::tie(t, aa) = alignAnchorToTarget();
-        return std::pair<glm::vec3, AxisAngleRotation2>(-t, -aa);
+        return _opposingHalfJoint->alignAnchorToTarget();
     }
 
 
@@ -181,8 +190,8 @@ protected:
     // To get the Body that is "hinged" to this HalfJoint ...
     // ... access _opposingHalfJoint's _anchor
 
-    glm::vec3 _translationToTargetBone;         // These are the translation and orientation relative to the _anchor ...
-    AxisAngleRotation2 _rotationToTargetBone;   // ... as expressed in the local coordinate system of the _anchor
+    glm::vec3 _translationToTargetBone;         // These are the translation and orientation of the targetBone ...
+    AxisAngleRotation2 _rotationToTargetBone;   // ... as expressed in the local coordinate system of this halfJoint
 
     std::map<int, float> _constraints;  // Constraints are keyed on indices of our choosing
 

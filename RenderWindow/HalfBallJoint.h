@@ -51,7 +51,22 @@ public:
     void constrain();
     void setParamsFreely(std::map<int, float>);
     std::map<int, float> getParams();
-    void doDraw(const float& radius) const { GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius); }
+
+    void doDraw(const float& radius) const {
+        GLfloat r[] = { 1.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat g[] = { 0.0f, 1.0f, 0.0f, 1.0f };
+        GLfloat b[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+        GLfloat white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, r);
+        GlutDraw::drawParallelepiped(glm::vec3(radius, 0, 0), glm::vec3(0, radius, 0) / 8.0f, glm::vec3(0, 0, radius) / 8.0f, glm::vec3(radius, 0, 0));
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, g);
+        GlutDraw::drawParallelepiped(glm::vec3(0, radius, 0), glm::vec3(0, 0, radius) / 8.0f, glm::vec3(radius, 0, 0) / 8.0f, glm::vec3(0, radius, 0));
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, b);
+        GlutDraw::drawParallelepiped(glm::vec3(0, 0, radius), glm::vec3(radius, 0, 0) / 8.0f, glm::vec3(0, radius, 0) / 8.0f, glm::vec3(0, 0, radius));
+
+        glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+        GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius);
+    }
 
     void backup() { _mainAxis_stash = _mainAxis; _spin_stash = _spin; }
     void restore() { _mainAxis = _mainAxis_stash; _spin = _spin_stash; }

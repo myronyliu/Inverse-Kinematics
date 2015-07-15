@@ -28,8 +28,16 @@ void HalfJoint::attach(Bone* targetBone) {
 void Bone::draw(const float& scale) const {
     
     doDraw();
+
     for (auto halfJoint : _halfJoints) {
+
+        glPushMatrix();
+        pushRotation(-halfJoint->rotationToTargetBone());
+        pushTranslation(-halfJoint->translationToTargetBone());
+
         halfJoint->draw(0.1);
+
+        glPopMatrix();
     }
 }
 
