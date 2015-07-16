@@ -40,10 +40,14 @@ std::pair<std::vector<Bone*>, std::vector<Joint*>> Skeleton::bonesAndJoints() co
 void Skeleton::doDraw() {
     if (_root == NULL) return;
 
-    _root->draw(0.2);
+    int nPush = 0;
+    int nPop = 0;
+
+    //_root->draw(0.2);
 
     vector<tuple<Bone*, Joint*, int>> stack;
-    set<Bone*> drawn({ _root });
+    stack.push_back(tuple<Bone*, Joint*, int>(_root, NULL, 0));
+    set<Bone*> drawn;
 
     for (auto target : _root->jointTargets()) {
         if (target.second != NULL) {
@@ -57,7 +61,7 @@ void Skeleton::doDraw() {
     Bone* bone;
     Joint* joint; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
     int depth;
-    int previousDepth = 0; // the depth of the root, which has already been drawn
+    int previousDepth = 0; // the depth of the root, which is the starting point
     while (stack.size() > 0) {
 
         tie(bone, joint, depth) = stack.back();
@@ -72,21 +76,29 @@ void Skeleton::doDraw() {
         }
 
         if (depth < previousDepth) {
-            glPopMatrix();
+            for (int i = 0; i < previousDepth - depth; i++) {
+                glPopMatrix();
+                nPop++;
+            }
             bone->draw(0.2);
         }
-        else if (depth == previousDepth)
-            bone->draw(0.2);
         else {
+            if (depth == previousDepth) {
+                glPopMatrix();
+                nPop++;
+            }
             tie(translation, rotation) = joint->alignAnchorToTarget();
             glPushMatrix();
             pushTranslation(translation);
             pushRotation(rotation);
             bone->draw(0.2);
+            nPush++;
         }
         drawn.insert(bone);
         previousDepth = depth;
 
     }
-    glPopMatrix();
+    if (nPush != nPop) {
+        int j = 0;
+    }
 }

@@ -19,7 +19,7 @@ namespace GlutDraw
 
     void drawDomeShell(glm::vec3 center, glm::vec3 axis, float thetaMax = M_PI / 2, float thicknessRatio = 1.1f, int m = 16, int n = 16);
 
-    void drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n = 32);
+    void drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n = 16);
 
     void drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis, glm::vec3 zAxis);
 

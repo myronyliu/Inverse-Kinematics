@@ -17,32 +17,42 @@ void GlutDraw::drawCone(glm::vec3 base, float r, glm::vec3 axis, int n) {
     float h = glm::length(axis);
     glm::vec3 baseNormal = -axis / h;
     glm::vec3 w = axisAngleAlignZtoVEC3(-baseNormal);
+    float angle = glm::length(w);
+    glm::vec3 wHat = glm::vec3(0, 0, 1);
+    if (angle > 0) wHat = w / angle;
 
+    glm::vec3 tip = base + axis;
     float dTheta = 2 * M_PI / n;
 
-    glPushMatrix();
-    pushRotation(base);
-    pushRotation(w);
+    auto normal = [&](const float& theta) {
+        glm::vec3 n(cos(theta), sin(theta), r / h);
+        n = glm::normalize(glm::rotate(n, angle, wHat));
+        glNormal3f(n[0], n[1], n[2]);
+    };
+    auto vertex = [&](const float& theta) {
+        glm::vec3 v = glm::vec3(r*cos(theta), r*sin(theta), 0);
+        glVertex3f(base[0] + v[0], base[1] + v[1], base[2] + v[2]);
+    };
 
-    glBegin(GL_TRIANGLE_FAN);
-    glNormal3f(-baseNormal[0], -baseNormal[1], -baseNormal[2]);
-    glVertex3f(0, 0, h);
+    glBegin(GL_TRIANGLES);
     for (int i = 0; i <= n; i++) {
-        glm::vec3 normal = glm::normalize(glm::vec3(cos(i*dTheta), sin(i*dTheta), h));
-        glNormal3f(normal[0], normal[1], normal[2]);
-        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), 0);
+        float theta = i*dTheta;
+        normal(theta + dTheta/2);
+        glVertex3f(tip[0], tip[1], tip[2]);
+        normal(theta);
+        vertex(theta);
+        normal(theta + dTheta);
+        vertex(theta + dTheta);
     }
     glEnd();
 
     glBegin(GL_TRIANGLE_FAN);
     glNormal3f(baseNormal[0], baseNormal[1], baseNormal[2]);
-    glVertex3f(0, 0, 0);
+    glVertex3f(base[0], base[1], base[2]);
     for (int i = 0; i <= n; i++) {
-        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), 0);
+        vertex(i*dTheta);
     }
     glEnd();
-
-    glPopMatrix();
 }
 
 void GlutDraw::drawParallelogram(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis)
@@ -69,7 +79,13 @@ void GlutDraw::drawRectangle(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxisD
 }
 
 void GlutDraw::drawSphere(glm::vec3 center, glm::vec3 axis, int m, int n) {
-    GlutDraw::drawDome(center, axis, M_PI, false, true, m, n);
+    //GlutDraw::drawDome(center, axis, M_PI, false, true, m, n);
+
+    glPushMatrix();
+    pushTranslation(center);
+    pushRotation(axisAngleAlignZtoVEC3(axis));
+    glutSolidSphere(glm::length(axis), m, n);
+    glPopMatrix();
 }
 
 void GlutDraw::drawDome (

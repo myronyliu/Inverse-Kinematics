@@ -91,19 +91,19 @@ std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {
 void Joint::draw(const float& scale) const {
     GlutDraw::drawCylinder(_translationFromAnchor / 2.0f, _translationFromAnchor / 2.0f, 0.02);
 
-    /*glPushMatrix();
+    glPushMatrix();
     pushTranslation(_translationFromAnchor);
-    pushRotation(_rotationFromAnchor);*/
+    pushRotation(_rotationFromAnchor);
 
-    drawPivot(scale);
+    //drawPivot(scale);
 
-    /*glPushMatrix();
+    glPushMatrix();
     pushTranslation(_jointTranslation);
-    pushRotation(_jointRotation);*/
+    pushRotation(_jointRotation);
 
     drawJoint(scale);
     GlutDraw::drawCylinder(_translationToTarget / 2.0f, _translationToTarget / 2.0f, 0.02);
 
-    /*glPopMatrix();
-    glPopMatrix();*/
+    glPopMatrix();
+    glPopMatrix();
 }
