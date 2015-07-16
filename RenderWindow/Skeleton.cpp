@@ -19,7 +19,7 @@ std::pair<std::vector<Bone*>, std::vector<Joint*>> Skeleton::bonesAndJoints() co
         Bone* bone = boneStack.back();
         boneStack.pop_back();
 
-        for (auto joint : bone->joints()) {
+        for (auto joint : bone->anchoredJoints()) {
             if (visitedJoints.find(joint) == visitedJoints.end()) {
                 visitedJoints.insert(joint);
             }
@@ -43,13 +43,12 @@ void Skeleton::doDraw() {
     int nPush = 0;
     int nPop = 0;
 
-    //_root->draw(0.2);
-
     vector<tuple<Bone*, Joint*, int>> stack;
     stack.push_back(tuple<Bone*, Joint*, int>(_root, NULL, 0));
     set<Bone*> drawn;
+    vector<bool> depthVisited;
 
-    for (auto target : _root->jointTargets()) {
+    for (auto target : _root->coupledBones()) {
         if (target.second != NULL) {
             stack.push_back(tuple<Bone*, Joint*, int>(target.second, target.first, 1));
         }
@@ -65,10 +64,14 @@ void Skeleton::doDraw() {
     while (stack.size() > 0) {
 
         tie(bone, joint, depth) = stack.back();
+        if (depthVisited.size() < depth + 1) {
+            depthVisited.resize(depth + 1, false);
+        }
+        depthVisited[depth] = true;
         stack.pop_back();
         
         
-        for (auto target : bone->jointTargets()) {
+        for (auto target : bone->coupledBones()) {
             // the Bone from which "target" descended in the tree is just the variable "Bone* bone"
             if (target.second != NULL && drawn.find(target.second) == drawn.end()) {
                 stack.push_back(tuple<Bone*, Joint*, int>(target.second, target.first, depth + 1));
@@ -79,6 +82,14 @@ void Skeleton::doDraw() {
             for (int i = 0; i < previousDepth - depth; i++) {
                 glPopMatrix();
                 nPop++;
+            }
+            if (depthVisited[depth] && bone != _root) {
+                tie(translation, rotation) = joint->alignAnchorToTarget();
+
+                glPopMatrix();
+                glPushMatrix();
+                pushTranslation(translation);
+                pushRotation(rotation);
             }
             bone->draw(0.2);
         }
@@ -97,6 +108,9 @@ void Skeleton::doDraw() {
         drawn.insert(bone);
         previousDepth = depth;
 
+    }
+    if (glGetError() != GL_NO_ERROR) {
+        std::cout << gluErrorString(glGetError()) << std::endl;
     }
     if (nPush != nPop) {
         int j = 0;

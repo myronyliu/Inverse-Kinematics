@@ -106,14 +106,14 @@ glm::vec3 Math::axisAngleRotation3(const glm::mat3& R) {
     }
 }
 AxisAngleRotation2 Math::axisAngleRotation2(const glm::mat3& R) {
-    return axisAngleRotation2(axisAngleRotation3(R));
+    return AxisAngleRotation2(axisAngleRotation3(R));
 }
 
 AxisAngleRotation2 Math::axisAngleRotation2(const glm::vec3& w) {
     float angle = glm::length(w);
     if (angle == 0) return AxisAngleRotation2(glm::vec2(0, 0), 0);
     glm::vec2 axis(acos(w[2] / angle), atan2(w[1], w[0]));
-    angle -= (2 * M_PI)*floor(angle / (2 * M_PI));
+    angle = mod(angle, 2 * M_PI);
     return AxisAngleRotation2(axis, angle);
 }
 

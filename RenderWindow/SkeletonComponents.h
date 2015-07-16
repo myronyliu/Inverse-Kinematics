@@ -18,21 +18,34 @@ class Bone
 {
     friend class Joint;
 public:
-    Bone(): _joints(std::set<Joint*>()) {}
+    Bone(): _anchoredJoints(std::set<Joint*>()) {}
     Bone(std::vector<Joint*> joints) { for (auto joint : joints) attach(joint); }
     void draw(const float& scale = 1) const;
     virtual void doDraw(const float& scale = 0.2) const;
 
-    Joint* attach(Joint* halfJoint);
-    void dettach(Joint* halfJoint);
-    std::set<Joint*> joints() const {
-        return _joints;
-    }
-    std::map<Joint*, Bone*> jointTargets() const;
+    Joint* attach(Joint*);
+    void unattach(Joint*);
+
+    Joint* couple(Joint*);
+    void uncouple(Joint*);
+
+    std::set<Joint*> anchoredJoints() const { return _anchoredJoints; }
+    std::set<Joint*> targetingJoints() const { return _targetingJoints; }
+
+    // The terminology is as follows:
+    // ... The shoulder bone COUPLES to the arm bone
+    // ... The arm bone is ATTACHING to the shoulder bone
+    // Therefore,   calling ShoulderBone.coupledBones() will return { shoulder->arm joint : arm      bone }
+    // In contrast, calling    ArmBone.attachingBones() will return { shoulder->arm joint : shoulder bone }
+
+    std::map<Joint*, Bone*> coupledBones() const;
+    std::map<Joint*, Bone*> attachingBones() const;
+
     Joint* getLink(Bone* neighbor) const;
 
 protected:
-    std::set<Joint*> _joints; // these are the joints that are ANCHORED to this body
+    std::set<Joint*> _anchoredJoints; // these are the joints that are ANCHORED to this body
+    std::set<Joint*> _targetingJoints;
 private:
 };
 
@@ -45,6 +58,7 @@ class Joint
     friend class Bone;
 public:
     Joint();
+    Joint(const int&, const float& = 1);
     Joint(const glm::vec3&, const glm::vec3&, const glm::vec3&, const glm::vec3&);
 
     /////////////////
@@ -87,7 +101,7 @@ public:
     void setRotationToTarget(const glm::vec3& w) { _rotationFromAnchor = AxisAngleRotation2(w); _rotationFromAnchor.clamp(); }
     void setRotationToTarget(const glm::mat3& R) { _rotationFromAnchor = AxisAngleRotation2(R); _rotationFromAnchor.clamp(); }
     void attach(Bone* target);
-    void detach();
+    void unattach();
 
     void setJointTranslation(const glm::vec3& translation);
     void setJointRotation(const AxisAngleRotation2& rotation);

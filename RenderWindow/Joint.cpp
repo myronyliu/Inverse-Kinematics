@@ -28,6 +28,57 @@ _translationToTarget(translationToTarget),
 _rotationToTarget(AxisAngleRotation2(wToTarget))
 {}
 
+Joint::Joint(const int& i, const float& scale) {
+    if (i == 0) {
+        _translationFromAnchor = scale*glm::vec3(1, 0, 0);
+        _rotationFromAnchor = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), M_PI / 2);
+        _jointTranslation = glm::vec3(0, 0, 0);
+        _jointRotation = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _translationToTarget = scale*glm::vec3(0, 0, 1);
+        _rotationToTarget = AxisAngleRotation2(glm::vec2(0, 0), 0);
+    }
+    else if (i == 1) {
+        _translationFromAnchor = scale*glm::vec3(-1, 0, 0);
+        _rotationFromAnchor = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), -M_PI / 2);
+        _jointTranslation = glm::vec3(0, 0, 0);
+        _jointRotation = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _translationToTarget = scale*glm::vec3(0, 0, 1);
+        _rotationToTarget = AxisAngleRotation2(glm::vec2(0, 0), 0);
+    }
+    else if (i == 2) {
+        _translationFromAnchor = scale*glm::vec3(0, 1, 0);
+        _rotationFromAnchor = AxisAngleRotation2(glm::vec2(M_PI / 2, 0), -M_PI / 2);
+        _jointTranslation = glm::vec3(0, 0, 0);
+        _jointRotation = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _translationToTarget = scale*glm::vec3(0, 0, 1);
+        _rotationToTarget = AxisAngleRotation2(glm::vec2(0, 0), 0);
+    }
+    else if (i == 3) {
+        _translationFromAnchor = scale*glm::vec3(0, -1, 0);
+        _rotationFromAnchor = AxisAngleRotation2(glm::vec2(M_PI / 2, 0), M_PI / 2);
+        _jointTranslation = glm::vec3(0, 0, 0);
+        _jointRotation = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _translationToTarget = scale*glm::vec3(0, 0, 1);
+        _rotationToTarget = AxisAngleRotation2(glm::vec2(0, 0), 0);
+    }
+    else if (i == 4) {
+        _translationFromAnchor = scale*glm::vec3(0, 0, 1);
+        _rotationFromAnchor = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _jointTranslation = glm::vec3(0, 0, 0);
+        _jointRotation = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _translationToTarget = scale*glm::vec3(0, 0, 1);
+        _rotationToTarget = AxisAngleRotation2(glm::vec2(0, 0), 0);
+    }
+    else if (i == 5) {
+        _translationFromAnchor = scale*glm::vec3(0, 0, -1);
+        _rotationFromAnchor = AxisAngleRotation2(glm::vec2(M_PI / 2, 0), M_PI);
+        _jointTranslation = glm::vec3(0, 0, 0);
+        _jointRotation = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _translationToTarget = scale*glm::vec3(0, 0, 1);
+        _rotationToTarget = AxisAngleRotation2(glm::vec2(0, 0), 0);
+    }
+}
+
 /////////////////
 //// SETTERS ////
 /////////////////
@@ -95,7 +146,7 @@ void Joint::draw(const float& scale) const {
     pushTranslation(_translationFromAnchor);
     pushRotation(_rotationFromAnchor);
 
-    //drawPivot(scale);
+    drawPivot(scale);
 
     glPushMatrix();
     pushTranslation(_jointTranslation);

@@ -117,8 +117,9 @@ void Grid::doDraw()
 
 
 void Arrow::doDraw() {
-    GlutDraw::drawLine(glm::vec3(0, 0, 0), glm::vec3(0, 0, _length));
     float alpha = 1.0f / 16;
+    //GlutDraw::drawLine(glm::vec3(0, 0, 0), glm::vec3(0, 0, _length));
+    GlutDraw::drawCylinder(glm::vec3(0, 0, -(alpha / 2)*_length), glm::vec3(0, 0, (1 - alpha / 2)*_length), _length / 256);
     GlutDraw::drawCone(glm::vec3(0, 0, (1 - alpha)*_length), _length*alpha / 2, glm::vec3(0, 0, alpha*_length));
 }
 

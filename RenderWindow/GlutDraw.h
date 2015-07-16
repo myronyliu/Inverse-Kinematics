@@ -26,6 +26,10 @@ namespace GlutDraw
     void drawPyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseToCorner, int nFaces = 4, bool mode = true);
 
     void drawDoublePyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseToCorner, int nFaces = 4, bool mode = true);
+    
+    void drawExhaustiveTriangles(const std::vector<glm::vec3>& vertices);
+
+    void drawTriangularPrism(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& axis);
 };
 
 #endif /* GLUTDRAW_H */

@@ -14,8 +14,8 @@
 class BallJoint : public Joint
 {
 public:
-    BallJoint() :
-        Joint() {}
+    BallJoint() : Joint() {}
+    BallJoint(const int& i, const float& scale = 1) : Joint(i, scale) {}
     BallJoint(const glm::vec3& translationFromAnchor, const glm::vec3& rotationFromAnchor, const glm::vec3& translationToTarget, const glm::vec3& rotationToTarget) :
         Joint(translationFromAnchor, rotationFromAnchor, translationToTarget, rotationToTarget) {}
 

@@ -18,9 +18,9 @@ namespace Scene {
 
         std::pair<std::vector<Bone*>, std::vector<Joint*>> bonesAndJoints() const;
         std::vector<Bone*> bones() const { return bonesAndJoints().first; }
-        std::vector<Joint*> joints() const { return bonesAndJoints().second; }
+        std::vector<Joint*> anchoredJoints() const { return bonesAndJoints().second; }
 
-        void jiggle(const float& amplitude = 1) { for (auto joint : joints()) joint->perturb(amplitude); }
+        void jiggle(const float& amplitude = 1) { for (auto joint : anchoredJoints()) joint->perturb(amplitude); }
 
         void doDraw();
     private:

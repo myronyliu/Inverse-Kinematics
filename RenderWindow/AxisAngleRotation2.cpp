@@ -56,7 +56,7 @@ AxisAngleRotation2::AxisAngleRotation2(const glm::vec3& w) {
     else {
         _axis[0] = acos(w[2] / angle);
         _axis[1] = atan2(w[1], w[0]);
-        _angle = angle - (2 * M_PI)*floor(angle / (2 * M_PI));
+        _angle = Math::mod(angle, 2 * M_PI);
     }
 }
 AxisAngleRotation2::AxisAngleRotation2(const AxisSpinRotation& axisSpin) {

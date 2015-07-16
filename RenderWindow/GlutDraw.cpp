@@ -15,13 +15,20 @@ void GlutDraw::drawLine(glm::vec3 tail, glm::vec3 head)
 void GlutDraw::drawCone(glm::vec3 base, float r, glm::vec3 axis, int n) {
 
     float h = glm::length(axis);
-    glm::vec3 baseNormal = -axis / h;
-    glm::vec3 w = axisAngleAlignZtoVEC3(-baseNormal);
-    float angle = glm::length(w);
+    glm::vec3 w = axisAngleAlignZtoVEC3(axis);
+
+    glPushMatrix();
+    pushTranslation(base);
+    pushRotation(w);
+    glutSolidCone(r, h, n, 1);
+    glPopMatrix();
+
+    /*float angle = glm::length(w);
     glm::vec3 wHat = glm::vec3(0, 0, 1);
     if (angle > 0) wHat = w / angle;
 
     glm::vec3 tip = base + axis;
+    glm::vec3 baseNormal = -axis / h;
     float dTheta = 2 * M_PI / n;
 
     auto normal = [&](const float& theta) {
@@ -52,7 +59,7 @@ void GlutDraw::drawCone(glm::vec3 base, float r, glm::vec3 axis, int n) {
     for (int i = 0; i <= n; i++) {
         vertex(i*dTheta);
     }
-    glEnd();
+    glEnd();*/
 }
 
 void GlutDraw::drawParallelogram(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis)
@@ -106,16 +113,21 @@ void GlutDraw::drawDome (
     if (angle > 0) wHat = w / angle;
     
     auto sphereNormal = [&](const float& theta, const float& phi) {
-        glm::vec3 dir(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
-        glm::vec3 n = glm::rotate(dir, angle, wHat);
+        glm::vec3 n(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        //glm::vec3 n = glm::rotate(n, angle, wHat);
         if (outwardNormals) glNormal3f(n[0], n[1], n[2]);
         else glNormal3f(-n[0], -n[1], -n[2]);
     };
     auto sphereVertex = [&](const float& theta, const float& phi) {
-        glm::vec3 dir(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
-        glm::vec3 n = glm::rotate(dir, angle, wHat);
-        glVertex3f(center[0] + r*n[0], center[1] + r*n[1], center[2] + r*n[2]);
+        glm::vec3 n(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        //glm::vec3 n = glm::rotate(n, angle, wHat);
+        //glVertex3f(center[0] + r*n[0], center[1] + r*n[1], center[2] + r*n[2]);
+        glVertex3f(r*n[0], r*n[1], r*n[2]);
     };
+
+    glPushMatrix();
+    pushTranslation(center);
+    pushRotation(w);
 
     glBegin(GL_TRIANGLE_FAN);
     sphereNormal(0,0);
@@ -157,14 +169,16 @@ void GlutDraw::drawDome (
     else if (solid) {
         glBegin(GL_TRIANGLE_FAN);
         sphereNormal(M_PI,0);
-        glm::vec3 baseCenter = center + axis*cos(thetaMax);
-        glVertex3f(baseCenter[0], baseCenter[1], baseCenter[2]);
+        //glm::vec3 baseCenter = center + axis*cos(thetaMax);
+        //glVertex3f(baseCenter[0], baseCenter[1], baseCenter[2]);
+        glVertex3f(0, 0, r*cos(thetaMax));
         for (int j = 0; j <= nPhiDivisions; j++) {
             float phi = j*dPhi;
             sphereVertex(thetaMax,phi);
         }
         glEnd();
     }
+    glPopMatrix();
 }
 
 void GlutDraw::drawDomeShell(
@@ -437,4 +451,81 @@ void GlutDraw::drawDoublePyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 
     glEnd();
 
     glPopMatrix();
+}
+
+void GlutDraw::drawExhaustiveTriangles(const std::vector<glm::vec3>& vertices) {
+    for (int i = 0; i < vertices.size(); i++) {
+        glm::vec3 vi = vertices[i];
+        for (int j = 0; j < i; j++) {
+            glm::vec3 vj = vertices[j];
+            if (vj == vi) continue;
+            for (int k = 0; k < j; k++) {
+                glm::vec3 vk = vertices[k];
+                if (vk == vj) continue;
+                glm::vec3 n = glm::cross(vi - vj, vj - vk);
+                if (n == glm::vec3(0, 0, 0)) continue;
+                n = glm::normalize(n);
+                float d = (glm::length(vi - vj) + glm::length(vj - vk) + glm::length(vk - vi));
+                glm::vec3 nudge = (d / 1204)*n;
+
+                drawTriangularPrism(vi, vj, vk, nudge);
+            }
+        }
+    }
+}
+
+
+void GlutDraw::drawTriangularPrism(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& axisIn) {
+    glm::vec3 axis;
+    float cardinality = glm::dot(glm::cross(b - a, c - a), axisIn);
+
+    if (cardinality == 0)
+        return;
+    else if (cardinality > 0)
+        axis = axisIn;
+    else
+        axis = -axisIn;
+
+    auto normal = [](const glm::vec3& n) {
+        glNormal3f(n[0], n[1], n[2]);
+    };
+    auto vertex = [](const glm::vec3& v) {
+        glVertex3f(v[0], v[1], v[2]);
+    };
+
+    glBegin(GL_QUADS);
+
+    normal(glm::normalize(glm::cross(b - a, axis)));
+    vertex(a - axis);
+    vertex(a + axis);
+    vertex(b + axis);
+    vertex(b - axis);
+    normal(glm::normalize(glm::cross(c - b, axis)));
+    vertex(b - axis);
+    vertex(b + axis);
+    vertex(c + axis);
+    vertex(c - axis);
+    normal(glm::normalize(glm::cross(a - c, axis)));
+    vertex(c - axis);
+    vertex(c + axis);
+    vertex(a + axis);
+    vertex(a - axis);
+
+    glEnd();
+
+    glm::vec3 topNormal = normalize(axis);
+
+    glBegin(GL_TRIANGLES);
+
+    normal(topNormal);
+    vertex(a + axis);
+    vertex(b + axis);
+    vertex(c + axis);
+
+    normal(-topNormal);
+    vertex(a - axis);
+    vertex(b - axis);
+    vertex(c - axis);
+
+    glEnd();
 }

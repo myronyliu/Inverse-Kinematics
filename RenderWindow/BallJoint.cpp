@@ -10,7 +10,7 @@ void BallJoint::perturbParams(const float& scale) {
 
     float dArc = scale*M_PI / 512;
     float randPhi = 2 * M_PI*rand() / RAND_MAX;
-    spin += scale*(rand() < RAND_MAX / 2) ? M_PI / 512 : -M_PI / 512;
+    spin += scale*((rand() < RAND_MAX / 2) ? M_PI : -M_PI) / 512;
 
     glm::vec3 dAxis = glm::vec3(sin(dArc)*cos(randPhi), sin(dArc)*cos(randPhi), cos(dArc));
 
@@ -132,8 +132,8 @@ void BallJoint::drawPivot(const float& radius) const {
     float thetaMin, thetaMax, phiMin, phiMax, spinMin, spinMax;
 
     if (getConstraint(0, thetaMin) && thetaMin > 0)
-        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1.05*radius), thetaMin, 1.25f);
+        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1.1*radius), thetaMin, 1.1f);
     if (getConstraint(1, thetaMax) && thetaMax < M_PI)
-        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.05*radius), M_PI - thetaMax, 1.25f);
+        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.1*radius), M_PI - thetaMax, 1.1f);
 
 }
