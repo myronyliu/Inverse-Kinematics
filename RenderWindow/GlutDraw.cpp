@@ -13,6 +13,7 @@ void GlutDraw::drawLine(glm::vec3 tail, glm::vec3 head)
 }
 
 void GlutDraw::drawCone(glm::vec3 base, float r, glm::vec3 axis, int n) {
+
     float h = glm::length(axis);
     glm::vec3 baseNormal = -axis / h;
     glm::vec3 w = axisAngleAlignZtoVEC3(-baseNormal);
@@ -67,82 +68,138 @@ void GlutDraw::drawRectangle(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxisD
     drawParallelogram(center, xAxis, yAxis);
 }
 
-void GlutDraw::drawSphere(glm::vec3 center, float r, int m, int n)
+void GlutDraw::drawSphere(glm::vec3 center, glm::vec3 axis, int m, int n) {
+    GlutDraw::drawDome(center, axis, M_PI, false, true, m, n);
+}
+
+void GlutDraw::drawDome (
+    glm::vec3 center, glm::vec3 axis, float thetaMaxIn, bool solid, bool outwardNormals, int nThetaDivisionsFull, int nPhiDivisions)
 {
-    //glPushMatrix();
-    //glTranslatef(center[0], center[1], center[2]);
-    //glutSolidSphere(r, m, n);
-    //glPopMatrix();
+    float r = glm::length(axis);
+    float thetaMax = Math::clamp(0.0f, thetaMaxIn, M_PI);
+    if (r == 0 || thetaMax == 0 || nPhiDivisions < 2 || nThetaDivisionsFull < 3) return;
 
-    if (r == 0 || m < 2 || n < 3) return;
+    int nThetaDivisions = ceil((thetaMax / M_PI)*nThetaDivisionsFull);
 
-    float dTheta = M_PI / m;
-    float dPhi = 2 * M_PI / n;
+    float dTheta = thetaMax / nThetaDivisions;
+    float dPhi = 2 * M_PI / nPhiDivisions;
+
+    glm::vec3 w = axisAngleAlignZtoVEC3(axis);
+    float angle = glm::length(w);
+    glm::vec3 wHat(0, 0, 1);
+    if (angle > 0) wHat = w / angle;
+    
+    auto sphereNormal = [&](const float& theta, const float& phi) {
+        glm::vec3 dir(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        glm::vec3 n = glm::rotate(dir, angle, wHat);
+        if (outwardNormals) glNormal3f(n[0], n[1], n[2]);
+        else glNormal3f(-n[0], -n[1], -n[2]);
+    };
+    auto sphereVertex = [&](const float& theta, const float& phi) {
+        glm::vec3 dir(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        glm::vec3 n = glm::rotate(dir, angle, wHat);
+        glVertex3f(center[0] + r*n[0], center[1] + r*n[1], center[2] + r*n[2]);
+    };
 
     glBegin(GL_TRIANGLE_FAN);
-    glNormal3f(0, 0, 1);
-    glVertex3f(center[0], center[1], center[2] + r);
-    for (int j = 0; j <= n; j++) {
+    sphereNormal(0,0);
+    sphereVertex(0,0);
+    for (int j = 0; j <= nPhiDivisions; j++) {
         float phi = j*dPhi;
-        float x = sin(dTheta)*cos(phi);
-        float y = sin(dTheta)*sin(phi);
-        float z = cos(dTheta);
-        glNormal3f(x, y, z);
-        glVertex3f(
-            center[0] + r*x,
-            center[1] + r*y,
-            center[2] + r*z);
-        glVertex3f(
-            center[0] + r*x,
-            center[1] + r*y,
-            center[2] + r*z);
+        sphereNormal(dTheta,phi);
+        sphereVertex(dTheta,phi);
     }
     glEnd();
 
-    glBegin(GL_TRIANGLE_FAN);
-    glNormal3f(0, 0, -1);
-    glVertex3f(center[0], center[1], center[2] + -r);
-    for (int j = 0; j <= n; j++) {
-        float phi = j*dPhi;
-        float x = sin(M_PI-dTheta)*cos(phi);
-        float y = sin(M_PI-dTheta)*sin(phi);
-        float z = cos(M_PI-dTheta);
-        glNormal3f(x, y, z);
-        glVertex3f(
-            center[0] + r*x,
-            center[1] + r*y,
-            center[2] + r*z);
-        glVertex3f(
-            center[0] + r*x,
-            center[1] + r*y,
-            center[2] + r*z);
-    }
-    glEnd();
+    int iLimit = nThetaDivisions;
+    if (thetaMax == M_PI) iLimit--;
 
-    for (int i = 1; i < m-1; i++) {
+    for (int i = 1; i < iLimit; i++) {
 
         glBegin(GL_QUAD_STRIP);
         float theta = i*dTheta;
-        for (int j = 0; j <= n; j++) {
+        for (int j = 0; j <= nPhiDivisions; j++) {
             float phi = j*dPhi;
-            float x = sin(theta)*cos(phi);
-            float y = sin(theta)*sin(phi);
-            float z = cos(theta);
-            glNormal3f(x, y, z);
-            glVertex3f(
-                center[0] + r*x,
-                center[1] + r*y,
-                center[2] + r*z);
-            x = sin(theta+dTheta)*cos(phi);
-            y = sin(theta+dTheta)*sin(phi);
-            z = cos(theta+dTheta);
-            glVertex3f(
-                center[0] + r*x,
-                center[1] + r*y,
-                center[2] + r*z);
+            sphereNormal(theta,phi);
+            sphereVertex(theta,phi);
+            sphereNormal(theta+dTheta,phi);
+            sphereVertex(theta+dTheta,phi);
         }
         glEnd();
     }
+
+    if (thetaMax == M_PI) {
+        glBegin(GL_TRIANGLE_FAN);
+        sphereNormal(M_PI,0);
+        sphereVertex(M_PI,0);
+        for (int j = 0; j <= nPhiDivisions; j++) {
+            float phi = j*dPhi;
+            sphereNormal(M_PI - dTheta, phi);
+            sphereVertex(M_PI - dTheta, phi);
+        }
+        glEnd();
+    }
+    else if (solid) {
+        glBegin(GL_TRIANGLE_FAN);
+        sphereNormal(M_PI,0);
+        glm::vec3 baseCenter = center + axis*cos(thetaMax);
+        glVertex3f(baseCenter[0], baseCenter[1], baseCenter[2]);
+        for (int j = 0; j <= nPhiDivisions; j++) {
+            float phi = j*dPhi;
+            sphereVertex(thetaMax,phi);
+        }
+        glEnd();
+    }
+}
+
+void GlutDraw::drawDomeShell(
+    glm::vec3 center, glm::vec3 axis,
+    float thetaMax, float radiusRatio,
+    int nThetaDivisionsFull, int nPhiDivisions)
+{
+    float r0 = glm::length(axis);
+    if (r0 == 0) return;
+    float r1 = radiusRatio*r0;
+
+    float rInner = fmin(r0, r1);
+    float rOuter = fmax(r0, r1);
+
+    drawDome(glm::vec3(0, 0, 0), rOuter*glm::normalize(axis), thetaMax, false, true, nThetaDivisionsFull, nPhiDivisions);
+    drawDome(glm::vec3(0, 0, 0), rInner*glm::normalize(axis), thetaMax, false, false, nThetaDivisionsFull, nPhiDivisions);
+
+    if (radiusRatio == 1) return;
+
+    float thetaMaxClamped = Math::clamp(0.0f, thetaMax, M_PI);
+    if (thetaMaxClamped == 0 || thetaMaxClamped == M_PI) return;
+
+    float dPhi = 2 * M_PI / nPhiDivisions;
+    float zInner = rInner*cos(thetaMax);
+    float zOuter = rOuter*cos(thetaMax);
+
+    glm::vec3 w = axisAngleAlignZtoVEC3(axis);
+    float angle = glm::length(w);
+    glm::vec3 wHat(0, 0, 1);
+    if (angle > 0) wHat = w / angle;
+
+    float normalTheta = M_PI / 2 + thetaMax;
+    auto stripNormal = [&](const float& phi) {
+        glm::vec3 dir(sin(normalTheta)*cos(phi), sin(normalTheta)*sin(phi), cos(normalTheta));
+        glm::vec3 n = glm::rotate(dir, angle, wHat);
+    };
+    auto stripVertices = [&](const float& phi) {
+        glm::vec3 dir(sin(thetaMax)*cos(phi), sin(thetaMax)*sin(phi), cos(thetaMax));
+        glm::vec3 n = glm::rotate(dir, angle, wHat);
+        glVertex3f(center[0] + rInner*n[0], center[1] + rInner*n[1], center[2] + rInner*n[2]);
+        glVertex3f(center[0] + rOuter*n[0], center[1] + rOuter*n[1], center[2] + rOuter*n[2]);
+    };
+
+    glBegin(GL_QUAD_STRIP);
+    for (int i = 0; i <= nPhiDivisions; i++) {
+        float phi = i*dPhi;
+        stripNormal(phi);
+        stripVertices(phi);
+    }
+    glEnd();
 }
 
 void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n)
@@ -150,13 +207,18 @@ void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n
     float h = glm::length(halfAxis);
     if (h == 0) return;
     glm::vec3 topNormal = halfAxis / h;
-    glm::vec3 w = axisAngleAlignZtoVEC3(topNormal);
 
     float dTheta = 2 * M_PI / n;
 
-    glPushMatrix();
-    pushTranslation(center);
-    pushRotation(w);
+    glm::vec3 w = axisAngleAlignZtoVEC3(topNormal);
+    bool transformed = false;
+    if (center != glm::vec3(0, 0, 0) || w != glm::vec3(0, 0, 0)) transformed = true;
+
+    if (transformed) {
+        glPushMatrix();
+        pushTranslation(center);
+        pushRotation(w);
+    }
 
     glBegin(GL_QUAD_STRIP);
     for (int i = 0; i <= n; i++) {
@@ -182,7 +244,8 @@ void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n
     }
     glEnd();
 
-    glPopMatrix();
+    if (transformed)
+        glPopMatrix();
 }
 
 void GlutDraw::drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis, glm::vec3 zAxisIn) {

@@ -172,6 +172,7 @@ void Window::draw()
     glClearDepth(1.0f);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_NORMALIZE);
     glDisable(GL_COLOR_MATERIAL);
 
     for(std::vector<UIElement *>::const_iterator child = getChildren().begin() ;

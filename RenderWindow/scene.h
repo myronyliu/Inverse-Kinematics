@@ -6,7 +6,6 @@
 #include "utils.h"
 #include "Math.h"
 
-class HalfJoint;
 
 namespace Scene
 {
@@ -131,14 +130,15 @@ class Object
 {
 public:
 /* Constructors */
-    Object() :
-        _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+    Object(const bool& visible = true) :
+        _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(visible), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const glm::vec3& w) :
         _translation(translation), _rotation(Math::axisAngleRotation2(w)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const glm::vec2& axis, const float& angle) :
         _translation(translation), _rotation(AxisAngleRotation2(axis,angle)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const AxisAngleRotation2& axisAngle) :
         _translation(translation), _rotation(axisAngle), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+    
     void draw();
     void draw(Shader*);
     virtual void doDraw() = 0;
@@ -219,16 +219,6 @@ public:
 protected:
     glm::vec3 _dimensions;
 };
-class AnchoredBox : public Box {
-public:
-    AnchoredBox() : Box() {}
-    AnchoredBox(const glm::vec3& anchor, const glm::vec3& rotation, const glm::vec3& dimensions):
-        Box(anchor, rotation, dimensions) {}
-    AnchoredBox(const glm::vec3& anchor, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
-        Box(anchor, z, y, dimensions) {}
-    void doDraw();
-private:
-};
 
 class Cylinder : public Object {
 public:
@@ -248,7 +238,7 @@ public:
     Sphere() : Object(), _r(5) { }
     Sphere(const glm::vec3& translation, const float& radius) : Object(translation,glm::vec3(0,0,0)), _r(radius) { }
 
-    void doDraw() { GlutDraw::drawSphere(glm::vec3(0, 0, 0), _r); }
+    void doDraw() { GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, _r)); }
 
 protected:
     float _r;

@@ -28,10 +28,7 @@ glm::mat3 Math::basisChangeMatrix(const glm::mat3& oldBasis, const glm::mat3& ne
 }
 
 glm::mat3 Math::composeLocalTransforms(const glm::mat3& A, const glm::mat3& B) {
-    // A defines a basis, so to convert B's columns (currently in standard basis [xHat,yHat,zHat]) to A's basis
-    // we left multiply B by the "basis-change-matrix from standard to A" : A_inv
-    // The result is A_inv.B, which after multiplying by the previous transformation A, gives...
-    return (glm::inverse(A)*B)*A;
+    return (glm::inverse(A)*B*A)*A;
 }
 glm::vec3 Math::composeLocalRotations(const glm::vec3& w0, const glm::vec3& w1) {
     float angle0 = glm::length(w0);
@@ -115,14 +112,14 @@ AxisAngleRotation2 Math::axisAngleRotation2(const glm::vec3& w) {
 
 
 glm::vec3 Math::axisAngleRotation3(const glm::vec2& axis, const float& angle) {
-    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
+    return mod(angle, 2 * M_PI)*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
 glm::vec3 Math::axisAngleRotation3(const float& angle, const glm::vec2& axis) {
-    return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
+    return mod(angle, 2 * M_PI)*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
 glm::vec3 Math::axisAngleRotation3(const AxisAngleRotation2& axisAngle) {
     glm::vec2 axis = axisAngle._axis;
-    float angle = axisAngle._angle;
+    float angle = mod(axisAngle._angle, 2 * M_PI);
     return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
 

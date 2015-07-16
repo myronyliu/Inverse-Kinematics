@@ -122,13 +122,6 @@ void Arrow::doDraw() {
     GlutDraw::drawCone(glm::vec3(0, 0, (1 - alpha)*_length), _length*alpha / 2, glm::vec3(0, 0, alpha*_length));
 }
 
-void AnchoredBox::doDraw() {
-    glPushMatrix();
-    glTranslatef(0, 0, -_dimensions[2] / 2);
-    Box::doDraw();
-    glPopMatrix();
-}
-
 void Box::doDraw() {
     glm::vec3 half = _dimensions / 2.0f;
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, 0), glm::vec3(half[0], 0, 0), glm::vec3(0, half[1], 0), glm::vec3(0, 0, half[2]));

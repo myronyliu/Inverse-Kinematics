@@ -25,7 +25,8 @@ public:
     void constrainParams();
     void perturbParams();
 
-    void doDraw(const float& radius) const;
+    void drawJoint(const float& radius) const;
+    void drawPivot(const float& radius) const;
 private:
 };
 

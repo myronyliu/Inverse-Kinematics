@@ -51,7 +51,8 @@ public:
     /////////////////
 
     void draw(const float& scale) const;
-    virtual void doDraw(const float&) const {}
+    virtual void drawJoint(const float&) const {}
+    virtual void drawPivot(const float&) const {}
 
     //////////////////////////
     //// PARAMETERIZATION ////

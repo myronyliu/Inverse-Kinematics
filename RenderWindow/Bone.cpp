@@ -23,5 +23,5 @@ void Bone::doDraw(const float& scale) const {
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, scale), glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale));
 
     glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-    GlutDraw::drawSphere(glm::vec3(0, 0, 0), scale);
+    GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));
 }

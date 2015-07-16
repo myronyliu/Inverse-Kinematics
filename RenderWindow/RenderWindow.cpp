@@ -9,7 +9,7 @@ Scene::Path* tipPath;
 Scene::Path* anchorPath;
 
 void idle(void) {
-    glutPostRedisplay();
+    //glutPostRedisplay();
 }
 
 GlutUI::Manager MANAGER;
@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 
     Bone* root = new Bone();
     Bone* child = new Bone();
-    BallJoint* joint0 = new BallJoint(glm::vec3(0, 1, 1), glm::vec3(M_PI/4, 0, 0), glm::vec3(0, -1, 1), glm::vec3(M_PI/2, 0, 0));
+    BallJoint* joint0 = new BallJoint(glm::vec3(0, 1, 1), glm::vec3(M_PI / 4, 0, 0), glm::vec3(0, -1, 1), glm::vec3(0, M_PI / 4, 0));
 
     joint0->attach(root);
     joint0->couple(child);

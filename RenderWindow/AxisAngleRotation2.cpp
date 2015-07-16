@@ -84,7 +84,9 @@ AxisAngleRotation2::AxisAngleRotation2(const AxisSpinRotation& axisSpin) {
 
 
 
-
+glm::vec3 AxisAngleRotation2::axisAngleRotation3() const {
+    return Math::mod(_angle, 2 * M_PI)*glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));
+}
 
 glm::mat3 AxisAngleRotation2::rotationMatrix() const {
     glm::vec3 wHat = glm::vec3(sin(_axis[0])*cos(_axis[1]), sin(_axis[0])*sin(_axis[1]), cos(_axis[0]));

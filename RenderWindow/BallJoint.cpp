@@ -113,7 +113,7 @@ void BallJoint::buildParamsFromTransforms() {
     _params[2] = axisSpin._spin;
 }
 
-void BallJoint::doDraw(const float& radius) const {
+void BallJoint::drawJoint(const float& radius) const {
 
     glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
     GlutDraw::drawParallelepiped(glm::vec3(radius, 0, 0), glm::vec3(0, radius, 0) / 8.0f, glm::vec3(0, 0, radius) / 8.0f, glm::vec3(radius, 0, 0));
@@ -123,5 +123,9 @@ void BallJoint::doDraw(const float& radius) const {
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, radius), glm::vec3(radius, 0, 0) / 8.0f, glm::vec3(0, radius, 0) / 8.0f, glm::vec3(0, 0, radius));
 
     glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-    GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius);
+    GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, radius));
+}
+
+void BallJoint::drawPivot(const float& radius) const {
+    GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.1*radius), M_PI / 2, 1.25f);
 }

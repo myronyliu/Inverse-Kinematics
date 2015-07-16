@@ -170,14 +170,30 @@ void printVector(const std::vector<float>& v) {
 }
 
 void pushTranslation(const glm::vec3& t) {
-    glTranslatef(t[0], t[1], t[2]);
+    if (t == glm::vec3(0, 0, 0)) return;
+    else glTranslatef(t[0], t[1], t[2]);
 }
 void pushRotation(const glm::vec3& w) {
+    /*GLfloat M[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, M);
+    for (int i = 0; i < 4;i++) {
+        for (int j = 0; j < 4; j++) {
+            printf("%f ", M[i + 4 * j]);
+        }
+        printf("\n");
+    }*/
     float angle = glm::length(w);
     if (angle > 0) {
         glm::vec3 axis = w / angle;
         glRotatef((180.0f / M_PI)*angle, axis[0], axis[1], axis[2]);
     }
+    /*glGetFloatv(GL_MODELVIEW_MATRIX, M);
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 4; j++) {
+            printf("%f ", M[i + 4 * j]);
+        }
+        printf("\n");
+    }*/
 }
 void pushRotation(const AxisAngleRotation2& axisAngle) {
     float theta = axisAngle._axis[0];
