@@ -20,10 +20,10 @@ public:
         Joint(translationFromAnchor, rotationFromAnchor, translationToTarget, rotationToTarget) {}
 
     std::map<int, float> adjustableParams() const;
-    void buildTransformsFromParams() { _jointRotation = AxisSpinRotation(glm::vec2(_params[0], _params[1]), _params[2]); }
+    void buildTransformsFromParams() { _jointRotation = AxisAngleRotation2(AxisSpinRotation(glm::vec2(_params[0], _params[1]), _params[2])); }
     void buildParamsFromTransforms();
     void constrainParams();
-    void perturbParams();
+    void perturbParams(const float& scale);
 
     void drawJoint(const float& radius) const;
     void drawPivot(const float& radius) const;

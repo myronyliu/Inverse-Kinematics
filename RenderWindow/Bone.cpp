@@ -24,4 +24,16 @@ void Bone::doDraw(const float& scale) const {
 
     glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
     GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));
+
+    GLint depth;
+    glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &depth);
+    std::cout << depth << std::endl;
+
+    GLenum errorEnum = glGetError();
+    if (errorEnum != GL_NO_ERROR) {
+        //std::cout << gluErrorString(errorEnum) << std::endl;
+        GLint depth;
+        glGetIntegerv(GL_MODELVIEW_STACK_DEPTH, &depth);
+        int j = 0;
+    }
 }

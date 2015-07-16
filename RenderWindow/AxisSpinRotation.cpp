@@ -26,10 +26,12 @@ AxisSpinRotation::AxisSpinRotation(const glm::mat3& R) {
 
 AxisSpinRotation::AxisSpinRotation(const AxisAngleRotation2& axisAngle) {
     mat3 R = axisAngle.rotationMatrix();
-    vec3 z = R[3];
+    vec3 z = R[2];
     _axis[0] = acos(z[2]);
     _axis[1] = atan2(z[1], z[0]);
     vec3 wAlign = axisAngleAlignVECtoZ3(z);
-    vec3 y = rotate(R[2], length(wAlign), normalize(wAlign));
-    _spin = atan2(y[1], y[0]);
+    float alignAngle = length(wAlign);
+    glm::vec3 x = R[0];
+    if (alignAngle>0) x = rotate(R[0], alignAngle, wAlign/alignAngle);
+    _spin = atan2(x[1], x[0]);
 }

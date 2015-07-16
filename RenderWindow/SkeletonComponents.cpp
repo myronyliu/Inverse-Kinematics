@@ -4,13 +4,14 @@
 //// Functions for making/breaking connections between Bone and Joint ////
 //////////////////////////////////////////////////////////////////////////////
 
-void Bone::attach(Joint* joint) {
-    if (joint == NULL) return;
+Joint* Bone::attach(Joint* joint) {
+    if (joint == NULL) return NULL;
     _joints.insert(joint);
     joint->_anchor = this;
     if (joint->_target == this) {
         joint->_target = NULL;
     }
+    return joint;
 }
 void Bone::dettach(Joint* joint) {
     _joints.erase(joint);

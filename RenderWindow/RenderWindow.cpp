@@ -15,6 +15,10 @@ void idle(void) {
 GlutUI::Manager MANAGER;
 int main(int argc, char* argv[])
 {
+    auto randRotation = []() {
+        return 2 * M_PI*glm::vec3(rand(), rand(), rand()) / (float)RAND_MAX;
+    };
+
     MANAGER.init(argc, argv);
     int windowWidth = 700;
     int windowHeight = 700;
@@ -43,27 +47,44 @@ int main(int argc, char* argv[])
     world.addObject(yAxis);
     world.addObject(zAxis);
 
-    tipPath = new Scene::Path(1.5);
+    /*tipPath = new Scene::Path(1.5);
     anchorPath = new Scene::Path(1);
     tipPath->setParameterization(PathParameterizations::circle);
     anchorPath->setParameterization(PathParameterizations::line);
     anchorPath->setTranslation(glm::vec3(0, 0, 0));
     world.addObject(tipPath);
-    world.addObject(anchorPath);
+    world.addObject(anchorPath);*/
 
-    Bone* root = new Bone();
-    Bone* child = new Bone();
-    BallJoint* joint0 = new BallJoint(glm::vec3(0, 1, 1), glm::vec3(M_PI / 4, 0, 0), glm::vec3(0, -1, 1), glm::vec3(0, M_PI / 4, 0));
+    /*std::vector<Joint*> childrenJoints(2);
+    childrenJoints[0] = new BallJoint(glm::vec3(-1, 0, 0), glm::vec3(0, -M_PI / 2, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    childrenJoints[1] = new BallJoint(glm::vec3(1, 0, 0), glm::vec3(0, M_PI / 2, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    childrenJoints[2] = new BallJoint(glm::vec3(0, -1, 0), glm::vec3(M_PI / 2, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    childrenJoints[3] = new BallJoint(glm::vec3(0, 1, 0), glm::vec3(-M_PI / 2, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    childrenJoints[4] = new BallJoint(glm::vec3(0, 0, -1), glm::vec3(M_PI, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    childrenJoints[5] = new BallJoint(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
 
-    joint0->attach(root);
-    joint0->couple(child);
-    
-    
-    Scene::Skeleton* skeleton = new Scene::Skeleton();
-    skeleton->setRoot(root);
-    //skeleton->setRotation(glm::vec3(M_PI / 4, 0, 0));
-    //skeleton->setTranslation(glm::vec3(0.1, 0.2, 0.3));
-    world.addObject(skeleton);
+    std::vector<Bone*> childrenBones(6);
+    for (int i = 0; i < 2; i++) {
+        childrenBones[i] = new Bone();
+        childrenJoints[i]->couple(childrenBones[i]);
+    }
+
+    Bone* root = new Bone(childrenJoints);*/
+
+    //Bone* bone0 = new Bone();
+    //Bone* bone1 = new Bone();
+    //Bone* bone2 = new Bone();
+
+    //Joint* joint01 = new BallJoint(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    //Joint* joint12 = new BallJoint(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), glm::vec3(0, 0, 0));
+    //
+    //bone0->attach(joint01)->couple(bone1)->attach(joint12)->couple(bone2);
+
+    //Scene::Skeleton* skeleton = new Scene::Skeleton();
+    //skeleton->setRoot(bone0);
+    ////skeleton->setRotation(glm::vec3(M_PI / 4, 0, 0));
+    ////skeleton->setTranslation(glm::vec3(0.1, 0.2, 0.3));
+    ////world.addObject(skeleton);
 
 
     Scene::Camera * cam = new Scene::Camera();
@@ -77,12 +98,10 @@ int main(int argc, char* argv[])
     ///////////////////////////////////////
     ///// Keyboard Hotkey Assignments /////
     ///////////////////////////////////////
-    auto ilambda = []() {
-        std::string bmpName = "out.bmp";
-        SaveAsBMP(bmpName.c_str());
+    auto ilambda = [&]() {
+        //skeleton->jiggle();
     };
     auto jlambda = [&]() {
-        joint0->perturb();
     };
     auto nlambda = [&]() {
         

@@ -13,11 +13,11 @@ namespace GlutDraw
 
     void drawRectangle(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis);
 
-    void drawSphere(glm::vec3 center, glm::vec3 axis, int n = 32, int m = 32);
+    void drawSphere(glm::vec3 center, glm::vec3 axis, int n = 16, int m = 16);
 
-    void drawDome(glm::vec3 center, glm::vec3 axis, float thetaMax = M_PI / 2, bool solid = true, bool outwardNormals = true, int m = 32, int n = 32);
+    void drawDome(glm::vec3 center, glm::vec3 axis, float thetaMax = M_PI / 2, bool solid = true, bool outwardNormals = true, int m = 16, int n = 16);
 
-    void drawDomeShell(glm::vec3 center, glm::vec3 axis, float thetaMax = M_PI / 2, float thicknessRatio = 1.1f, int m = 32, int n = 32);
+    void drawDomeShell(glm::vec3 center, glm::vec3 axis, float thetaMax = M_PI / 2, float thicknessRatio = 1.1f, int m = 16, int n = 16);
 
     void drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n = 32);
 

@@ -69,17 +69,21 @@ AxisAngleRotation2::AxisAngleRotation2(const AxisSpinRotation& axisSpin) {
     glm::vec3 y(-sin(spin), cos(spin), 0);
     glm::vec3 z(0, 0, 1);
 
-    glm::vec3 v(-sin(phi), cos(phi), 0);
+    glm::vec3 v(cos(M_PI / 2 + phi), sin(M_PI / 2 + phi), 0);
 
-    glm::rotate(x, theta, v);
-    glm::rotate(y, theta, v);
-    glm::rotate(z, theta, v);
+    x = glm::rotate(x, theta, v);
+    y = glm::rotate(y, theta, v);
+    z = glm::rotate(z, theta, v);
 
     glm::vec3 w = Math::axisAngleRotation3(glm::mat3(x, y, z));
 
     _angle = glm::length(w);
-    _axis[0] = acos(w[2] / _angle);
-    _axis[1] = atan2(w[1], w[0]);
+    if (_angle == 0)
+        _axis = glm::vec2(0, 0);
+    else {
+        _axis[0] = acos(w[2] / _angle);
+        _axis[1] = atan2(w[1], w[0]);
+    }
 }
 
 

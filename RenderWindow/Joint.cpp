@@ -60,18 +60,30 @@ void Joint::setJointRotation(const glm::mat3& R) {
     buildTransformsFromParams();
 }
 
+void Joint::setConstraint(const int& key, const float& value) {
+    _constraints[key] = value;
+    constrainParams();
+    buildTransformsFromParams();
+}
 
 
 
 std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {
 
-    glm::mat3 R = composeLocalTransforms(
-        _rotationFromAnchor.rotationMatrix(),
-        _jointRotation.rotationMatrix());
+    glm::mat3 JointFrameAxes_AnchorFrame = _rotationFromAnchor.rotationMatrix();
 
-    glm::vec3 t = _translationFromAnchor + R*(_jointTranslation+_translationToTarget);
+    // Express the joint rotation in the Anchor frame and use it to compute the total rotation from anchor to joint
+    glm::mat3 JointR_AnchorFrame = revertFromBasis(_jointRotation.rotationMatrix(), JointFrameAxes_AnchorFrame);
+    glm::mat3 AnchorToJointR_AnchorFrame = JointR_AnchorFrame*JointFrameAxes_AnchorFrame;
 
-    R = composeLocalTransforms(R, _rotationToTarget.rotationMatrix());
+    // Express the joint translation in the Anchor frame. Then sum it with the translation from the Anchor (which is already expressed in the Anchor frame)
+    glm::vec3 t = _translationFromAnchor + AnchorToJointR_AnchorFrame*(_jointTranslation+_translationToTarget);
+
+    // Express the rotation vector between the Target and the Joint in the frame of the Anchor
+    glm::vec3 TargetW_AnchorFrame = AnchorToJointR_AnchorFrame*_rotationToTarget.axisAngleRotation3();
+
+    // Compute the total rotation from the Anchor Frame to the Target frame
+    glm::mat3 R = rotationMatrix(TargetW_AnchorFrame)*AnchorToJointR_AnchorFrame;
 
     return std::pair<glm::vec3, AxisAngleRotation2>(t, AxisAngleRotation2(R));
 }
@@ -79,30 +91,19 @@ std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {
 void Joint::draw(const float& scale) const {
     GlutDraw::drawCylinder(_translationFromAnchor / 2.0f, _translationFromAnchor / 2.0f, 0.02);
 
-    bool transformed0 = false;
-    bool transformed1 = false;
-    if (_translationFromAnchor != glm::vec3(0, 0, 0) || _rotationFromAnchor.axisAngleRotation3() != glm::vec3(0, 0, 0)) transformed0 = true;
-    if (_jointTranslation != glm::vec3(0, 0, 0) || _jointRotation.axisAngleRotation3() != glm::vec3(0, 0, 0)) transformed1 = true;
-
-    if (transformed0) {
-        glPushMatrix();
-        pushTranslation(_translationFromAnchor);
-        pushRotation(_rotationFromAnchor);
-    }
+    /*glPushMatrix();
+    pushTranslation(_translationFromAnchor);
+    pushRotation(_rotationFromAnchor);*/
 
     drawPivot(scale);
 
-    if (transformed1) {
-        glPushMatrix();
-        pushTranslation(_jointTranslation);
-        pushRotation(_jointRotation);
-    }
+    /*glPushMatrix();
+    pushTranslation(_jointTranslation);
+    pushRotation(_jointRotation);*/
 
     drawJoint(scale);
     GlutDraw::drawCylinder(_translationToTarget / 2.0f, _translationToTarget / 2.0f, 0.02);
 
-    if (transformed1)
-        glPopMatrix();
-    if (transformed0)
-        glPopMatrix();
+    /*glPopMatrix();
+    glPopMatrix();*/
 }

@@ -18,11 +18,12 @@ class Bone
 {
     friend class Joint;
 public:
-    Bone() {}
+    Bone(): _joints(std::set<Joint*>()) {}
+    Bone(std::vector<Joint*> joints) { for (auto joint : joints) attach(joint); }
     void draw(const float& scale = 1) const;
     virtual void doDraw(const float& scale = 0.2) const;
 
-    void attach(Joint* halfJoint);
+    Joint* attach(Joint* halfJoint);
     void dettach(Joint* halfJoint);
     std::set<Joint*> joints() const {
         return _joints;
@@ -62,12 +63,12 @@ public:
     virtual std::map<int, float> adjustableParams() const { return _params; }
     void setParams(const std::map<int, float>& params_unconstrained);
     void setParam(const int& key, const float& value);
-    void setConstraint(const int& key, const float& value) { _constraints[key] = value; }
+    void setConstraint(const int& key, const float& value);
 
     void restore() { _params = _stashedParams; }
     void backup() { _stashedParams = _params; }
 
-    void perturb() { perturbParams(); constrainParams(); buildTransformsFromParams(); }
+    void perturb(const float& scale = 1) { perturbParams(scale); constrainParams(); buildTransformsFromParams(); }
     virtual float reach() const { return 0; }
 
     /////////////////
@@ -78,7 +79,7 @@ public:
     void setRotationFromAnchor(const AxisAngleRotation2& rotation) { _rotationFromAnchor = rotation; _rotationFromAnchor.clamp(); }
     void setRotationFromAnchor(const glm::vec3& w) { _rotationFromAnchor = AxisAngleRotation2(w); _rotationFromAnchor.clamp(); }
     void setRotationFromAnchor(const glm::mat3& R) { _rotationFromAnchor = AxisAngleRotation2(R); _rotationFromAnchor.clamp(); }
-    void couple(Bone* target) { _target = target; }
+    Bone* couple(Bone* target) { _target = target; return target; }
     void decouple() { _target = NULL; }
 
     void setTranslationToTarget(const glm::vec3& translation) { _translationFromAnchor = translation; }
@@ -132,7 +133,7 @@ protected:
     //// DANGEROUS FUNCTIONS THAT SHOULD NOT BE ACCESSED PUBLICLY ////
     //////////////////////////////////////////////////////////////////
 
-    virtual void perturbParams() {}
+    virtual void perturbParams(const float& scale) {}
     virtual void buildTransformsFromParams() {}
     virtual void buildParamsFromTransforms() {}
 

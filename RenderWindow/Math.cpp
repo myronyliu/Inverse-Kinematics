@@ -27,8 +27,15 @@ glm::mat3 Math::basisChangeMatrix(const glm::mat3& oldBasis, const glm::mat3& ne
     return glm::inverse(newBasis)*oldBasis;
 }
 
+glm::mat3 Math::changeToBasis(const glm::mat3& transformation, const glm::mat3& basis) {
+    return glm::inverse(basis)*transformation*basis;
+}
+glm::mat3 Math::revertFromBasis(const glm::mat3& transformation, const glm::mat3& basis) {
+    return basis*transformation*glm::inverse(basis);
+}
+
 glm::mat3 Math::composeLocalTransforms(const glm::mat3& A, const glm::mat3& B) {
-    return (glm::inverse(A)*B*A)*A;
+    return revertFromBasis(B, A)*A;
 }
 glm::vec3 Math::composeLocalRotations(const glm::vec3& w0, const glm::vec3& w1) {
     float angle0 = glm::length(w0);

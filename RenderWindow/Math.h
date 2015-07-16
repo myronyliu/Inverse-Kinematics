@@ -20,6 +20,18 @@ namespace Math {
     // e.g. To reexpress v (currently expressed in the former basis) in the latter basis,
     // ...  use basisChangeMatrix(former basis, latter basis)*v
     glm::mat3 basisChangeMatrix(const glm::mat3&, const glm::mat3&);
+
+    // changeToBasis() expresses the former transformation (in standard basis) in terms of the latter basis
+    // revertFromBasis() expresses the former transformation (in latter basis) in terms of the standard basis
+    // i.e. if we have a two transformations R1 and R2 with R1 expressed in basis B1 and R2 expressed in basis R1*B1
+    // ... then to get R2 into the same frame as R1, we call revertFromBasis(R2,R1)
+    // On the other hand, if R2 is expressed in the same basis as R1 (call it B1) and we wish to make R2 a local transformation
+    // ... with respect to the basis R1*B1, call changeToBasis(R2,R1)
+    glm::mat3 changeToBasis(const glm::mat3&, const glm::mat3&);
+    glm::mat3 revertFromBasis(const glm::mat3&, const glm::mat3&);
+
+    // The following three express the former transformation in the basis defined by the latter ...
+    // ... and then returns the product
     glm::mat3 composeLocalTransforms(const glm::mat3&, const glm::mat3&);
     glm::vec3 composeLocalRotations(const glm::vec3&, const glm::vec3&);
     AxisAngleRotation2 composeLocalRotations(const AxisAngleRotation2&, const AxisAngleRotation2&);

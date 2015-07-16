@@ -1,7 +1,7 @@
 /** Display.cpp
- * 
- *
- * 
+*
+*
+*
 **/
 
 #include "GlutUI.h"
@@ -20,13 +20,13 @@ Controls::Keyboard * mainKeyboard;
 
 /** Manager Class **/
 /** Manages and exposes all the UI elements
- *
+*
 **/
 
 void Manager::init(int argc, char* argv[])
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode( GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH );
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH);
 }
 
 void Manager::drawElements()
@@ -124,17 +124,17 @@ Button & Manager::createButton(Panel & panel, int width, int height, int xpos, i
 
 /** UIElement Class **/
 /** Abstract class that defines the basic properties of an UI element
- *
+*
 **/
 
 void UIElement::init()
 {
-     _UIElemId = nextId();
+    _UIElemId = nextId();
 }
 
 /** Window Class **/
 /** Abstract class that defines the basic properties of an UI element
- *
+*
 **/
 
 void Window::init()
@@ -165,22 +165,21 @@ void Window::reshapeFuncWrapper(int w, int h)
 }
 
 void Window::draw()
-{    
+{
     //std::cout << "Creating Window: " << getWidth() << " by " << getHeight() << "." << std::endl;
 
     glClearColor(1.0f, 0.0f, 1.0f, 0.0f);
     glClearDepth(1.0f);
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glEnable(GL_DEPTH_TEST);
-    glEnable(GL_NORMALIZE);
     glDisable(GL_COLOR_MATERIAL);
 
-    for(std::vector<UIElement *>::const_iterator child = getChildren().begin() ;
-        child < getChildren().end() ; child++)
+    for (std::vector<UIElement *>::const_iterator child = getChildren().begin();
+        child < getChildren().end(); child++)
     {
         (*child)->draw();
     }
-    
+
     glutSwapBuffers();
 }
 
@@ -188,28 +187,28 @@ void Window::reshape(int w, int h)
 {
     //std::cout << "New size: " << w << " by " << h << std::endl;
     // prevent divide by 0 error when minimized
-    if(w==0) 
+    if (w == 0)
         h = 1;
 
     setWidth(w);
     setHeight(h);
-    glViewport(0,0,w,h);
+    glViewport(0, 0, w, h);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45,(float)w/h,0.1,100);
+    gluPerspective(45, (float)w / h, 0.1, 100);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
 
 
 /** Panel Class **/
-/** Panel class that defines a panel areas within the 
- *
+/** Panel class that defines a panel areas within the
+*
 **/
 
 void Panel::draw()
 {
-    if(_world != NULL)
+    if (_world != NULL)
     {
         glPushMatrix();
         glMatrixMode(GL_PROJECTION);
@@ -223,26 +222,26 @@ void Panel::draw()
 
         glPopMatrix();
     }
-    
+
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
     glLoadIdentity();
     glOrtho(0, getWidth(), getHeight(), 0, -1, 1);
     glMatrixMode(GL_MODELVIEW);
 
-    for(std::vector<UIElement *>::const_iterator child = getChildren().begin() ;
-        child < getChildren().end() ; child++)
+    for (std::vector<UIElement *>::const_iterator child = getChildren().begin();
+        child < getChildren().end(); child++)
     {
         (*child)->draw();
     }
     glMatrixMode(GL_PROJECTION);
     glPopMatrix();
-    glMatrixMode(GL_MODELVIEW); 
+    glMatrixMode(GL_MODELVIEW);
 }
 
 /** Button Class **/
 /** Abstract class that defines the basic properties of an UI element
- *
+*
 **/
 
 void Button::draw()
@@ -250,13 +249,13 @@ void Button::draw()
     /*glPushMatrix();
     glColor4d(1.0, 1.0, 1.0, 0.2);
     GlutDraw::drawRectangle(getXPos(), getYPos(), getWidth(), getHeight());
-    
+
     glColor4d(1.0, 1.0, 1.0, 0.2);
     glBegin(GL_QUADS);
-        glVertex2d(getXPos(), getYPos());
-        glVertex2d(getXPos() + getWidth(), getYPos());
-        glVertex2d(getXPos() + getWidth(), getYPos() + getHeight());
-        glVertex2d(getXPos(), getYPos() + getHeight());
+    glVertex2d(getXPos(), getYPos());
+    glVertex2d(getXPos() + getWidth(), getYPos());
+    glVertex2d(getXPos() + getWidth(), getYPos() + getHeight());
+    glVertex2d(getXPos(), getYPos() + getHeight());
     glEnd();*/
 }
 
@@ -272,22 +271,22 @@ void Controls::Mouse::_mouse(int button, int state, int x, int y)
 {
     _lastlastx = _lastx;
     _lastlasty = _lasty;
-    _lastx=x;
-    _lasty=y;
-    switch(button)
+    _lastx = x;
+    _lasty = y;
+    switch (button)
     {
     case GLUT_LEFT_BUTTON:
-        _buttons[0] = ((GLUT_DOWN==state)? true : false);
+        _buttons[0] = ((GLUT_DOWN == state) ? true : false);
         //std::cout << "Left button pressed." << x << ", " << y << std::endl;
         break;
 
     case GLUT_MIDDLE_BUTTON:
-        _buttons[1] = ((GLUT_DOWN==state)? true : false);
+        _buttons[1] = ((GLUT_DOWN == state) ? true : false);
         //std::cout << "Middle button pressed." << x << ", " << y << std::endl;
         break;
 
     case GLUT_RIGHT_BUTTON:
-        _buttons[2] = ((GLUT_DOWN==state)? true : false);
+        _buttons[2] = ((GLUT_DOWN == state) ? true : false);
         //std::cout << "Right button pressed." << x << ", " << y << std::endl;
         break;
 
@@ -302,22 +301,22 @@ void Controls::Mouse::_motion(int x, int y)
 {
     int diffxlast = _lastx - _lastlastx;
     int diffylast = _lasty - _lastlasty;
-    int diffx=x-_lastx;
-    int diffy=y-_lasty;
+    int diffx = x - _lastx;
+    int diffy = y - _lasty;
     _lastlastx = _lastx;
     _lastlasty = _lasty;
-    _lastx=x;
-    _lasty=y;
+    _lastx = x;
+    _lasty = y;
 
-    if(_buttons[0])
+    if (_buttons[0])
     {
         _camera->panDown(0.01f * diffy);
         _camera->panRight(0.01f * diffx);
     }
-    else if(_buttons[2])
+    else if (_buttons[2])
     {
     }
-    else if(_buttons[1])
+    else if (_buttons[1])
     {
     }
     glutPostRedisplay();
@@ -348,14 +347,14 @@ void Controls::Keyboard::init()
     auto camRight = [&]() {_camera->setPos(_camera->pos() + _camStep*_camera->right()); };
     auto camDown = [&]() {_camera->setPos(_camera->pos() - _camStep*_camera->up()); };
     auto camUp = [&]() {_camera->setPos(_camera->pos() + _camStep*_camera->up()); };
-    auto camRollLeft = [&]() {_camera->rollLeft(M_PI/16); };
-    auto camRollRight = [&]() {_camera->rollRight(M_PI/16); };
+    auto camRollLeft = [&]() {_camera->rollLeft(M_PI / 16); };
+    auto camRollRight = [&]() {_camera->rollRight(M_PI / 16); };
 
     hotkey_map['s'] = camBack;
     hotkey_map['w'] = camForward;
     hotkey_map['a'] = camLeft;
     hotkey_map['d'] = camRight;
-    hotkey_map['f'] = camDown;
+    hotkey_map['c'] = camDown;
     hotkey_map['r'] = camUp;
 
     hotkey_map['q'] = camRollLeft;
@@ -366,7 +365,7 @@ void Controls::Keyboard::register_hotkey(unsigned char key, std::function<void(v
 {
     hotkey_map[key] = func;
 }
-void Controls::Keyboard::register_specialkey(int key,  std::function<void (void)> func)
+void Controls::Keyboard::register_specialkey(int key, std::function<void(void)> func)
 {
     specialkey_map[key] = func;
 }

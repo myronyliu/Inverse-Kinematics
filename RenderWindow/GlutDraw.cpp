@@ -115,7 +115,6 @@ void GlutDraw::drawDome (
     if (thetaMax == M_PI) iLimit--;
 
     for (int i = 1; i < iLimit; i++) {
-
         glBegin(GL_QUAD_STRIP);
         float theta = i*dTheta;
         for (int j = 0; j <= nPhiDivisions; j++) {
@@ -185,6 +184,7 @@ void GlutDraw::drawDomeShell(
     auto stripNormal = [&](const float& phi) {
         glm::vec3 dir(sin(normalTheta)*cos(phi), sin(normalTheta)*sin(phi), cos(normalTheta));
         glm::vec3 n = glm::rotate(dir, angle, wHat);
+        glNormal3f(n[0], n[1], n[2]);
     };
     auto stripVertices = [&](const float& phi) {
         glm::vec3 dir(sin(thetaMax)*cos(phi), sin(thetaMax)*sin(phi), cos(thetaMax));
@@ -202,50 +202,59 @@ void GlutDraw::drawDomeShell(
     glEnd();
 }
 
-void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 halfAxis, float r, int n)
+void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 axis, float r, int n)
 {
-    float h = glm::length(halfAxis);
+    float h = glm::length(axis);
     if (h == 0) return;
-    glm::vec3 topNormal = halfAxis / h;
+    glm::vec3 topNormal = axis / h;
 
     float dTheta = 2 * M_PI / n;
 
-    glm::vec3 w = axisAngleAlignZtoVEC3(topNormal);
-    bool transformed = false;
-    if (center != glm::vec3(0, 0, 0) || w != glm::vec3(0, 0, 0)) transformed = true;
+    glm::vec3 w = axisAngleAlignZtoVEC3(axis);
+    float angle = glm::length(w);
+    glm::vec3 wHat(0, 0, 1);
+    if (angle > 0) wHat = w / angle;
 
-    if (transformed) {
-        glPushMatrix();
-        pushTranslation(center);
-        pushRotation(w);
-    }
+    auto normal = [&](const float& theta) {
+        glm::vec3 n(cos(theta), sin(theta), 0);
+        n = glm::rotate(n, angle, wHat);
+        glNormal3f(n[0], n[1], n[2]);
+    };
+    auto topVertex = [&](const float& theta) {
+        glm::vec3 v(r*cos(theta), r*sin(theta), h);
+        v = glm::rotate(v, angle, wHat);
+        glVertex3f(center[0] + v[0], center[1] + v[1], center[2] + v[2]);
+    };
+    auto bottomVertex = [&](const float& theta) {
+        glm::vec3 v(r*cos(theta), r*sin(theta), -h);
+        v = glm::rotate(v, angle, wHat);
+        glVertex3f(center[0] + v[0], center[1] + v[1], center[2] + v[2]);
+    };
 
     glBegin(GL_QUAD_STRIP);
     for (int i = 0; i <= n; i++) {
-        glNormal3f(cos(i*dTheta), sin(i*dTheta), 0);
-        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), -h);
-        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), h);
+        float theta = i*dTheta;
+        normal(theta);
+        topVertex(theta);
+        bottomVertex(theta);
     }
     glEnd();
 
     glBegin(GL_TRIANGLE_FAN);
     glNormal3f(-topNormal[0], -topNormal[1], -topNormal[2]);
-    glVertex3f(0, 0, -h);
+    glVertex3f(center[0] - axis[0], center[1] - axis[1], center[2] - axis[2]);
     for (int i = 0; i <= n; i++) {
-        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), -h);
+        bottomVertex(i*dTheta);
     }
     glEnd();
 
     glBegin(GL_TRIANGLE_FAN);
     glNormal3f(topNormal[0], topNormal[1], topNormal[2]);
-    glVertex3f(0, 0, h);
+    glVertex3f(center[0] + axis[0], center[1] + axis[1], center[2] + axis[2]);
     for (int i = 0; i <= n; i++) {
-        glVertex3f(r*cos(i*dTheta), r*sin(i*dTheta), h);
+        topVertex(i*dTheta);
     }
     glEnd();
-
-    if (transformed)
-        glPopMatrix();
 }
 
 void GlutDraw::drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 yAxis, glm::vec3 zAxisIn) {

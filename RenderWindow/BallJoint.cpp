@@ -3,20 +3,20 @@
 
 using namespace Math;
 
-void BallJoint::perturbParams() {
+void BallJoint::perturbParams(const float& scale) {
     float theta = _params[0];
     float phi = _params[1];
     float spin = _params[2];
 
-    float dArc = M_PI / 1024;
+    float dArc = scale*M_PI / 512;
     float randPhi = 2 * M_PI*rand() / RAND_MAX;
-    spin += (rand() < RAND_MAX / 2) ? M_PI / 1024 : -M_PI / 1024;
+    spin += scale*(rand() < RAND_MAX / 2) ? M_PI / 512 : -M_PI / 512;
 
     glm::vec3 dAxis = glm::vec3(sin(dArc)*cos(randPhi), sin(dArc)*cos(randPhi), cos(dArc));
 
     glm::mat3 R1 = matrixAlignZtoVEC(dAxis);
-    glm::mat3 R = composeLocalTransforms(_jointRotation.rotationMatrix(), R1);
-    glm::vec3 newAxis = glm::normalize(R[3]);
+    glm::mat3 R = revertFromBasis(R1, _jointRotation.rotationMatrix())*_jointRotation.rotationMatrix();
+    glm::vec3 newAxis = glm::normalize(R[2]);
 
     std::map<int, float> newParams;
     _params[0] = acos(newAxis[2]);                // axis_theta
@@ -127,5 +127,13 @@ void BallJoint::drawJoint(const float& radius) const {
 }
 
 void BallJoint::drawPivot(const float& radius) const {
-    GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.1*radius), M_PI / 2, 1.25f);
+    if (_constraints.size() == 0) return;
+
+    float thetaMin, thetaMax, phiMin, phiMax, spinMin, spinMax;
+
+    if (getConstraint(0, thetaMin) && thetaMin > 0)
+        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1.05*radius), thetaMin, 1.25f);
+    if (getConstraint(1, thetaMax) && thetaMax < M_PI)
+        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.05*radius), M_PI - thetaMax, 1.25f);
+
 }
