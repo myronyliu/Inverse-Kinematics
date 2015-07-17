@@ -27,32 +27,6 @@ Connection::Connection(const int& i, const float& scale, Bone* bone) : _bone(bon
     }
 }
 
-Bone* Connection::attach(Bone* bone) {
-    if (bone == _bone)
-        return bone;
-    if (bone != NULL) {
-        if (Socket* socket = dynamic_cast<Socket*>(this)) {
-            bone->_sockets.erase(socket);
-        }
-        else if (Joint* joint = dynamic_cast<Joint*>(this)) {
-            bone->_joints.erase(joint);
-        }
-    }
-    _bone = bone;
-    return bone;
-}
-void Connection::dettach() {
-    if (_bone == NULL) return;
-
-    if (Socket* socket = dynamic_cast<Socket*>(this)) {
-        _bone->_sockets.erase(socket);
-    }
-    else if (Joint* joint = dynamic_cast<Joint*>(this)) {
-        _bone->_joints.erase(joint);
-    }
-    _bone = NULL;
-}
-
 
 void Connection::draw(const float& scale) const {
     drawAnchor(scale);
@@ -63,6 +37,5 @@ void Connection::draw(const float& scale) const {
 
     drawPivot(scale);
 
-    glPopMatrix();
     glPopMatrix();
 }

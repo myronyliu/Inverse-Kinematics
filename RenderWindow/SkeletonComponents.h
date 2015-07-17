@@ -28,9 +28,11 @@ public:
     virtual void doDraw(const float& scale = 0.2) const;
 
     Joint* attach(Joint*);
+    std::vector<Joint*> attach(std::vector<Joint*> joints) { for (auto joint : joints) attach(joint); return joints; }
     void detach(Joint*);
 
     Socket* attach(Socket*);
+    std::vector<Socket*> attach(std::vector<Socket*> sockets) { for (auto socket : sockets) attach(socket); return sockets; }
     void detach(Socket*);
 
     std::set<Joint*> joints() const { return _joints; }
@@ -87,8 +89,8 @@ public:
     void setRotationFromBone(const glm::vec3& w) { _rotationFromBone = AxisAngleRotation2(w); _rotationFromBone.clamp(); }
     void setRotationFromBone(const glm::mat3& R) { _rotationFromBone = AxisAngleRotation2(R); _rotationFromBone.clamp(); }
 
-    Bone* attach(Bone* bone);
-    void dettach();
+    virtual Bone* attach(Bone* bone) { _bone = bone; return bone; }
+    virtual void dettach() { _bone = NULL; }
 
 protected:
     Bone* _bone;
@@ -105,6 +107,9 @@ public:
 
     Socket* couple(Socket* socket);
     void decouple();
+
+    Bone* attach(Bone* bone);
+    void dettach();
 
     Socket* socket() const { return _socket; }
     Bone* opposingBone() const;
@@ -130,6 +135,9 @@ public:
     Joint* couple(Joint*);
     void decouple();
 
+    Bone* attach(Bone* bone);
+    void dettach();
+
     //////////////////////////
     //// PARAMETERIZATION ////
     //////////////////////////
@@ -143,7 +151,7 @@ public:
     void restore() { _params = _stashedParams; }
     void backup() { _stashedParams = _params; }
 
-    void perturb(const float& scale = 1) { perturbParams(scale); constrainParams(); buildTransformsFromParams(); }
+    void perturbJoint(const float& scale = 1) { perturbParams(scale); constrainParams(); buildTransformsFromParams(); }
     virtual float reach() const { return 0; }
 
     /////////////////

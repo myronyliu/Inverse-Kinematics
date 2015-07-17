@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    skeleton = chain();
+    skeleton = axisTree();
     world.addObject(skeleton);
 
 

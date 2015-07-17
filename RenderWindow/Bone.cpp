@@ -14,6 +14,7 @@ Joint* Bone::attach(Joint* joint) {
     if (joint->bone() != NULL)
         joint->bone()->_joints.erase(joint);
     _joints.insert(joint);
+    joint->_bone = this;
     return joint;
 }
 void Bone::detach(Joint* joint) {
@@ -29,6 +30,7 @@ Socket* Bone::attach(Socket* socket) {
     if (socket->bone() != NULL)
         socket->bone()->_sockets.erase(socket);
     _sockets.insert(socket);
+    socket->_bone = this;
     return socket;
 }
 void Bone::detach(Socket* socket) {
@@ -43,21 +45,21 @@ void Bone::detach(Socket* socket) {
 std::map<Connection*, Bone*> Bone::connectionToBones() const {
     std::map<Connection*, Bone*> map;
     for (auto joint : _joints)
-        map[joint] = joint->socket()->bone();
+        map[joint] = joint->opposingBone();
     for (auto socket : _sockets)
-        map[socket] = socket->joint()->bone();
+        map[socket] = socket->opposingBone();
     return map;
 }
 std::map<Socket*, Bone*> Bone::socketToBones() const {
     std::map<Socket*, Bone*> map;
     for (auto socket : _sockets)
-        map[socket] = socket->joint()->bone();
+        map[socket] = socket->opposingBone();
     return map;
 }
 std::map<Joint*, Bone*> Bone::jointToBones() const {
     std::map<Joint*, Bone*> map;
     for (auto joint : _joints)
-        map[joint] = joint->socket()->bone();
+        map[joint] = joint->opposingBone();
     return map;
 }
 
@@ -80,11 +82,14 @@ void Bone::draw(const float& scale) const {
     for (auto socket : _sockets) {
         socket->draw(0.1);
     }
+    for (auto joint : _joints) {
+        joint->draw(0.1);
+    }
 }
 
 void Bone::doDraw(const float& scale) const {
 
-    /*glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
     GlutDraw::drawParallelepiped(glm::vec3(scale, 0, 0), glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
     GlutDraw::drawParallelepiped(glm::vec3(0, scale, 0), glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0));
@@ -92,9 +97,9 @@ void Bone::doDraw(const float& scale) const {
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, scale), glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale));
 
     glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
-    GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));*/
+    GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));
 
-    if (_sockets.size() + _joints.size() < 2)
+    /*if (_sockets.size() + _joints.size() < 2)
         GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));
     else {
         std::vector<glm::vec3> translations({ glm::vec3(0, 0, 0) });
@@ -103,5 +108,5 @@ void Bone::doDraw(const float& scale) const {
         for (auto socket : _sockets)
             translations.push_back(socket->translationFromBone());
         GlutDraw::drawExhaustiveTriangles(translations);
-    }
+    }*/
 }

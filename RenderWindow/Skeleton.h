@@ -21,7 +21,7 @@ namespace Scene {
         std::vector<Socket*> sockets() const;
         std::vector<Joint*> joints() const;
 
-        void jiggle(const float& amplitude = 1) { for (auto joint : sockets()) joint->perturb(amplitude); }
+        void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
 
         void doDraw();
     private:
