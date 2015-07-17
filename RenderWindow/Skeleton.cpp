@@ -96,7 +96,10 @@ void Skeleton::doDraw() {
         depthVisited[depth] = true;
         stack.pop_back();
         
-        
+        if (depth == 2) {
+            int j = 0;
+        }
+
         for (auto target : bone->socketToBones()) {
             // the Bone from which "target" descended in the tree is just the variable "Bone* bone"
             if (target.second != NULL && drawn.find(target.second) == drawn.end()) {

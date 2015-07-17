@@ -1,6 +1,7 @@
 #include "SkeletonComponents.h"
 
-Connection::Connection(const int& i, const float& scale, Bone* bone) : _bone(bone) {
+Connection::Connection(const int& i, const float& scale, Bone* bone) {
+
     if (i == 0) {
         _translationFromBone = scale*glm::vec3(1, 0, 0);
         _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), M_PI / 2);

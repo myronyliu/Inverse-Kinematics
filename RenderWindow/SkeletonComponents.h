@@ -102,7 +102,7 @@ class Joint : public Connection
 {
     friend class Socket;
 public:
-    Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, bone) {}
+    Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, NULL) { attach(bone); }
     Joint(Bone* bone, const glm::vec3& t, const glm::vec3& w) : Connection(bone, t, w) {}
 
     Socket* couple(Socket* socket);
@@ -123,8 +123,7 @@ class Socket :public Connection
 {
     friend class Joint;
 public:
-    Socket(const int& i = 4, const float& scale = 1, Bone* bone = NULL) :
-        Connection(i, scale, bone), _translationToJoint(glm::vec3(0, 0, 0)), _rotationToJoint(AxisAngleRotation2(glm::vec2(0, 0), 0)) {}
+    Socket(const int& i = 4, const float& scale = 1, Bone* bone = NULL);
     Socket(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
         Connection(bone, t, w), _translationToJoint(glm::vec3(0, 0, 0)), _rotationToJoint(AxisAngleRotation2(glm::vec2(0, 0), 0)) {}
 

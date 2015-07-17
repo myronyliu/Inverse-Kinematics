@@ -30,6 +30,15 @@ namespace GlutDraw
     void drawExhaustiveTriangles(const std::vector<glm::vec3>& vertices);
 
     void drawTriangularPrism(const glm::vec3& a, const glm::vec3& b, const glm::vec3& c, const glm::vec3& axis);
+
+    void drawWedge(
+        glm::vec3 center, glm::vec3 zAxis, glm::vec3 yAxis, float phiRange, bool solid = true,
+        bool outwardNormals = true, int nThetaDivisions = 16, int nPhiDivisionsFull = 16
+        );
+    void drawWedgeShell(
+        glm::vec3 center, glm::vec3 zAxis, glm::vec3 yAxis, float phiRange, float radiusRatio,
+        int nThetaDivisions = 16, int nPhiDivisionsFull = 16
+        );
 };
 
 #endif /* GLUTDRAW_H */

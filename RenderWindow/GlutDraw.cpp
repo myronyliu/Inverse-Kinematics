@@ -100,7 +100,7 @@ void GlutDraw::drawDome (
 {
     float r = glm::length(axis);
     float thetaMax = Math::clamp(0.0f, thetaMaxIn, M_PI);
-    if (r == 0 || thetaMax == 0 || nPhiDivisions < 2 || nThetaDivisionsFull < 3) return;
+    if (r == 0 || thetaMax == 0 || nPhiDivisions < 3 || nThetaDivisionsFull < 2) return;
 
     int nThetaDivisions = ceil((thetaMax / M_PI)*nThetaDivisionsFull);
 
@@ -230,6 +230,102 @@ void GlutDraw::drawDomeShell(
         stripVertices(phi);
     }
     glEnd();
+}
+
+void GlutDraw::drawWedge(
+    glm::vec3 center, glm::vec3 zAxis, glm::vec3 yAxis, float phiRangeIn,
+    bool solid, bool outwardNormals, int nThetaDivisions, int nPhiDivisionsFull)
+{
+
+    float r = glm::length(zAxis);
+    glm::vec3 w = Math::axisAngleAlignZYtoVECS3(zAxis, yAxis);
+
+    float phiRange = Math::clamp(0.0f, phiRangeIn, 2*M_PI);
+    if (r == 0 || phiRange == 0 || nPhiDivisionsFull < 3 || nThetaDivisions < 2)
+        return;
+    if (phiRange == 2 * M_PI) {
+        GlutDraw::drawSphere(center, zAxis, nThetaDivisions, nPhiDivisionsFull);
+        return;
+    }
+
+    int nPhiDivisions = ceil((phiRange / (2 * M_PI))*nPhiDivisionsFull);
+
+    float dTheta = M_PI / nPhiDivisions;
+    float dPhi = phiRange / nPhiDivisions;
+
+    auto sphereNormal = [&](const float& theta, const float& phi) {
+        glm::vec3 n(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        if (outwardNormals) glNormal3f(n[0], n[1], n[2]);
+        else glNormal3f(-n[0], -n[1], -n[2]);
+    };
+    auto sphereVertex = [&](const float& theta, const float& phi) {
+        glm::vec3 n(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        glVertex3f(r*n[0], r*n[1], r*n[2]);
+    };
+
+    glPushMatrix();
+    pushTranslation(center);
+    pushRotation(w);
+
+    glBegin(GL_TRIANGLE_FAN);
+    sphereNormal(0, 0);
+    sphereVertex(0, 0);
+    for (int j = 0; j <= nPhiDivisions; j++) {
+        float phi = j*dPhi - phiRange / 2 + M_PI / 2;
+        sphereNormal(dTheta, phi);
+        sphereVertex(dTheta, phi);
+    }
+    glEnd();
+
+    glBegin(GL_TRIANGLE_FAN);
+    sphereNormal(M_PI, 0);
+    sphereVertex(M_PI, 0);
+    for (int j = 0; j <= nPhiDivisions; j++) {
+        float phi = j*dPhi - phiRange / 2 + M_PI / 2;
+        sphereNormal(M_PI - dTheta, phi);
+        sphereVertex(M_PI - dTheta, phi);
+    }
+    glEnd();
+
+    for (int i = 1; i < nThetaDivisions; i++) {
+        glBegin(GL_QUAD_STRIP);
+        float theta = i*dTheta;
+        for (int j = 0; j <= nPhiDivisions; j++) {
+            float phi = j*dPhi - phiRange / 2 + M_PI / 2;
+            sphereNormal(theta, phi);
+            sphereVertex(theta, phi);
+            sphereNormal(theta + dTheta, phi);
+            sphereVertex(theta + dTheta, phi);
+        }
+        glEnd();
+    }
+
+    if (solid) {
+        glBegin(GL_TRIANGLE_FAN);
+        sphereNormal(M_PI / 2, M_PI - phiRange / 2);
+        glVertex3f(0, 0, 0);
+        for (int i = 0; i <= nThetaDivisions; i++) {
+            sphereVertex(i*dTheta, (M_PI - phiRange) / 2);
+        }
+        glEnd();
+
+        glBegin(GL_TRIANGLE_FAN);
+        sphereNormal(M_PI / 2, M_PI + phiRange / 2);
+        glVertex3f(0, 0, 0);
+        for (int i = 0; i <= nThetaDivisions; i++) {
+            sphereVertex(i*dTheta, (M_PI + phiRange) / 2);
+        }
+        glEnd();
+    }
+
+    glPopMatrix();
+}
+void drawWedgeShell(
+    glm::vec3 center, glm::vec3 zAxis, glm::vec3 yAxis, float phiRange, float radiusRatio,
+    int nThetaDivisions, int nPhiDivisionsFull)
+{
+    GlutDraw::drawWedge(center, zAxis, yAxis, phiRange, false, true);
+    GlutDraw::drawWedge(center, zAxis, yAxis, phiRange, false, false);
 }
 
 void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 axis, float r, int n)
