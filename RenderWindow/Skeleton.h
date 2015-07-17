@@ -16,11 +16,12 @@ namespace Scene {
         Bone* root() const { return _root; }
         void setRoot(Bone* root) { _root = root; }
 
-        std::pair<std::vector<Bone*>, std::vector<Joint*>> bonesAndJoints() const;
-        std::vector<Bone*> bones() const { return bonesAndJoints().first; }
-        std::vector<Joint*> anchoredJoints() const { return bonesAndJoints().second; }
+        std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>> bonesSocketsJoints() const;
+        std::vector<Bone*> bones() const;
+        std::vector<Socket*> sockets() const;
+        std::vector<Joint*> joints() const;
 
-        void jiggle(const float& amplitude = 1) { for (auto joint : anchoredJoints()) joint->perturb(amplitude); }
+        void jiggle(const float& amplitude = 1) { for (auto joint : sockets()) joint->perturb(amplitude); }
 
         void doDraw();
     private:

@@ -11,8 +11,8 @@ Scene::Path* anchorPath;
 Scene::Skeleton* skeleton;
 
 void idle(void) {
-    skeleton->jiggle(2);
-    glutPostRedisplay();
+    /*skeleton->jiggle(2);
+    glutPostRedisplay();*/
 }
 
 GlutUI::Manager MANAGER;
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    skeleton = axisTree();
+    skeleton = chain();
     world.addObject(skeleton);
 
 

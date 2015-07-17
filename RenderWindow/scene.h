@@ -9,11 +9,7 @@
 
 namespace Scene
 {
-enum {
-    PIN = 0,
-    BALL = 1,
-    PRISM = 2
-};
+
 enum {
     AMBIENT = 0,
     DIFFUSE = 1

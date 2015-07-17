@@ -36,3 +36,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 //#include <armadillo>
+
+
+static GLfloat red[] = { 1, 0, 0, 1 };
+static GLfloat green[] = { 0, 1, 0, 1 };
+static GLfloat blue[] = { 0, 0, 1, 1 };
+static GLfloat white[] = { 1, 1, 1, 1 };

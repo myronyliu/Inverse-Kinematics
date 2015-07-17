@@ -7,45 +7,44 @@
 #include "utils.h"
 #include "Math.h"
 
-static GLfloat red[] = { 1, 0, 0, 1 };
-static GLfloat green[] = { 0, 1, 0, 1 };
-static GLfloat blue[] = { 0, 0, 1, 1 };
-static GLfloat white[] = { 1, 1, 1, 1 };
+enum {
+    PIN = 0,
+    BALL = 1,
+    PRISM = 2
+};
 
 class Joint;
+class Socket;
 
 class Bone
 {
     friend class Joint;
+    friend class Socket;
+    friend class Connection;
 public:
-    Bone(): _anchoredJoints(std::set<Joint*>()) {}
-    Bone(std::vector<Joint*> joints) { for (auto joint : joints) attach(joint); }
+    Bone() : _sockets(std::set<Socket*>()), _joints(std::set<Joint*>()) {}
+    Bone(std::vector<Socket*> sockets, std::vector<Joint*> joints);
     void draw(const float& scale = 1) const;
     virtual void doDraw(const float& scale = 0.2) const;
 
     Joint* attach(Joint*);
-    void unattach(Joint*);
+    void detach(Joint*);
 
-    Joint* couple(Joint*);
-    void uncouple(Joint*);
+    Socket* attach(Socket*);
+    void detach(Socket*);
 
-    std::set<Joint*> anchoredJoints() const { return _anchoredJoints; }
-    std::set<Joint*> targetingJoints() const { return _targetingJoints; }
+    std::set<Joint*> joints() const { return _joints; }
+    std::set<Socket*> sockets() const { return _sockets; }
 
-    // The terminology is as follows:
-    // ... The shoulder bone COUPLES to the arm bone
-    // ... The arm bone is ATTACHING to the shoulder bone
-    // Therefore,   calling ShoulderBone.coupledBones() will return { shoulder->arm joint : arm      bone }
-    // In contrast, calling    ArmBone.attachingBones() will return { shoulder->arm joint : shoulder bone }
+    std::map<Connection*, Bone*> connectionToBones() const;
+    std::map<Socket*, Bone*> socketToBones() const;
+    std::map<Joint*, Bone*> jointToBones() const;
 
-    std::map<Joint*, Bone*> coupledBones() const;
-    std::map<Joint*, Bone*> attachingBones() const;
-
-    Joint* getLink(Bone* neighbor) const;
+    Connection* getConnectionToBone(Bone*) const;
 
 protected:
-    std::set<Joint*> _anchoredJoints; // these are the joints that are ANCHORED to this body
-    std::set<Joint*> _targetingJoints;
+    std::set<Joint*> _joints;
+    std::set<Socket*> _sockets;
 private:
 };
 
@@ -53,21 +52,83 @@ private:
 
 
 
-class Joint
+
+class Connection
 {
     friend class Bone;
 public:
-    Joint();
-    Joint(const int&, const float& = 1);
-    Joint(const glm::vec3&, const glm::vec3&, const glm::vec3&, const glm::vec3&);
+    Connection(const int& = 4, const float& = 1, Bone* = NULL);
+    Connection(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
+        _bone(bone), _translationFromBone(t), _rotationFromBone(AxisAngleRotation2(w)) {}
+
+    virtual void draw(const float&) const;
+    virtual void drawAnchor(const float&) const {
+        GlutDraw::drawCylinder(_translationFromBone / 2.0f, _translationFromBone / 2.0f, 0.02);
+    }
+    virtual void drawPivot(const float&) const {};
+
+    /////////////////
+    //// GETTERS ////
+    /////////////////
+
+    Bone* bone() const { return _bone; }
+    glm::vec3 translationFromBone() const { return _translationFromBone; }
+    AxisAngleRotation2 rotationFromBone() const { return _rotationFromBone; }
+    AxisAngleRotation2 rotationFromBone2() const { return _rotationFromBone; }
+    glm::vec3 rotationFromBone3() const { return _rotationFromBone.axisAngleRotation3(); }
+    glm::mat3 rotationFromBoneR() const { return _rotationFromBone.rotationMatrix(); }
+
+    /////////////////
+    //// SETTERS ////
+    /////////////////
+
+    void setTranslationFromBone(const glm::vec3& translation) { _translationFromBone = translation; }
+    void setRotationFromBone(const AxisAngleRotation2& rotation) { _rotationFromBone = rotation; _rotationFromBone.clamp(); }
+    void setRotationFromBone(const glm::vec3& w) { _rotationFromBone = AxisAngleRotation2(w); _rotationFromBone.clamp(); }
+    void setRotationFromBone(const glm::mat3& R) { _rotationFromBone = AxisAngleRotation2(R); _rotationFromBone.clamp(); }
+
+    Bone* attach(Bone* bone);
+    void dettach();
+
+protected:
+    Bone* _bone;
+    glm::vec3 _translationFromBone;
+    AxisAngleRotation2 _rotationFromBone;
+};
+
+class Joint : public Connection
+{
+    friend class Socket;
+public:
+    Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, bone) {}
+    Joint(Bone* bone, const glm::vec3& t, const glm::vec3& w) : Connection(bone, t, w) {}
+
+    Socket* couple(Socket* socket);
+    void decouple();
+
+    Socket* socket() const { return _socket; }
+    Bone* opposingBone() const;
+
+    virtual int type() const { return -1; }
+protected:
+    Socket* _socket;
+};
+
+class Socket :public Connection
+{
+    friend class Joint;
+public:
+    Socket(const int& i = 4, const float& scale = 1, Bone* bone = NULL) :
+        Connection(i, scale, bone), _translationToJoint(glm::vec3(0, 0, 0)), _rotationToJoint(AxisAngleRotation2(glm::vec2(0, 0), 0)) {}
+    Socket(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
+        Connection(bone, t, w), _translationToJoint(glm::vec3(0, 0, 0)), _rotationToJoint(AxisAngleRotation2(glm::vec2(0, 0), 0)) {}
 
     /////////////////
     //// DRAWING ////
     /////////////////
 
-    void draw(const float& scale) const;
-    virtual void drawJoint(const float&) const {}
-    virtual void drawPivot(const float&) const {}
+    Joint* couple(Joint*);
+    void decouple();
 
     //////////////////////////
     //// PARAMETERIZATION ////
@@ -86,29 +147,6 @@ public:
     virtual float reach() const { return 0; }
 
     /////////////////
-    //// SETTERS ////
-    /////////////////
-
-    void setTranslationFromAnchor(const glm::vec3& translation) { _translationFromAnchor = translation; }
-    void setRotationFromAnchor(const AxisAngleRotation2& rotation) { _rotationFromAnchor = rotation; _rotationFromAnchor.clamp(); }
-    void setRotationFromAnchor(const glm::vec3& w) { _rotationFromAnchor = AxisAngleRotation2(w); _rotationFromAnchor.clamp(); }
-    void setRotationFromAnchor(const glm::mat3& R) { _rotationFromAnchor = AxisAngleRotation2(R); _rotationFromAnchor.clamp(); }
-    Bone* couple(Bone* target) { _target = target; return target; }
-    void decouple() { _target = NULL; }
-
-    void setTranslationToTarget(const glm::vec3& translation) { _translationFromAnchor = translation; }
-    void setRotationToTarget(const AxisAngleRotation2& rotation) { _rotationFromAnchor = rotation; _rotationFromAnchor.clamp(); }
-    void setRotationToTarget(const glm::vec3& w) { _rotationFromAnchor = AxisAngleRotation2(w); _rotationFromAnchor.clamp(); }
-    void setRotationToTarget(const glm::mat3& R) { _rotationFromAnchor = AxisAngleRotation2(R); _rotationFromAnchor.clamp(); }
-    void attach(Bone* target);
-    void unattach();
-
-    void setJointTranslation(const glm::vec3& translation);
-    void setJointRotation(const AxisAngleRotation2& rotation);
-    void setJointRotation(const glm::vec3& w);
-    void setJointRotation(const glm::mat3& R);
-
-    /////////////////
     //// GETTERS ////
     /////////////////
 
@@ -116,32 +154,20 @@ public:
     bool getConstraint(const int& key, float& value) const;
     bool getParam(const int& key, float& value) const;
 
-    Bone* anchor() const { return _anchor; }
-    glm::vec3 translationFromAnchor() const { return _translationFromAnchor; }
-    AxisAngleRotation2 rotationFromAnchor() const { return _rotationFromAnchor; }
-    AxisAngleRotation2 rotationFromAnchor2() const { return _rotationFromAnchor; }
-    glm::vec3 rotationFromAnchor3() const { return _rotationFromAnchor.axisAngleRotation3(); }
-    glm::mat3 rotationFromAnchorR() const { return _rotationFromAnchor.rotationMatrix(); }
+    glm::vec3 translationToJoint() const { return _translationToJoint; }
+    AxisAngleRotation2 rotationToJoint() const { return _rotationToJoint; }
+    AxisAngleRotation2 rotationToJoint2() const { return _rotationToJoint; }
+    glm::vec3 rotationToJoint3() const { return _rotationToJoint.axisAngleRotation3(); }
+    glm::mat3 rotationToJointR() const { return _rotationToJoint.rotationMatrix(); }
+    Joint* joint() const { return _joint; }
+    Bone* opposingBone() const {
+        if (_joint == NULL) return NULL;
+        else return _joint->bone();
+    }
 
-    Bone* target() const { return _target; }
-    glm::vec3 translationToTarget() const { return _translationToTarget; }
-    AxisAngleRotation2 rotationToTarget() const { return _rotationToTarget; }
-    AxisAngleRotation2 rotationToTarget2() const { return _rotationToTarget; }
-    glm::vec3 rotationToTarget3() const { return _rotationToTarget.axisAngleRotation3(); }
-    glm::mat3 rotationToTargetR() const { return _rotationToTarget.rotationMatrix(); }
+    std::pair<glm::vec3, AxisAngleRotation2> alignSocketedBoneToJointedBone() const;
 
-    glm::vec3 jointTranslation() const { return _jointTranslation; }
-    AxisAngleRotation2 jointRotation() const { return _jointRotation; }
-    AxisAngleRotation2 jointRotation2() const { return _jointRotation; }
-    glm::vec3 jointRotation3() const { return _jointRotation.axisAngleRotation3(); }
-    glm::mat3 jointRotationR() const { return _jointRotation.rotationMatrix(); }
-
-    ////////////////////////////
-    //// DERIVED QUANTITIES ////
-    ////////////////////////////
-
-    std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const;
-
+    virtual int type() const { return -2; }
 protected:
     //////////////////////////////////////////////////////////////////
     //// DANGEROUS FUNCTIONS THAT SHOULD NOT BE ACCESSED PUBLICLY ////
@@ -151,30 +177,26 @@ protected:
     virtual void buildTransformsFromParams() {}
     virtual void buildParamsFromTransforms() {}
 
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    //// The following should always be called via the connection, so we make them protected ////
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
+    void setTranslationToJoint(const glm::vec3& translation);
+    void setRotationToJoint(const AxisAngleRotation2& rotation);
+    void setRotationToJoint(const glm::vec3& w);
+    void setRotationToJoint(const glm::mat3& R);
+
     //////////////////////////
     //// MEMBER VARIABLES ////
     //////////////////////////
 
-    Bone* _anchor;
-    Bone* _target;
+    Joint* _joint;
 
-    glm::vec3 _translationFromAnchor;       // IN THE COORDINATE FRAME OF THE ANCHOR
-    AxisAngleRotation2 _rotationFromAnchor;
-
-    glm::vec3 _jointTranslation;            // IN THE COORDINATE FRAME OF THE JOINT's "BASE" (in "default" configuration)
-    AxisAngleRotation2 _jointRotation;
-
-    glm::vec3 _translationToTarget;         // IN THE COORDINATE FRAME OF THE JOINT's "TIP"
-    AxisAngleRotation2 _rotationToTarget;
-
-
+    glm::vec3 _translationToJoint;            // IN THE COORDINATE FRAME OF THE JOINT's "BASE" (in "default" configuration)
+    AxisAngleRotation2 _rotationToJoint;
 
     std::map<int, float> _constraints;  // Constraints are keyed on indices of our choosing
     std::map<int, float> _params;
-
     std::map<int, float> _stashedParams;
 };
-
-#include "BallJoint.h"
-
 #endif
