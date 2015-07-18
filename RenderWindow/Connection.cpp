@@ -1,5 +1,7 @@
 #include "SkeletonComponents.h"
 
+using namespace Scene;
+
 Connection::Connection(const int& i, const float& scale, Bone* bone) {
 
     if (i == 0) {

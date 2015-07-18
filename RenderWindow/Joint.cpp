@@ -4,6 +4,7 @@
 using namespace std;
 using namespace glm;
 using namespace Math;
+using namespace Scene;
 
 Bone* Joint::attach(Bone* bone) {
     if (bone == _bone)
@@ -44,4 +45,15 @@ void Joint::decouple() {
         _socket->_joint = NULL;
     }
     _socket = NULL;
+}
+
+std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {
+    if (opposingBone() == NULL)
+        return make_pair(glm::vec3(0, 0, 0), AxisAngleRotation2(glm::vec2(0, 0), 0));
+
+    glm::vec3 translation;
+    AxisAngleRotation2 rotation;
+    tie(translation, rotation) = _socket->alignAnchorToTarget();
+
+    return make_pair((-rotation).rotationMatrix()*(-translation), -rotation);
 }

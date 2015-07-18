@@ -3,10 +3,12 @@
 
 #include "SkeletonComponents.h"
 
-class HalfPrismJoint : public Joint {
+namespace Scene {
 
-};
+    class HalfPrismJoint : public Joint {
 
+    };
 
+}
 
 #endif

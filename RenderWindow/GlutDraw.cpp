@@ -250,7 +250,7 @@ void GlutDraw::drawWedge(
 
     int nPhiDivisions = ceil((phiRange / (2 * M_PI))*nPhiDivisionsFull);
 
-    float dTheta = M_PI / nPhiDivisions;
+    float dTheta = M_PI / nThetaDivisions;
     float dPhi = phiRange / nPhiDivisions;
 
     auto sphereNormal = [&](const float& theta, const float& phi) {
@@ -302,7 +302,7 @@ void GlutDraw::drawWedge(
 
     if (solid) {
         glBegin(GL_TRIANGLE_FAN);
-        sphereNormal(M_PI / 2, M_PI - phiRange / 2);
+        sphereNormal(M_PI / 2, - phiRange / 2);
         glVertex3f(0, 0, 0);
         for (int i = 0; i <= nThetaDivisions; i++) {
             sphereVertex(i*dTheta, (M_PI - phiRange) / 2);
@@ -320,12 +320,49 @@ void GlutDraw::drawWedge(
 
     glPopMatrix();
 }
-void drawWedgeShell(
+void GlutDraw::drawWedgeShell(
     glm::vec3 center, glm::vec3 zAxis, glm::vec3 yAxis, float phiRange, float radiusRatio,
     int nThetaDivisions, int nPhiDivisionsFull)
 {
-    GlutDraw::drawWedge(center, zAxis, yAxis, phiRange, false, true);
-    GlutDraw::drawWedge(center, zAxis, yAxis, phiRange, false, false);
+    float r0 = glm::length(zAxis);
+    float r1 = r0*radiusRatio;
+    float rInner = fmin(r0, r1);
+    float rOuter = fmax(r0, r1);
+    GlutDraw::drawWedge(center, rOuter*zAxis / r0, yAxis, phiRange, false, true);
+    GlutDraw::drawWedge(center, rInner*zAxis / r0, yAxis, phiRange, false, false);
+
+    float dTheta = M_PI / nThetaDivisions;
+    auto sphereNormal = [&](const float& theta, const float& phi) {
+        glm::vec3 n(cos(phiRange / 2),-sin(phiRange / 2), 0);
+        glNormal3f(n[0], n[1], n[2]);
+    };
+    auto quadStripVertices = [&](const float& theta, const float& phi) {
+        glm::vec3 n(sin(theta)*cos(phi), sin(theta)*sin(phi), cos(theta));
+        glVertex3f(rInner*n[0], rInner*n[1], rInner*n[2]);
+        glVertex3f(r0*n[0], rOuter*n[1], rOuter*n[2]);
+    };
+
+    glPushMatrix();
+    pushTranslation(center);
+    pushRotation(Math::axisAngleAlignZYtoVECS3(zAxis, yAxis));
+
+    glBegin(GL_QUAD_STRIP);
+    glNormal3f(cos(phiRange / 2), -sin(phiRange / 2), 0);
+    glVertex3f(0, 0, 0);
+    for (int i = 0; i <= nThetaDivisions; i++) {
+        quadStripVertices(i*dTheta, (M_PI - phiRange) / 2);
+    }
+    glEnd();
+
+    glBegin(GL_QUAD_STRIP);
+    glNormal3f(-cos(phiRange / 2), -sin(phiRange / 2), 0);
+    glVertex3f(0, 0, 0);
+    for (int i = 0; i <= nThetaDivisions; i++) {
+        quadStripVertices(i*dTheta, (M_PI + phiRange) / 2);
+    }
+    glEnd();
+
+    glPopMatrix();
 }
 
 void GlutDraw::drawCylinder(glm::vec3 center, glm::vec3 axis, float r, int n)
@@ -550,6 +587,7 @@ void GlutDraw::drawDoublePyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 
 }
 
 void GlutDraw::drawExhaustiveTriangles(const std::vector<glm::vec3>& vertices) {
+    if (vertices.size() < 3) return;
     for (int i = 0; i < vertices.size(); i++) {
         glm::vec3 vi = vertices[i];
         for (int j = 0; j < i; j++) {

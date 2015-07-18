@@ -6,7 +6,7 @@ using namespace std;
 using namespace glm;
 using namespace Math;
 
-
+void Skeleton::jiggle(const float& amplitude) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
 
 std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>> Skeleton::bonesSocketsJoints() const {
     if (_root == NULL) return std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>>();
@@ -64,19 +64,20 @@ std::vector<Joint*> Skeleton::joints() const {
 
 
 void Skeleton::doDraw() {
+
     if (_root == NULL) return;
 
     int nPush = 0;
     int nPop = 0;
 
-    vector<tuple<Bone*, Socket*, int>> stack;
-    stack.push_back(tuple<Bone*, Socket*, int>(_root, NULL, 0));
+    vector<tuple<Bone*, Connection*, int>> stack;
+    stack.push_back(tuple<Bone*, Connection*, int>(_root, NULL, 0));
     set<Bone*> drawn;
     vector<bool> depthVisited;
 
-    for (auto target : _root->socketToBones()) {
+    for (auto target : _root->connectionToBones()) {
         if (target.second != NULL) {
-            stack.push_back(tuple<Bone*, Socket*, int>(target.second, target.first, 1));
+            stack.push_back(make_tuple(target.second, target.first, 1));
         }
     }
 
@@ -84,12 +85,12 @@ void Skeleton::doDraw() {
     AxisAngleRotation2 rotation;
 
     Bone* bone;
-    Socket* joint; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
+    Connection* connection; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
     int depth;
     int previousDepth = 0; // the depth of the root, which is the starting point
     while (stack.size() > 0) {
 
-        tie(bone, joint, depth) = stack.back();
+        tie(bone, connection, depth) = stack.back();
         if (depthVisited.size() < depth + 1) {
             depthVisited.resize(depth + 1, false);
         }
@@ -100,10 +101,10 @@ void Skeleton::doDraw() {
             int j = 0;
         }
 
-        for (auto target : bone->socketToBones()) {
+        for (auto target : bone->connectionToBones()) {
             // the Bone from which "target" descended in the tree is just the variable "Bone* bone"
             if (target.second != NULL && drawn.find(target.second) == drawn.end()) {
-                stack.push_back(tuple<Bone*, Socket*, int>(target.second, target.first, depth + 1));
+                stack.push_back(make_tuple(target.second, target.first, depth + 1));
             }
         }
 
@@ -113,7 +114,7 @@ void Skeleton::doDraw() {
                 nPop++;
             }
             if (depthVisited[depth] && bone != _root) {
-                tie(translation, rotation) = joint->alignSocketedBoneToJointedBone();
+                tie(translation, rotation) = connection->alignAnchorToTarget();
 
                 glPopMatrix();
                 glPushMatrix();
@@ -127,7 +128,7 @@ void Skeleton::doDraw() {
                 glPopMatrix();
                 nPop++;
             }
-            tie(translation, rotation) = joint->alignSocketedBoneToJointedBone();
+            tie(translation, rotation) = connection->alignAnchorToTarget();
             glPushMatrix();
             pushTranslation(translation);
             pushRotation(rotation);
