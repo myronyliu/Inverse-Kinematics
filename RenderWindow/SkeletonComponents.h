@@ -25,6 +25,7 @@ namespace Scene {
     {
         friend class Joint;
         friend class Socket;
+        friend class Skeleton;
         friend class Connection;
     public:
         Bone() : _sockets(std::set<Socket*>()), _joints(std::set<Joint*>()) {}
@@ -57,6 +58,8 @@ namespace Scene {
         std::set<Joint*> _joints;
         std::set<Socket*> _sockets;
     private:
+        bool insertConnection(Connection*);
+        bool eraseConnection(Connection*);
     };
 
 
@@ -67,6 +70,7 @@ namespace Scene {
     class Connection
     {
         friend class Bone;
+        friend class Skeleton;
     public:
         Connection(const int& = 4, const float& = 1, Bone* = NULL);
         Connection(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
@@ -76,12 +80,13 @@ namespace Scene {
         virtual void drawAnchor(const float&) const {
             GlutDraw::drawCylinder(_translationFromBone / 2.0f, _translationFromBone / 2.0f, 0.02);
         }
-        virtual void drawPivot(const float&) const {};
+        virtual void drawPivot(const float&) const = 0;
 
         // The following is expressed in the frame of _bone
-        virtual std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const {
+        virtual std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const = 0;
+        /*{
             return std::make_pair(glm::vec3(0, 0, 0), AxisAngleRotation2(glm::vec2(0, 0), 0));
-        }
+        }*/
 
         /////////////////
         //// GETTERS ////
@@ -103,27 +108,26 @@ namespace Scene {
         void setRotationFromBone(const glm::vec3& w) { _rotationFromBone = AxisAngleRotation2(w); _rotationFromBone.clamp(); }
         void setRotationFromBone(const glm::mat3& R) { _rotationFromBone = AxisAngleRotation2(R); _rotationFromBone.clamp(); }
 
-        virtual Bone* attach(Bone* bone) { _bone = bone; return bone; }
-        virtual void dettach() { _bone = NULL; }
+        Bone* attach(Bone* bone);
+        void dettach();
 
     protected:
         Bone* _bone;
         glm::vec3 _translationFromBone;
         AxisAngleRotation2 _rotationFromBone;
+        
     };
 
     class Joint : public Connection
     {
         friend class Socket;
+        friend class Skeleton;
     public:
         Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, NULL) { attach(bone); }
         Joint(Bone* bone, const glm::vec3& t, const glm::vec3& w) : Connection(bone, t, w) {}
 
         Socket* couple(Socket* socket);
         void decouple();
-
-        Bone* attach(Bone* bone);
-        void dettach();
 
         Socket* socket() const { return _socket; }
         Bone* opposingBone() const;
@@ -132,6 +136,7 @@ namespace Scene {
 
         virtual int type() const { return -1; }
     protected:
+
         Socket* _socket;
     };
 
@@ -149,9 +154,6 @@ namespace Scene {
 
         Joint* couple(Joint*);
         void decouple();
-
-        Bone* attach(Bone* bone);
-        void dettach();
 
         //////////////////////////
         //// PARAMETERIZATION ////
@@ -199,6 +201,7 @@ namespace Scene {
         virtual void perturbParams(const float& scale) {}
         virtual void buildTransformsFromParams() {}
         virtual void buildParamsFromTransforms() {}
+
 
         /////////////////////////////////////////////////////////////////////////////////////////////
         //// The following should always be called via the connection, so we make them protected ////

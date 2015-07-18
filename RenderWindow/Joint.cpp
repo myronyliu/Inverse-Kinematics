@@ -6,22 +6,6 @@ using namespace glm;
 using namespace Math;
 using namespace Scene;
 
-Bone* Joint::attach(Bone* bone) {
-    if (bone == _bone)
-        return bone;
-    if (bone != NULL)
-        bone->_joints.insert(this);
-    if (_bone != NULL)
-        _bone->_joints.erase(this);
-    _bone = bone;
-    return bone;
-}
-void Joint::dettach() {
-    if (_bone == NULL) return;
-    _bone->_joints.erase(this);
-    _bone = NULL;
-}
-
 Bone* Joint::opposingBone() const {
     if (_socket == NULL) return NULL;
     else return _socket->bone();
@@ -30,21 +14,28 @@ Bone* Joint::opposingBone() const {
 Socket* Joint::couple(Socket* socket) {
     if (socket == _socket || socket->type() != type())
         return socket;
-
-    if (socket == NULL) {
+    if (socket == NULL)
         decouple();
-    }
     else {
-        socket->_joint = NULL;
+        if (_bone != NULL) {
+            _bone->_joints.erase(this);
+            _bone->attach(this);
+        }
+        socket->_joint = this;
         _socket = socket;
     }
     return socket;
 }
 void Joint::decouple() {
     if (_socket != NULL) {
-        _socket->_joint = NULL;
+        if (_bone != NULL) {
+            Bone* bone = _bone;                 // 1: Backup the bone to which this socket is anchored
+            _bone->detach(this);                // 2: Detach this socket from the anchor (keeping the socket-joint link in tact)
+            bone->_joints.insert(this);         // 3: Reattach this socket to its anchor without skeleton updates
+        }
+        _socket->_joint = NULL;                 // 4: Sever the socket-joint link
+        _socket = NULL;                         //    ...
     }
-    _socket = NULL;
 }
 
 std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {

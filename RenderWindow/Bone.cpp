@@ -5,6 +5,32 @@ using namespace glm;
 using namespace Math;
 using namespace Scene;
 
+
+bool Bone::insertConnection(Connection* connection) {
+    if (connection == NULL) return true;
+    if (Socket* socket = dynamic_cast<Socket*>(connection)) {
+        _sockets.insert(socket);
+        return true;
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(connection)) {
+        _joints.insert(joint);
+        return true;
+    }
+    return false;
+}
+bool Bone::eraseConnection(Connection* connection) {
+    if (connection == NULL) return true;
+    if (Socket* socket = dynamic_cast<Socket*>(connection)) {
+        _sockets.erase(socket);
+        return true;
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(connection)) {
+        _joints.erase(joint);
+        return true;
+    }
+    return false;
+}
+
 Bone::Bone(std::vector<Socket*> sockets, std::vector<Joint*> joints) {
     for (auto socket : sockets) attach(socket);
     for (auto joint : joints) attach(joint);
@@ -61,13 +87,19 @@ std::set<Bone*> Bone::reachableBones(Connection* excluded) {
 
 Scene::Skeleton* Bone::addToSkeleton(Scene::Skeleton* skeleton, Connection* excluded) {
     if (skeleton == _skeleton) return skeleton;
-    for (auto bone : reachableBones(excluded))
+    for (auto bone : reachableBones(excluded)) {
         bone->_skeleton = skeleton;
+        skeleton->_bones.insert(bone);
+    }
     return skeleton;
 }
 
 Joint* Bone::attach(Joint* joint) {
-    if (joint == NULL) return NULL;
+    if (joint == NULL)
+        return joint;
+    else if (_joints.find(joint) != _joints.end())
+        return joint;
+
     Bone* oldAnchor = joint->bone();
     Bone* target = joint->opposingBone();
     if (oldAnchor != NULL) {

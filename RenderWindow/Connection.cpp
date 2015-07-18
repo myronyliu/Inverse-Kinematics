@@ -30,6 +30,21 @@ Connection::Connection(const int& i, const float& scale, Bone* bone) {
     }
 }
 
+Bone* Connection::attach(Bone* bone) {
+    if (bone == NULL) return bone;
+    if (Socket* socket = dynamic_cast<Socket*>(this))
+        bone->attach(socket);
+    else if (Joint* joint = dynamic_cast<Joint*>(this))
+        bone->attach(joint);
+    return bone;
+}
+void Connection::dettach() {
+    if (Socket* socket = dynamic_cast<Socket*>(this))
+        _bone->detach(socket);
+    else if (Joint* joint = dynamic_cast<Joint*>(this))
+        _bone->detach(joint);
+}
+
 
 void Connection::draw(const float& scale) const {
     drawAnchor(scale);
