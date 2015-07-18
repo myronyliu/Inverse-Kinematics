@@ -35,7 +35,7 @@
 #include <GL/glut.h>
 #include <glm/glm.hpp>
 #include <glm/gtx/rotate_vector.hpp>
-//#include <armadillo>
+#include <armadillo>
 
 
 static GLfloat red[] = { 1, 0, 0, 1 };

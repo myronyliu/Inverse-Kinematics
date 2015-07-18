@@ -1,4 +1,4 @@
-#include "SkeletonComponents.h"
+#include "BodyComponents.h"
 
 using namespace std;
 using namespace glm;
@@ -31,58 +31,51 @@ bool Bone::eraseConnection(Connection* connection) {
     return false;
 }
 
-Bone::Bone(std::vector<Socket*> sockets, std::vector<Joint*> joints) {
+Bone::Bone(vector<Socket*> sockets, vector<Joint*> joints) {
     for (auto socket : sockets) attach(socket);
     for (auto joint : joints) attach(joint);
 }
 
-std::set<Bone*> Bone::reachableBones(Connection* excluded) {
+map<Bone*,vector<Connection*>> Bone::reachableBonePaths(Connection* excluded) {
 
-    std::set<Bone*> visitedBones({ this });
-    std::vector<Bone*> boneStack;
+    map<Bone*, vector<Connection*>> visited({ make_pair(this, vector<Connection*>(0)) });
+    vector<pair<Bone*, vector<Connection*>>> stack;
 
-    for (auto socket : sockets()) {
-        if (socket == excluded) continue;
-        Bone* opposingBone = socket->opposingBone();
+    for (auto connection : connections()) {
+        if (connection == excluded) continue;
+        Bone* opposingBone = connection->opposingBone();
         if (opposingBone == NULL) continue;
-        if (visitedBones.find(opposingBone) == visitedBones.end()) {
-            visitedBones.insert(opposingBone);
-            boneStack.push_back(opposingBone);
-        }
-    }
-    for (auto joint : joints()) {
-        if (joint == excluded) continue;
-        Bone* opposingBone = joint->opposingBone();
-        if (opposingBone == NULL) continue;
-        if (visitedBones.find(opposingBone) == visitedBones.end()) {
-            visitedBones.insert(opposingBone);
-            boneStack.push_back(opposingBone);
+        if (visited.find(opposingBone) == visited.end()) {
+            stack.push_back(make_pair(opposingBone, vector<Connection*>({ connection })));
+            visited.insert(stack.back());
         }
     }
 
-    while (boneStack.size() > 0) {
-        Bone* bone = boneStack.back();
-        boneStack.pop_back();
+    while (stack.size() > 0) {
+        Bone* bone = stack.back().first;
+        vector<Connection*> path = stack.back().second;
+        // I don't think it's safe to "std::tie" here, since we pop_back immediately after
+        stack.pop_back();
 
-        for (auto socket : bone->sockets()) {
-            Bone* opposingBone = socket->opposingBone();
+        for (auto connection : bone->connections()) {
+            Bone* opposingBone = connection->opposingBone();
             if (opposingBone == NULL) continue;
-            if (visitedBones.find(opposingBone) == visitedBones.end()) {
-                visitedBones.insert(opposingBone);
-                boneStack.push_back(opposingBone);
-            }
-        }
-        for (auto joint : bone->joints()) {
-            Bone* opposingBone = joint->opposingBone();
-            if (opposingBone == NULL) continue;
-            if (visitedBones.find(opposingBone) == visitedBones.end()) {
-                visitedBones.insert(opposingBone);
-                boneStack.push_back(opposingBone);
+            if (visited.find(opposingBone) == visited.end()) {
+                vector<Connection*> extendedPath = path;
+                extendedPath.push_back(connection);
+                stack.push_back(make_pair(opposingBone, extendedPath));
+                visited.insert(stack.back());
             }
         }
     }
 
-    return visitedBones;
+    return visited;
+}
+set<Bone*> Bone::reachableBones(Connection* excluded) {
+    set<Bone*> set;
+    map<Bone*, vector<Connection*>> map = reachableBonePaths();
+    for (auto pair : map) { set.insert(pair.first); }
+    return set;
 }
 
 Scene::Skeleton* Bone::addToSkeleton(Scene::Skeleton* skeleton, Connection* excluded) {
@@ -131,10 +124,10 @@ void Bone::detach(Joint* joint) {
         joint->_bone = NULL;
         Bone* target = joint->opposingBone();
         if (target != NULL) {
-            std::set<Bone*> reachableBones_fromDetached = target->reachableBones();
+            set<Bone*> reachableBones_fromDetached = target->reachableBones();
             auto it2 = reachableBones_fromDetached.find(this);
             if (it2 == reachableBones_fromDetached.end()) {
-                target->addToSkeleton(new Scene::Skeleton(reachableBones_fromDetached));
+                target->addToSkeleton(new Scene::Skeleton(*reachableBones_fromDetached.begin()));
             }
         }
     }
@@ -172,31 +165,36 @@ void Bone::detach(Socket* socket) {
         socket->_bone = NULL;
         Bone* target = socket->opposingBone();
         if (target != NULL) {
-            std::set<Bone*> reachableBones_fromDetached = target->reachableBones();
+            set<Bone*> reachableBones_fromDetached = target->reachableBones();
             auto it2 = reachableBones_fromDetached.find(this);
             if (it2 == reachableBones_fromDetached.end()) {
-                target->addToSkeleton(new Scene::Skeleton(reachableBones_fromDetached));
+                target->addToSkeleton(new Scene::Skeleton(*reachableBones_fromDetached.begin()));
             }
         }
     }
 }
 
-std::map<Connection*, Bone*> Bone::connectionToBones() const {
-    std::map<Connection*, Bone*> map;
+set<Connection*> Bone::connections() const {
+    set<Connection*> connections(_sockets.begin(), _sockets.end());
+    for (auto joint : _joints) { connections.insert(joint); }
+    return connections;
+}
+map<Connection*, Bone*> Bone::connectionToBones() const {
+    map<Connection*, Bone*> map;
     for (auto joint : _joints)
         map[joint] = joint->opposingBone();
     for (auto socket : _sockets)
         map[socket] = socket->opposingBone();
     return map;
 }
-std::map<Socket*, Bone*> Bone::socketToBones() const {
-    std::map<Socket*, Bone*> map;
+map<Socket*, Bone*> Bone::socketToBones() const {
+    map<Socket*, Bone*> map;
     for (auto socket : _sockets)
         map[socket] = socket->opposingBone();
     return map;
 }
-std::map<Joint*, Bone*> Bone::jointToBones() const {
-    std::map<Joint*, Bone*> map;
+map<Joint*, Bone*> Bone::jointToBones() const {
+    map<Joint*, Bone*> map;
     for (auto joint : _joints)
         map[joint] = joint->opposingBone();
     return map;
@@ -239,7 +237,7 @@ void Bone::doDraw(const float& scale) const {
     //GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));
 
     if (_sockets.size() + _joints.size() < 3) {
-        std::vector<glm::vec3> pts;
+        vector<glm::vec3> pts;
         for (auto socket : _sockets)
             pts.push_back(socket->_translationFromBone);
         for (auto joint : _joints)
@@ -259,7 +257,7 @@ void Bone::doDraw(const float& scale) const {
         }
     }
     else {
-        std::vector<glm::vec3> translations({ glm::vec3(0, 0, 0) });
+        vector<glm::vec3> translations({ glm::vec3(0, 0, 0) });
         for (auto joint : _joints)
             translations.push_back(joint->translationFromBone());
         for (auto socket : _sockets)

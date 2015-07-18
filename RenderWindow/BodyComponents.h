@@ -1,12 +1,11 @@
-#ifndef _SKELETONCOMPONENTS_H_
-#define _SKELETONCOMPONENTS_H_
+#ifndef _BODYCOMPONENTS_H_
+#define _BODYCOMPONENTS_H_
 
 #include "stdafx.h"
 #include "Rotation.h"
 #include "GlutDraw.h"
 #include "utils.h"
 #include "Math.h"
-#include "Skeleton.h"
 
 enum {
     PIN = 0,
@@ -16,12 +15,22 @@ enum {
 
 namespace Scene {
 
+    class Bone;
     class Joint;
     class Socket;
     class Connection;
     class Skeleton;
 
-    class Bone
+    class SkeletonComponent // Wrapper class for Bones and Connections (Sockets and Joints)
+    {
+    public:
+        glm::vec3 _globalTranslation;
+        glm::vec3 _globalRotation;
+    };
+
+    
+
+    class Bone : SkeletonComponent
     {
         friend class Joint;
         friend class Socket;
@@ -41,11 +50,14 @@ namespace Scene {
         std::vector<Socket*> attach(std::vector<Socket*> sockets) { for (auto socket : sockets) attach(socket); return sockets; }
         void detach(Socket*);
 
+        std::map<Bone*, std::vector<Connection*>> Bone::reachableBonePaths(Connection* = NULL);
         std::set<Bone*> reachableBones(Connection* = NULL);
         Skeleton* addToSkeleton(Skeleton*, Connection* = NULL);
 
+        Skeleton* skeleton() const { return _skeleton; }
         std::set<Joint*> joints() const { return _joints; }
         std::set<Socket*> sockets() const { return _sockets; }
+        std::set<Connection*> connections() const;
 
         std::map<Connection*, Bone*> connectionToBones() const;
         std::map<Socket*, Bone*> socketToBones() const;
@@ -64,10 +76,7 @@ namespace Scene {
 
 
 
-
-
-
-    class Connection
+    class Connection : public SkeletonComponent
     {
         friend class Bone;
         friend class Skeleton;
@@ -83,14 +92,18 @@ namespace Scene {
         virtual void drawPivot(const float&) const = 0;
 
         // The following is expressed in the frame of _bone
-        virtual std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const = 0;
-        /*{
-            return std::make_pair(glm::vec3(0, 0, 0), AxisAngleRotation2(glm::vec2(0, 0), 0));
-        }*/
+        virtual std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() = 0;
+        virtual std::pair<glm::vec3, AxisAngleRotation2> alignThisToBone() = 0;
 
         /////////////////
         //// GETTERS ////
         /////////////////
+
+        Skeleton* skeleton();
+        Connection* opposingConnection();
+        Bone* opposingBone();
+        std::pair<Socket*, Joint*> socketJoint();
+        //arma::mat JacobianToOpposingBone_numeric();
 
         Bone* bone() const { return _bone; }
         glm::vec3 translationFromBone() const { return _translationFromBone; }
@@ -123,16 +136,16 @@ namespace Scene {
         friend class Socket;
         friend class Skeleton;
     public:
-        Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, NULL) { attach(bone); }
+        Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, NULL) { Connection::attach(bone); }
         Joint(Bone* bone, const glm::vec3& t, const glm::vec3& w) : Connection(bone, t, w) {}
 
         Socket* couple(Socket* socket);
         void decouple();
 
         Socket* socket() const { return _socket; }
-        Bone* opposingBone() const;
 
-        std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const;
+        std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget();
+        std::pair<glm::vec3, AxisAngleRotation2> alignThisToBone();
 
         virtual int type() const { return -1; }
     protected:
@@ -185,12 +198,9 @@ namespace Scene {
         glm::vec3 rotationToJoint3() const { return _rotationToJoint.axisAngleRotation3(); }
         glm::mat3 rotationToJointR() const { return _rotationToJoint.rotationMatrix(); }
         Joint* joint() const { return _joint; }
-        Bone* opposingBone() const {
-            if (_joint == NULL) return NULL;
-            else return _joint->bone();
-        }
 
-        virtual std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget() const;
+        std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget();
+        std::pair<glm::vec3, AxisAngleRotation2> alignThisToBone();
 
         virtual int type() const { return -2; }
     protected:
@@ -224,6 +234,23 @@ namespace Scene {
         std::map<int, float> _constraints;  // Constraints are keyed on indices of our choosing
         std::map<int, float> _params;
         std::map<int, float> _stashedParams;
+    };
+
+    class Skeleton
+    {
+        friend class Bone;
+    public:
+        Skeleton() : _bones(std::set<Bone*>()) {}
+        Skeleton(Bone* bone) { _bones = bone->reachableBones(); for (auto bone : _bones) bone->_skeleton = this; }
+
+        std::set<std::pair<Socket*, Joint*>> socketJoints() const;
+        std::set<Bone*> bones() const { return _bones; }
+        std::set<Socket*> sockets() const;
+        std::set<Joint*> joints() const;
+
+        void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
+    private:
+        std::set<Bone*> _bones;
     };
 
 }

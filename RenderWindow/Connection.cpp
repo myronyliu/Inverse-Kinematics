@@ -1,4 +1,4 @@
-#include "SkeletonComponents.h"
+#include "BodyComponents.h"
 
 using namespace Scene;
 
@@ -29,6 +29,42 @@ Connection::Connection(const int& i, const float& scale, Bone* bone) {
         _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), M_PI);
     }
 }
+
+
+Skeleton* Connection::skeleton() {
+    if (_bone == NULL && opposingBone() == NULL) return NULL;
+    else if (_bone != NULL) return _bone->_skeleton;
+    else return opposingBone()->_skeleton;
+}
+Connection* Connection::opposingConnection() {
+    if (Socket* socket = dynamic_cast<Socket*>(this))
+        return socket->joint();
+    else if (Joint* joint = dynamic_cast<Joint*>(this))
+        return joint->socket();
+    else
+        return NULL;
+}
+Bone* Connection::opposingBone() {
+    if (Socket* socket = dynamic_cast<Socket*>(this)) {
+        if (socket->joint() == NULL) return NULL;
+        else return socket->joint()->bone();
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(this)) {
+        if (joint->socket() == NULL) return NULL;
+        else return joint->socket()->bone();
+    }
+    else
+        return NULL;
+}
+std::pair<Socket*, Joint*> Connection::socketJoint() {
+    if (Socket* socket = dynamic_cast<Socket*>(this))
+        return std::make_pair(socket, socket->joint());
+    else if (Joint* joint = dynamic_cast<Joint*>(this))
+        return std::make_pair(joint->socket(), joint);
+    else
+        return std::make_pair((Socket*)NULL, (Joint*)NULL);
+}
+
 
 Bone* Connection::attach(Bone* bone) {
     if (bone == NULL) return bone;

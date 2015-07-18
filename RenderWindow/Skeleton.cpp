@@ -1,4 +1,4 @@
-#include "Skeleton.h"
+#include "BodyComponents.h"
 #include "utils.h"
 
 using namespace Scene;
@@ -6,33 +6,23 @@ using namespace std;
 using namespace glm;
 using namespace Math;
 
-void Skeleton::jiggle(const float& amplitude) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
+std::set<std::pair<Socket*, Joint*>> Skeleton::socketJoints() const {
+    if (_bones.size() == 0) return std::set<std::pair<Socket*, Joint*>>();
+    
+    Bone* root = *_bones.begin();
 
-std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>> Skeleton::bonesSocketsJoints() const {
-    if (_root == NULL) return std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>>();
-
-    std::set<Bone*> visitedBones({ _root });
-    std::set<Joint*> visitedJoints;
-    std::set<Socket*> visitedSockets;
-    std::vector<Bone*> boneStack({ _root });
+    std::set<std::pair<Socket*, Joint*>> socketJoints;
+    std::set<Bone*> visitedBones({ root });
+    std::vector<Bone*> boneStack({ root });
 
     do {
         Bone* bone = boneStack.back();
         boneStack.pop_back();
 
-        for (auto socket : bone->sockets()) {
-            visitedSockets.insert(socket);
-            Bone* opposingBone = socket->opposingBone();
+        for (auto connection : bone->connections()) {
+            Bone* opposingBone = connection->opposingBone();
             if (opposingBone == NULL) continue;
-            if (visitedBones.find(opposingBone) == visitedBones.end()) {
-                visitedBones.insert(opposingBone);
-                boneStack.push_back(opposingBone);
-            }
-        }
-        for (auto joint : bone->joints()) {
-            visitedJoints.insert(joint);
-            Bone* opposingBone = joint->opposingBone();
-            if (opposingBone == NULL) continue;
+            socketJoints.insert(connection->socketJoint());
             if (visitedBones.find(opposingBone) == visitedBones.end()) {
                 visitedBones.insert(opposingBone);
                 boneStack.push_back(opposingBone);
@@ -40,109 +30,18 @@ std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>> Skelet
         }
     } while (boneStack.size() > 0);
 
-    std::vector<Bone*> bones(visitedBones.begin(), visitedBones.end());
-    std::vector<Socket*> sockets(visitedSockets.begin(), visitedSockets.end());
-    std::vector<Joint*> joints(visitedJoints.begin(), visitedJoints.end());
+    return socketJoints;
+}
 
-    return make_tuple(bones, sockets, joints);
-}
-std::vector<Bone*> Skeleton::bones() const {
-    std::vector<Bone*> bones;
-    std::tie(bones, std::ignore, std::ignore) = bonesSocketsJoints();
-    return bones;
-}
-std::vector<Socket*> Skeleton::sockets() const {
-    std::vector<Socket*> sockets;
-    std::tie(std::ignore, sockets, std::ignore) = bonesSocketsJoints();
+std::set<Socket*> Skeleton::sockets() const {
+    set<Socket*> sockets;
+    for (auto socketJoint : socketJoints())
+        sockets.insert(socketJoint.first);
     return sockets;
 }
-std::vector<Joint*> Skeleton::joints() const {
-    std::vector<Joint*> joints;
-    std::tie(std::ignore, std::ignore, joints) = bonesSocketsJoints();
+std::set<Joint*> Skeleton::joints() const {
+    set<Joint*> joints;
+    for (auto socketJoint : socketJoints())
+        joints.insert(socketJoint.second);
     return joints;
-}
-
-
-void Skeleton::doDraw() {
-
-    if (_root == NULL) return;
-
-    int nPush = 0;
-    int nPop = 0;
-
-    vector<tuple<Bone*, Connection*, int>> stack;
-    stack.push_back(tuple<Bone*, Connection*, int>(_root, NULL, 0));
-    set<Bone*> drawn;
-    vector<bool> depthVisited;
-
-    for (auto target : _root->connectionToBones()) {
-        if (target.second != NULL) {
-            stack.push_back(make_tuple(target.second, target.first, 1));
-        }
-    }
-
-    vec3 translation;
-    AxisAngleRotation2 rotation;
-
-    Bone* bone;
-    Connection* connection; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
-    int depth;
-    int previousDepth = 0; // the depth of the root, which is the starting point
-    while (stack.size() > 0) {
-
-        tie(bone, connection, depth) = stack.back();
-        if (depthVisited.size() < depth + 1) {
-            depthVisited.resize(depth + 1, false);
-        }
-        depthVisited[depth] = true;
-        stack.pop_back();
-        
-        if (depth == 2) {
-            int j = 0;
-        }
-
-        for (auto target : bone->connectionToBones()) {
-            // the Bone from which "target" descended in the tree is just the variable "Bone* bone"
-            if (target.second != NULL && drawn.find(target.second) == drawn.end()) {
-                stack.push_back(make_tuple(target.second, target.first, depth + 1));
-            }
-        }
-
-        if (depth < previousDepth) {
-            for (int i = 0; i < previousDepth - depth; i++) {
-                glPopMatrix();
-                nPop++;
-            }
-            if (depthVisited[depth] && bone != _root) {
-                tie(translation, rotation) = connection->alignAnchorToTarget();
-
-                glPopMatrix();
-                glPushMatrix();
-                pushTranslation(translation);
-                pushRotation(rotation);
-            }
-            bone->draw(0.2);
-        }
-        else {
-            if (depth == previousDepth) {
-                glPopMatrix();
-                nPop++;
-            }
-            tie(translation, rotation) = connection->alignAnchorToTarget();
-            glPushMatrix();
-            pushTranslation(translation);
-            pushRotation(rotation);
-            bone->draw(0.2);
-            nPush++;
-        }
-        drawn.insert(bone);
-        previousDepth = depth;
-
-    }
-    if (glGetError() != GL_NO_ERROR) {
-        std::cout << gluErrorString(glGetError()) << std::endl;
-    }
-    if (nPush != nPop) {
-        int j = 0;
-    }
 }

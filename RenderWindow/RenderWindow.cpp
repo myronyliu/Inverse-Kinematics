@@ -3,12 +3,12 @@
 #include "stdafx.h"
 #include "GlutUI.h"
 #include "Paths.h"
-#include "Skeleton.h"
+#include "Body.h"
 #include "MakeSkeleton.h"
 
 Scene::Path* tipPath;
 Scene::Path* anchorPath;
-Scene::Skeleton* skeleton;
+Scene::Body* body;
 
 void idle(void) {
     /*skeleton->jiggle(2);
@@ -58,8 +58,8 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    skeleton = axisTree(5);
-    world.addObject(skeleton);
+    body = axisTree(5);
+    world.addObject(body);
 
 
     Scene::Camera * cam = new Scene::Camera();
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     ///// Keyboard Hotkey Assignments /////
     ///////////////////////////////////////
     auto ilambda = [&]() {
-        skeleton->jiggle(2);
+        body->skeleton()->jiggle(2);
     };
     auto jlambda = [&]() {
     };

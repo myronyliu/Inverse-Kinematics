@@ -1,15 +1,10 @@
-#include "SkeletonComponents.h"
+#include "BodyComponents.h"
 #include "GlutDraw.h"
 
 using namespace std;
 using namespace glm;
 using namespace Math;
 using namespace Scene;
-
-Bone* Joint::opposingBone() const {
-    if (_socket == NULL) return NULL;
-    else return _socket->bone();
-}
 
 Socket* Joint::couple(Socket* socket) {
     if (socket == _socket || socket->type() != type())
@@ -38,7 +33,7 @@ void Joint::decouple() {
     }
 }
 
-std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {
+std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() {
     if (opposingBone() == NULL)
         return make_pair(glm::vec3(0, 0, 0), AxisAngleRotation2(glm::vec2(0, 0), 0));
 
@@ -47,4 +42,8 @@ std::pair<glm::vec3, AxisAngleRotation2> Joint::alignAnchorToTarget() const {
     tie(translation, rotation) = _socket->alignAnchorToTarget();
 
     return make_pair((-rotation).rotationMatrix()*(-translation), -rotation);
+}
+
+std::pair<glm::vec3, AxisAngleRotation2> Joint::alignThisToBone() {
+    return make_pair(glm::vec3(0, 0, 0), AxisAngleRotation2(glm::vec2(0, 0), 0));
 }
