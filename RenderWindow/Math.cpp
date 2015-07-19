@@ -51,6 +51,37 @@ AxisAngleRotation2 Math::composeLocalRotations(const AxisAngleRotation2& axisAng
     glm::vec3 w = composeLocalRotations(axisAngle0.axisAngleRotation3(), axisAngle1.axisAngleRotation3());
     return AxisAngleRotation2(w);
 }
+glm::vec3 Math::composeLocalRotations(const std::vector<glm::vec3>& localRotations) {
+    glm::mat3 R;
+    for (auto w_local : localRotations) {
+        glm::vec3 w_global = R*w_local;
+        R = Math::rotationMatrix(w_global)*R;
+    }
+    return Math::axisAngleRotation3(R);
+}
+AxisAngleRotation2 Math::composeLocalRotations(const std::vector<AxisAngleRotation2>& localRotations) {
+    std::vector<glm::vec3> ws(localRotations.size());
+    for (int i = 0; i < localRotations.size(); i++)
+        ws[i] = localRotations[i].axisAngleRotation3();
+    return AxisAngleRotation2(Math::composeLocalRotations(ws));
+}
+std::vector<std::pair<glm::vec3, glm::vec3>>
+Math::composeLocalTransforms(const std::vector<std::pair<glm::vec3, glm::vec3>>& localTransforms)
+{
+    int nTransforms = localTransforms.size();
+    std::vector<std::pair<glm::vec3,glm::vec3>> composedTransforms(nTransforms);
+    glm::vec3 t(0,0,0), t_local, w_local;
+    glm::mat3 R;
+    for (int i = 0; i < nTransforms; i++) {
+        std::tie(t_local, w_local) = localTransforms[i];
+        glm::vec3 t_global = R*t_local;
+        glm::vec3 w_global = R*w_local;
+        R = Math::rotationMatrix(w_global)*R;
+        t += t_global;
+        composedTransforms[i] = std::make_pair(t, Math::axisAngleRotation3(R));
+    }
+    return composedTransforms;
+}
 
 glm::mat3 Math::rotationMatrix(const glm::vec3& w) {
 

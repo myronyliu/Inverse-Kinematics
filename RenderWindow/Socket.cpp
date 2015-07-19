@@ -140,3 +140,21 @@ std::pair<glm::vec3, AxisAngleRotation2> Socket::alignAnchorToTarget() {
 std::pair<glm::vec3, AxisAngleRotation2> Socket::alignThisToBone() {
     return make_pair(glm::vec3(0, 0, 0), AxisAngleRotation2(glm::vec2(0, 0), 0));
 }
+
+arma::mat Socket::Jacobian_ParamsToTip(Connection*) {
+
+    return arma::mat();
+
+    float delta = 1.0f / 1024;
+
+    backup();
+
+    std::map<int, float> adjustable = adjustableParams();
+    for (auto param : adjustable) {
+        _params[param.first] -= delta;
+
+    }
+    
+
+    restore();
+}

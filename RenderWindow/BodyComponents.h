@@ -103,7 +103,9 @@ namespace Scene {
         Connection* opposingConnection();
         Bone* opposingBone();
         std::pair<Socket*, Joint*> socketJoint();
-        //arma::mat JacobianToOpposingBone_numeric();
+        glm::vec3 translationToOpposingConnection();
+        AxisAngleRotation2 rotationToOpposingConnection();
+        std::pair<glm::vec3, AxisAngleRotation2> transformsToConnection(const std::vector<Connection*>&);
 
         Bone* bone() const { return _bone; }
         glm::vec3 translationFromBone() const { return _translationFromBone; }
@@ -201,6 +203,10 @@ namespace Scene {
 
         std::pair<glm::vec3, AxisAngleRotation2> alignAnchorToTarget();
         std::pair<glm::vec3, AxisAngleRotation2> alignThisToBone();
+
+        // in the name of the function below, Params refers to the params of the socket
+        // Tip refers to the translation from the local coordinate system origin to the position of the argument
+        virtual arma::mat Jacobian_ParamsToTip(Connection*);
 
         virtual int type() const { return -2; }
     protected:

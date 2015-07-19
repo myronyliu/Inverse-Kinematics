@@ -35,6 +35,9 @@ namespace Math {
     glm::mat3 composeLocalTransforms(const glm::mat3&, const glm::mat3&);
     glm::vec3 composeLocalRotations(const glm::vec3&, const glm::vec3&);
     AxisAngleRotation2 composeLocalRotations(const AxisAngleRotation2&, const AxisAngleRotation2&);
+    glm::vec3 composeLocalRotations(const std::vector<glm::vec3>&);
+    AxisAngleRotation2 composeLocalRotations(const std::vector<AxisAngleRotation2>&);
+    std::vector<std::pair<glm::vec3, glm::vec3>> composeLocalTransforms(const std::vector<std::pair<glm::vec3, glm::vec3>>&);
 
     glm::vec3 axisAngleRotation3(const glm::vec2& axis, const float& angle);
     glm::vec3 axisAngleRotation3(const float& angle, const glm::vec2& axis);
