@@ -2,6 +2,11 @@
 #include "Math.h"
 #include "utils.h"
 
+glm::vec3 Math::rotate(const glm::vec3& v, const glm::vec3& w) {
+    float angle = glm::length(w);
+    if (angle == 0) return v;
+    else return glm::rotate(v, angle, w / angle);
+}
 
 float Math::clamp(const float& lowerBound, const float& value, const float& upperBound) {
     if (lowerBound >= upperBound) return value;

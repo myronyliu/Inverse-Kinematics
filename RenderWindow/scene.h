@@ -127,13 +127,9 @@ class Object
 public:
 /* Constructors */
     Object(const bool& visible = true) :
-        _translation(glm::vec3(0, 0, 0)), _rotation(AxisAngleRotation2()), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(visible), _objectID(nextID()) {}
+        _translation(glm::vec3(0, 0, 0)), _rotation(glm::vec3(0,0,0)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(visible), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const glm::vec3& w) :
-        _translation(translation), _rotation(Math::axisAngleRotation2(w)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
-    Object(const glm::vec3& translation, const glm::vec2& axis, const float& angle) :
-        _translation(translation), _rotation(AxisAngleRotation2(axis,angle)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
-    Object(const glm::vec3& translation, const AxisAngleRotation2& axisAngle) :
-        _translation(translation), _rotation(axisAngle), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+        _translation(translation), _rotation(w), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     
     void draw();
     void draw(Shader*);
@@ -141,12 +137,8 @@ public:
 
     /* getters */
     glm::vec3 translation() const { return _translation; }
-    glm::vec3 rotationAxis3() const { return Math::axisAngleRotation3(_rotation._axis, 1); }
-    glm::vec2 rotationAxis2() const { return _rotation._axis; }
-    glm::vec3 rotation3() const { return _rotation.axisAngleRotation3(); }
-    glm::mat3 rotationMat() const { return Math::rotationMatrix(_rotation); }
-    AxisAngleRotation2 rotation() const { return _rotation; }
-    AxisAngleRotation2 rotation2() const { return _rotation; }
+    glm::vec3 rotation() const { return _rotation; }
+    glm::mat3 rotationMatrix() const { return Math::rotationMatrix(_rotation); }
     bool getVisible() const { return _visible; }
     World* getWorld() const { return _world; }
     int getID() const { return _objectID; }
@@ -154,10 +146,8 @@ public:
     /* setters */
     void setColor(const glm::vec4& color) { _color = color; }
     void setTranslation(const glm::vec3& translation) { _translation = translation; }
-    void setRotation(const glm::vec3& w) { _rotation = Math::axisAngleRotation2(w); }
-    void setRotationAxis(const glm::vec3& w) { _rotation._axis = Math::axisAngleRotation2(w)._axis; }
-    void setRotationAxis(const glm::vec2& rotAxis) { _rotation._axis = rotAxis; }
-    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = Math::axisAngleAlignZYtoVECS2(z, y); }
+    void setRotation(const glm::vec3& w) { _rotation = w; }
+    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = Math::axisAngleAlignZYtoVECS3(z, y); }
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
 
@@ -169,8 +159,8 @@ public:
 protected:
     World * _world;
     int _objectID;
-    glm::vec3 _translation; // translation
-    AxisAngleRotation2 _rotation; // rotation axis direction axisAngleRotationd by (theta,phi)
+    glm::vec3 _translation;
+    glm::vec3 _rotation;
     glm::vec4 _color;
     int _material;
     bool _visible;
@@ -198,7 +188,7 @@ class Arrow : public Object{
 public:
     Arrow() : Object(), _length(1) {}
     Arrow(const glm::vec3& origin, const glm::vec3& displacement) :
-        Object(origin, Math::axisAngleAlignZtoVEC2(displacement)), _length(glm::length(displacement)) {}
+        Object(origin, displacement), _length(glm::length(displacement)) {}
     void doDraw();
 private:
     float _length;
@@ -210,7 +200,7 @@ public:
     Box(const glm::vec3& center, const glm::vec3& rotation, const glm::vec3& dimensions) :
         Object(center, rotation), _dimensions(dimensions) {}
     Box(const glm::vec3& center, const glm::vec3& z, const glm::vec3& y, const glm::vec3& dimensions) :
-        Object(center, Math::axisAngleAlignZYtoVECS2(z, y)), _dimensions(dimensions) {}
+        Object(center, Math::axisAngleAlignZYtoVECS3(z, y)), _dimensions(dimensions) {}
     void doDraw();
 protected:
     glm::vec3 _dimensions;
@@ -220,7 +210,7 @@ class Cylinder : public Object {
 public:
     Cylinder() {}
     Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) :
-        Object(center, Math::axisAngleAlignZtoVEC2(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
+        Object(center, Math::axisAngleAlignZtoVEC3(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
     void doDraw() { GlutDraw::drawCylinder(_translation, glm::vec3(0, 0, _height / 2), _radius); }
 private:
     float _radius;
@@ -277,7 +267,7 @@ public:
     }
     glm::vec3 point(const float& t) const {
         glm::vec3 pt = _scale*_parameterization(t);
-        return glm::rotate(pt, _rotation._angle, _rotation.axis3())+_translation;
+        return Math::rotate(pt, _rotation) + _translation;
     }
     glm::vec3 currentPoint() const { return _parameterization(_t); }
 
