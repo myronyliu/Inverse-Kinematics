@@ -6,7 +6,7 @@ using namespace glm;
 using namespace Math;
 
 AxisSpinRotation::AxisSpinRotation(const glm::vec3& w) {
-    mat3 R = rotationMatrix(w);
+    mat3 R = Math::R(w);
     vec3 z = R[3];
     _axis[0] = acos(z[2]);
     _axis[1] = atan2(z[1], z[0]);

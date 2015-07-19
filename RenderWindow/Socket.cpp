@@ -93,8 +93,8 @@ std::pair<glm::vec3, glm::vec3> Socket::alignAnchorToTarget() {
     if (opposingBone() == NULL)
         return make_pair(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
 
-    glm::mat3 SocketAxes_Socketed = Math::rotationMatrix(_wFromBone);
-    glm::mat3 SocketToJoint_Socketed = revertFromBasis(Math::rotationMatrix(_wToJoint), SocketAxes_Socketed);
+    glm::mat3 SocketAxes_Socketed = Math::R(_wFromBone);
+    glm::mat3 SocketToJoint_Socketed = revertFromBasis(Math::R(_wToJoint), SocketAxes_Socketed);
     glm::mat3 FlippedJointAxes_Socketed = SocketToJoint_Socketed*SocketAxes_Socketed;
     glm::mat3 JointAxes_Socketed = FlippedJointAxes_Socketed;
     JointAxes_Socketed[0] *= -1;
@@ -103,7 +103,7 @@ std::pair<glm::vec3, glm::vec3> Socket::alignAnchorToTarget() {
 
     glm::vec3 t = _tFromBone + FlippedJointAxes_Socketed*(_tToJoint);
 
-    glm::mat3 JointAxes_Jointed = Math::rotationMatrix(_joint->_wFromBone);
+    glm::mat3 JointAxes_Jointed = Math::R(_joint->_wFromBone);
     glm::mat3 JointedAxes_Joint = glm::inverse(JointAxes_Jointed);
     
     // The following aligns the joint axes from the Jointed Bone frame to the
@@ -119,7 +119,7 @@ std::pair<glm::vec3, glm::vec3> Socket::alignAnchorToTarget() {
 
     glm::mat3 SocketedToJointed_Socketed = JointToJointed_Socketed*JointAxes_Socketed;
 
-    return make_pair(t, Math::axisAngleRotation3(SocketedToJointed_Socketed));
+    return make_pair(t, Math::w(SocketedToJointed_Socketed));
 }
 
 std::pair<glm::vec3, glm::vec3> Socket::alignThisToBone() {

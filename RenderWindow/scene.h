@@ -138,7 +138,7 @@ public:
     /* getters */
     glm::vec3 translation() const { return _t; }
     glm::vec3 rotation() const { return _w; }
-    glm::mat3 rotationMatrix() const { return Math::rotationMatrix(_w); }
+    glm::mat3 rotationMatrix() const { return Math::R(_w); }
     bool getVisible() const { return _visible; }
     World* getWorld() const { return _world; }
     int getID() const { return _objectID; }

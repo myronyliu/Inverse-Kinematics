@@ -11,11 +11,6 @@ float jointRadius = 0.1;
 
 // find rotation vector to align object axis with global z-axis
 
-
-inline glm::vec3 composeRotation(const glm::vec3& w0, const glm::vec3& w1) {
-    return axisAngleRotation3(rotationMatrix(w1)*rotationMatrix(w0));
-}
-
 /* Method Definitions */
 
 void Camera::pushRotation() const {

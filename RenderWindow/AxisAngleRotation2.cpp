@@ -75,7 +75,7 @@ AxisAngleRotation2::AxisAngleRotation2(const AxisSpinRotation& axisSpin) {
     y = glm::rotate(y, theta, v);
     z = glm::rotate(z, theta, v);
 
-    glm::vec3 w = Math::axisAngleRotation3(glm::mat3(x, y, z));
+    glm::vec3 w = Math::w(glm::mat3(x, y, z));
 
     _angle = glm::length(w);
     if (_angle == 0)
@@ -176,7 +176,7 @@ void AxisAngleRotation2::randPerturbAxis(const float& dzArcLength, const float& 
     }
 
     glm::mat3 new_R = glm::mat3(x, y, z);
-    glm::vec3 new_axis = glm::normalize(Math::axisAngleRotation3(new_R));
+    glm::vec3 new_axis = glm::normalize(Math::w(new_R));
     if (glm::dot(axis3(), new_axis) < 0) new_axis = -new_axis;
 
     _axis[0] = acos(new_axis[2]);

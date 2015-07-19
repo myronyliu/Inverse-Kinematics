@@ -62,7 +62,7 @@ glm::vec3 Connection::translationToOpposingConnection() {
     if (Socket* socket = dynamic_cast<Socket*>(this))
         return socket->translationToJoint();
     else if (Joint* joint = dynamic_cast<Joint*>(this)) {
-        glm::mat3 RtoSocket = Math::rotationMatrix((-joint->socket()->rotationToJoint()));
+        glm::mat3 RtoSocket = Math::R((-joint->socket()->rotationToJoint()));
         return -RtoSocket*joint->socket()->translationToJoint();
     }
     else

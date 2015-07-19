@@ -41,7 +41,7 @@ std::pair<glm::vec3, glm::vec3> Joint::alignAnchorToTarget() {
     glm::vec3 rotation;
     tie(translation, rotation) = _socket->alignAnchorToTarget();
 
-    return make_pair(Math::rotationMatrix(-rotation)*(-translation), -rotation);
+    return make_pair(Math::R(-rotation)*(-translation), -rotation);
 }
 
 std::pair<glm::vec3, glm::vec3> Joint::alignThisToBone() {

@@ -52,10 +52,10 @@ glm::vec3 Math::composeLocalRotations(const glm::vec3& w0, const glm::vec3& w1) 
     float angle1 = glm::length(w1);
     if (angle0 == 0) return w1;
     if (angle1 == 0) return w0;
-    glm::mat3 R0 = rotationMatrix(w0);
+    glm::mat3 R0 = Math::R(w0);
     glm::vec3 w1_frame0 = R0*w1;
-    glm::mat3 R = rotationMatrix(w1_frame0)*R0;
-    return axisAngleRotation3(R);
+    glm::mat3 R = Math::R(w1_frame0)*R0;
+    return Math::w(R);
 }
 AxisAngleRotation2 Math::composeLocalRotations(const AxisAngleRotation2& axisAngle0, const AxisAngleRotation2& axisAngle1) {
     glm::vec3 w = composeLocalRotations(axisAngle0.axisAngleRotation3(), axisAngle1.axisAngleRotation3());
@@ -65,9 +65,9 @@ glm::vec3 Math::composeLocalRotations(const std::vector<glm::vec3>& localRotatio
     glm::mat3 R;
     for (auto w_local : localRotations) {
         glm::vec3 w_global = R*w_local;
-        R = Math::rotationMatrix(w_global)*R;
+        R = Math::R(w_global)*R;
     }
-    return Math::axisAngleRotation3(R);
+    return Math::w(R);
 }
 AxisAngleRotation2 Math::composeLocalRotations(const std::vector<AxisAngleRotation2>& localRotations) {
     std::vector<glm::vec3> ws(localRotations.size());
@@ -86,14 +86,14 @@ Math::composeLocalTransforms(const std::vector<std::pair<glm::vec3, glm::vec3>>&
         std::tie(t_local, w_local) = localTransforms[i];
         glm::vec3 t_global = R*t_local;
         glm::vec3 w_global = R*w_local;
-        R = Math::rotationMatrix(w_global)*R;
+        R = Math::R(w_global)*R;
         t += t_global;
-        composedTransforms[i] = std::make_pair(t, Math::axisAngleRotation3(R));
+        composedTransforms[i] = std::make_pair(t, Math::w(R));
     }
     return composedTransforms;
 }
 
-glm::mat3 Math::rotationMatrix(const glm::vec3& w) {
+glm::mat3 Math::R(const glm::vec3& w) {
 
     float theta = glm::length(w);
     theta -= (2 * M_PI)*floor(theta / (2 * M_PI));
@@ -111,18 +111,18 @@ glm::mat3 Math::rotationMatrix(const glm::vec3& w) {
         return glm::mat3() + sin(theta)*wCross + (1 - cos(theta))*wCross*wCross;
     }
 }
-glm::mat3 Math::rotationMatrix(const AxisAngleRotation2& axisAngle) {
-    return rotationMatrix(axisAngle.axisAngleRotation3());
+glm::mat3 Math::R(const AxisAngleRotation2& axisAngle) {
+    return Math::R(axisAngle.axisAngleRotation3());
 }
-glm::mat3 Math::rotationMatrix(const glm::vec2& axis, const float& angle) {
-    return rotationMatrix(axisAngleRotation3(axis, angle));
+glm::mat3 Math::R(const glm::vec2& axis, const float& angle) {
+    return Math::R(Math::w(axis, angle));
 }
-glm::mat3 Math::rotationMatrix(const float& angle, const glm::vec2& axis) {
-    return rotationMatrix(axisAngleRotation3(axis, angle));
+glm::mat3 Math::R(const float& angle, const glm::vec2& axis) {
+    return Math::R(Math::w(axis, angle));
 }
 
 
-glm::vec3 Math::axisAngleRotation3(const glm::mat3& R) {
+glm::vec3 Math::w(const glm::mat3& R) {
     float acosArg = (R[0][0] + R[1][1] + R[2][2] - 1) / 2;
     if (acosArg < -0.999999) {
         if (R[0][0] >= R[1][1] && R[0][0] >= R[2][2]) {
@@ -147,7 +147,7 @@ glm::vec3 Math::axisAngleRotation3(const glm::mat3& R) {
     }
 }
 AxisAngleRotation2 Math::axisAngleRotation2(const glm::mat3& R) {
-    return AxisAngleRotation2(axisAngleRotation3(R));
+    return AxisAngleRotation2(Math::w(R));
 }
 
 AxisAngleRotation2 Math::axisAngleRotation2(const glm::vec3& w) {
@@ -159,13 +159,13 @@ AxisAngleRotation2 Math::axisAngleRotation2(const glm::vec3& w) {
 }
 
 
-glm::vec3 Math::axisAngleRotation3(const glm::vec2& axis, const float& angle) {
+glm::vec3 Math::w(const glm::vec2& axis, const float& angle) {
     return mod(angle, 2 * M_PI)*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
-glm::vec3 Math::axisAngleRotation3(const float& angle, const glm::vec2& axis) {
+glm::vec3 Math::w(const float& angle, const glm::vec2& axis) {
     return mod(angle, 2 * M_PI)*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
 }
-glm::vec3 Math::axisAngleRotation3(const AxisAngleRotation2& axisAngle) {
+glm::vec3 Math::w(const AxisAngleRotation2& axisAngle) {
     glm::vec2 axis = axisAngle._axis;
     float angle = mod(axisAngle._angle, 2 * M_PI);
     return angle*glm::vec3(sin(axis[0])*cos(axis[1]), sin(axis[0])*sin(axis[1]), cos(axis[0]));
@@ -217,11 +217,11 @@ glm::vec3 Math::axisAngleAlignZYtoVECS3(const glm::vec3& zIn, const glm::vec3& y
     glm::vec3 y = glm::normalize(yIn - glm::dot(yIn, z)*z);
     glm::vec3 x = glm::cross(y, z);
     glm::mat3 R = glm::mat3(x, y, z);
-    return axisAngleRotation3(R);
+    return Math::w(R);
 }
 glm::vec3 Math::axisAngleAlignVECStoZY3(const glm::vec3& z, const glm::vec3& y) { return -axisAngleAlignZYtoVECS3(z, y); }
 AxisAngleRotation2 Math::axisAngleAlignVECStoZY2(const glm::vec3& z, const glm::vec3& y) { return axisAngleRotation2(axisAngleAlignVECStoZY3(z, y)); }
 AxisAngleRotation2 Math::axisAngleAlignZYtoVECS2(const glm::vec3& z, const glm::vec3& y) { return axisAngleRotation2(axisAngleAlignZYtoVECS3(z, y)); }
 
-glm::mat3 Math::matrixAlignVECtoZ(const glm::vec3& v) { return rotationMatrix(axisAngleAlignVECtoZ3(v)); }
-glm::mat3 Math::matrixAlignZtoVEC(const glm::vec3& v) { return rotationMatrix(axisAngleAlignZtoVEC3(v)); }
+glm::mat3 Math::matrixAlignVECtoZ(const glm::vec3& v) { return Math::R(axisAngleAlignVECtoZ3(v)); }
+glm::mat3 Math::matrixAlignZtoVEC(const glm::vec3& v) { return Math::R(axisAngleAlignZtoVEC3(v)); }

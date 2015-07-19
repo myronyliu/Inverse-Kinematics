@@ -15,10 +15,10 @@ namespace Math {
 
     float periodicClamp(const float&, const float&, const float&, const float&);
 
-    glm::mat3 rotationMatrix(const glm::vec3&);
-    glm::mat3 rotationMatrix(const AxisAngleRotation2&);
-    glm::mat3 rotationMatrix(const glm::vec2&, const float&);
-    glm::mat3 rotationMatrix(const float&, const glm::vec2&);
+    glm::mat3 R(const glm::vec3&);
+    glm::mat3 R(const AxisAngleRotation2&);
+    glm::mat3 R(const glm::vec2&, const float&);
+    glm::mat3 R(const float&, const glm::vec2&);
     // The following gives the matrix for changing from the former coordinate axes to the latter coordinate axes
     // e.g. To reexpress v (currently expressed in the former basis) in the latter basis,
     // ...  use basisChangeMatrix(former basis, latter basis)*v
@@ -42,10 +42,10 @@ namespace Math {
     AxisAngleRotation2 composeLocalRotations(const std::vector<AxisAngleRotation2>&);
     std::vector<std::pair<glm::vec3, glm::vec3>> composeLocalTransforms(const std::vector<std::pair<glm::vec3, glm::vec3>>&);
 
-    glm::vec3 axisAngleRotation3(const glm::vec2& axis, const float& angle);
-    glm::vec3 axisAngleRotation3(const float& angle, const glm::vec2& axis);
-    glm::vec3 axisAngleRotation3(const AxisAngleRotation2& axisAngle);
-    glm::vec3 axisAngleRotation3(const glm::mat3& R);
+    glm::vec3 w(const glm::vec2& axis, const float& angle);
+    glm::vec3 w(const float& angle, const glm::vec2& axis);
+    glm::vec3 w(const AxisAngleRotation2& axisAngle);
+    glm::vec3 w(const glm::mat3& R);
 
     AxisAngleRotation2 axisAngleRotation2(const glm::vec3&);
     AxisAngleRotation2 axisAngleRotation2(const glm::mat3&);
