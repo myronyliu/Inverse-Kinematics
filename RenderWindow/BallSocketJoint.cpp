@@ -16,7 +16,7 @@ void BallSocket::perturbParams(const float& scale) {
     glm::vec3 dAxis = glm::vec3(sin(dArc)*cos(randPhi), sin(dArc)*cos(randPhi), cos(dArc));
 
     glm::mat3 R1 = matrixAlignZtoVEC(dAxis);
-    glm::mat3 R = revertFromBasis(R1, _rotationToJoint.rotationMatrix())*_rotationToJoint.rotationMatrix();
+    glm::mat3 R = revertFromBasis(R1, Math::rotationMatrix(_wToJoint))*Math::rotationMatrix(_wToJoint);
     glm::vec3 newAxis = glm::normalize(R[2]);
 
     std::map<int, float> newParams;
@@ -108,7 +108,7 @@ std::map<int, float> BallSocket::adjustableParams() const {
 }
 
 void BallSocket::buildParamsFromTransforms() {
-    AxisSpinRotation axisSpin(_rotationToJoint);
+    AxisSpinRotation axisSpin(_wToJoint);
     _params[0] = axisSpin._axis[0];
     _params[1] = axisSpin._axis[1];
     _params[2] = axisSpin._spin;

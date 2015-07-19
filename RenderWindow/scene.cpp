@@ -74,8 +74,8 @@ void Object::draw()
     glMaterialfv(GL_FRONT, GL_DIFFUSE, color);
 
     glPushMatrix();
-    pushTranslation(_translation);
-    pushRotation(_rotation);
+    pushTranslation(_t);
+    pushRotation(_w);
 
     doDraw();
 
@@ -86,8 +86,8 @@ void Object::draw(Shader * shader)
     if (!_visible) return;
 
     glPushMatrix();
-    pushTranslation(_translation);
-    pushRotation(_rotation);
+    pushTranslation(_t);
+    pushRotation(_w);
 
     shader->link();
     doDraw();

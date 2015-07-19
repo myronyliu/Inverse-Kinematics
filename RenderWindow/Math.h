@@ -6,6 +6,7 @@
 
 namespace Math {
 
+    glm::vec3 clampRotation(const glm::vec3& w);
     glm::vec3 rotate(const glm::vec3& v, const glm::vec3& w);
 
     float clamp(const float& lowerBound, const float& value, const float& upperBound);

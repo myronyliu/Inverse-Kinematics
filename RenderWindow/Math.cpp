@@ -2,6 +2,11 @@
 #include "Math.h"
 #include "utils.h"
 
+
+glm::vec3 Math::clampRotation(const glm::vec3& w) {
+    return Math::mod(glm::length(w), 2 * M_PI)*glm::normalize(w);
+}
+
 glm::vec3 Math::rotate(const glm::vec3& v, const glm::vec3& w) {
     float angle = glm::length(w);
     if (angle == 0) return v;

@@ -127,27 +127,27 @@ class Object
 public:
 /* Constructors */
     Object(const bool& visible = true) :
-        _translation(glm::vec3(0, 0, 0)), _rotation(glm::vec3(0,0,0)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(visible), _objectID(nextID()) {}
+        _t(glm::vec3(0, 0, 0)), _w(glm::vec3(0,0,0)), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(visible), _objectID(nextID()) {}
     Object(const glm::vec3& translation, const glm::vec3& w) :
-        _translation(translation), _rotation(w), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
+        _t(translation), _w(w), _color(glm::vec4(1, 1, 1, 1)), _material(DIFFUSE), _visible(true), _objectID(nextID()) {}
     
     void draw();
     void draw(Shader*);
     virtual void doDraw() = 0;
 
     /* getters */
-    glm::vec3 translation() const { return _translation; }
-    glm::vec3 rotation() const { return _rotation; }
-    glm::mat3 rotationMatrix() const { return Math::rotationMatrix(_rotation); }
+    glm::vec3 translation() const { return _t; }
+    glm::vec3 rotation() const { return _w; }
+    glm::mat3 rotationMatrix() const { return Math::rotationMatrix(_w); }
     bool getVisible() const { return _visible; }
     World* getWorld() const { return _world; }
     int getID() const { return _objectID; }
 
     /* setters */
     void setColor(const glm::vec4& color) { _color = color; }
-    void setTranslation(const glm::vec3& translation) { _translation = translation; }
-    void setRotation(const glm::vec3& w) { _rotation = w; }
-    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _rotation = Math::axisAngleAlignZYtoVECS3(z, y); }
+    void setTranslation(const glm::vec3& translation) { _t = translation; }
+    void setRotation(const glm::vec3& w) { _w = w; }
+    void setOrientation(const glm::vec3& z, const glm::vec3& y) { _w = Math::axisAngleAlignZYtoVECS3(z, y); }
     void setVisible(bool visible) { _visible = visible; }
     void setWorld(World * world) { _world = world; }
 
@@ -159,8 +159,8 @@ public:
 protected:
     World * _world;
     int _objectID;
-    glm::vec3 _translation;
-    glm::vec3 _rotation;
+    glm::vec3 _t;
+    glm::vec3 _w;
     glm::vec4 _color;
     int _material;
     bool _visible;
@@ -211,7 +211,7 @@ public:
     Cylinder() {}
     Cylinder(const glm::vec3& center, const glm::vec3& halfAxis, const float& radius) :
         Object(center, Math::axisAngleAlignZtoVEC3(halfAxis)), _radius(radius), _height(2 * glm::length(halfAxis)) {}
-    void doDraw() { GlutDraw::drawCylinder(_translation, glm::vec3(0, 0, _height / 2), _radius); }
+    void doDraw() { GlutDraw::drawCylinder(_t, glm::vec3(0, 0, _height / 2), _radius); }
 private:
     float _radius;
     float _height;
@@ -256,25 +256,25 @@ private:
 class Path : public Object
 {
 public:
-    Path(const float& scale = 1, const float& t = 0) : Object(),_scale(scale), _t(t) {}
+    Path(const float& scale = 1, const float& time = 0) : Object(),_scale(scale), _time(time) {}
 
     void setParameterization(glm::vec3 (*parameterization)(const float&)) { _parameterization = parameterization; }
-    void setT(const float& t) { _t = t - floor(t); }
+    void setT(const float& time) { _time = time - floor(time); }
     glm::vec3 stepT(const float& dt = 1.0f / 1024) {
-        _t += dt;
-        _t -= floor(_t);
-        return point(_t);
+        _time += dt;
+        _time -= floor(_time);
+        return point(_time);
     }
     glm::vec3 point(const float& t) const {
         glm::vec3 pt = _scale*_parameterization(t);
-        return Math::rotate(pt, _rotation) + _translation;
+        return Math::rotate(pt, _w) + _t;
     }
-    glm::vec3 currentPoint() const { return _parameterization(_t); }
+    glm::vec3 currentPoint() const { return _parameterization(_time); }
 
     void doDraw();
 private:
     glm::vec3(*_parameterization)(const float&);
-    float _t;
+    float _time;
     float _scale;
 };
 

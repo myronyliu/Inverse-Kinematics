@@ -1,5 +1,5 @@
-#ifndef _ROTATION_H_
-#define _ROTATION_H_
+#ifndef _w_H_
+#define _w_H_
 
 #include "stdafx.h"
 

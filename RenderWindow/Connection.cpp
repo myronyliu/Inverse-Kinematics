@@ -6,28 +6,28 @@ using namespace Scene;
 Connection::Connection(const int& i, const float& scale, Bone* bone) {
 
     if (i == 0) {
-        _translationFromBone = scale*glm::vec3(1, 0, 0);
-        _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), M_PI / 2);
+        _tFromBone = scale*glm::vec3(1, 0, 0);
+        _wFromBone = glm::vec3(0, M_PI / 2, 0);
     }
     else if (i == 1) {
-        _translationFromBone = scale*glm::vec3(-1, 0, 0);
-        _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), -M_PI / 2);
+        _tFromBone = scale*glm::vec3(-1, 0, 0);
+        _wFromBone = glm::vec3(0, -M_PI / 2, 0);
     }
     else if (i == 2) {
-        _translationFromBone = scale*glm::vec3(0, 1, 0);
-        _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, 0), -M_PI / 2);
+        _tFromBone = scale*glm::vec3(0, 1, 0);
+        _wFromBone = glm::vec3(-M_PI / 2, 0, 0);
     }
     else if (i == 3) {
-        _translationFromBone = scale*glm::vec3(0, -1, 0);
-        _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, 0), M_PI / 2);
+        _tFromBone = scale*glm::vec3(0, -1, 0);
+        _wFromBone = glm::vec3(M_PI / 2, 0, 0);
     }
     else if (i == 4) {
-        _translationFromBone = scale*glm::vec3(0, 0, 1);
-        _rotationFromBone = AxisAngleRotation2(glm::vec2(0, 0), 0);
+        _tFromBone = scale*glm::vec3(0, 0, 1);
+        _wFromBone = glm::vec3(0, 0, 0);
     }
     else if (i == 5) {
-        _translationFromBone = scale*glm::vec3(0, 0, -1);
-        _rotationFromBone = AxisAngleRotation2(glm::vec2(M_PI / 2, M_PI / 2), M_PI);
+        _tFromBone = scale*glm::vec3(0, 0, -1);
+        _wFromBone = glm::vec3(0, M_PI, 0);
     }
 }
 
@@ -62,19 +62,19 @@ glm::vec3 Connection::translationToOpposingConnection() {
     if (Socket* socket = dynamic_cast<Socket*>(this))
         return socket->translationToJoint();
     else if (Joint* joint = dynamic_cast<Joint*>(this)) {
-        glm::mat3 RtoSocket = (-joint->socket()->rotationToJoint()).rotationMatrix();
+        glm::mat3 RtoSocket = Math::rotationMatrix((-joint->socket()->rotationToJoint()));
         return -RtoSocket*joint->socket()->translationToJoint();
     }
     else
         return glm::vec3(0, 0, 0);
 }
-AxisAngleRotation2 Connection::rotationToOpposingConnection() {
+glm::vec3 Connection::rotationToOpposingConnection() {
     if (Socket* socket = dynamic_cast<Socket*>(this))
         return socket->rotationToJoint();
     else if (Joint* joint = dynamic_cast<Joint*>(this))
         return -joint->socket()->rotationToJoint();
     else
-        return AxisAngleRotation2(glm::vec2(0, 0), 0);
+        return glm::vec3(0, 0, 0);
 }
 
 std::pair<Socket*, Joint*> Connection::socketJoint() {
@@ -85,23 +85,23 @@ std::pair<Socket*, Joint*> Connection::socketJoint() {
     else
         return std::make_pair((Socket*)NULL, (Joint*)NULL);
 }
-std::pair<glm::vec3, AxisAngleRotation2> Connection::transformsToConnection(const std::vector<Connection*>& sequence) {
+std::pair<glm::vec3, glm::vec3> Connection::transformsToConnection(const std::vector<Connection*>& sequence) {
     glm::mat3 R;
     std::vector<std::pair<glm::vec3, glm::vec3>> localTransforms;
     glm::vec3 t_local, w_local;
     for (int i = 0; i < sequence.size(); i++) {
         Connection* connection = sequence[i];
         t_local = connection->translationToOpposingConnection();
-        w_local = connection->rotationToOpposingConnection().axisAngleRotation3();
+        w_local = connection->rotationToOpposingConnection();
         localTransforms.push_back(std::make_pair(t_local, w_local));
         t_local = -connection->opposingConnection()->translationFromBone();
-        w_local = -connection->opposingConnection()->rotationFromBone().axisAngleRotation3();
+        w_local = -connection->opposingConnection()->rotationFromBone();
         localTransforms.push_back(std::make_pair(t_local, w_local));
         t_local = sequence[i + 1]->translationFromBone();
-        w_local = sequence[i + 1]->rotationFromBone().axisAngleRotation3();
+        w_local = sequence[i + 1]->rotationFromBone();
         // TODO: fix the out-of-bounds condition on the last iteration
     }
-    return std::pair<glm::vec3, AxisAngleRotation2>();
+    return std::pair<glm::vec3, glm::vec3>();
 }
 
 
@@ -125,8 +125,8 @@ void Connection::draw(const float& scale) const {
     drawAnchor(scale);
 
     glPushMatrix();
-    pushTranslation(_translationFromBone);
-    pushRotation(_rotationFromBone);
+    pushTranslation(_tFromBone);
+    pushRotation(_wFromBone);
 
     drawPivot(scale);
 

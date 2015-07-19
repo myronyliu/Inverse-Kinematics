@@ -239,9 +239,9 @@ void Bone::doDraw(const float& scale) const {
     if (_sockets.size() + _joints.size() < 3) {
         vector<glm::vec3> pts;
         for (auto socket : _sockets)
-            pts.push_back(socket->_translationFromBone);
+            pts.push_back(socket->_tFromBone);
         for (auto joint : _joints)
-            pts.push_back(joint->_translationFromBone);
+            pts.push_back(joint->_tFromBone);
         if (pts.size() == 1) {
             GlutDraw::drawCone(glm::vec3(0, 0, 0), glm::length(pts[0]) / 2, pts[0]);
         }
