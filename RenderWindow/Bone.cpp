@@ -209,6 +209,18 @@ Connection* Bone::getConnectionToBone(Bone* neighbor) const {
     return NULL;
 }
 
+bool Bone::hasConnection(Connection* connection) const {
+    if (Socket* socket = dynamic_cast<Socket*>(connection)) {
+        if (_sockets.find(socket) == _sockets.end()) return true;
+        else return false;
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(connection)) {
+        if (_joints.find(joint) == _joints.end()) return true;
+        else return false;
+    }
+    else return false;
+}
+
 /////////////////
 //// DRAWING ////
 /////////////////

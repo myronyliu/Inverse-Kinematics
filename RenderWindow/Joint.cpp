@@ -33,17 +33,11 @@ void Joint::decouple() {
     }
 }
 
-std::pair<glm::vec3, glm::vec3> Joint::alignAnchorToTarget() {
-    if (opposingBone() == NULL)
-        return make_pair(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
-
+bool Joint::transformAnchorToTarget(glm::vec3& t, glm::vec3& w) const {
     glm::vec3 translation;
     glm::vec3 rotation;
-    tie(translation, rotation) = _socket->alignAnchorToTarget();
-
-    return make_pair(Math::R(-rotation)*(-translation), -rotation);
-}
-
-std::pair<glm::vec3, glm::vec3> Joint::alignThisToBone() {
-    return make_pair(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
+    if (!_socket->transformAnchorToTarget(translation, rotation)) return false;
+    t = Math::R(-rotation)*(-translation);
+    w = -rotation;
+    return true;
 }

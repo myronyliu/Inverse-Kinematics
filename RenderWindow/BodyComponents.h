@@ -59,11 +59,14 @@ namespace Scene {
         std::set<Socket*> sockets() const { return _sockets; }
         std::set<Connection*> connections() const;
 
+        bool hasConnection(Connection* connection) const;
+
         std::map<Connection*, Bone*> connectionToBones() const;
         std::map<Socket*, Bone*> socketToBones() const;
         std::map<Joint*, Bone*> jointToBones() const;
 
         Connection* getConnectionToBone(Bone*) const;
+        
 
     protected:
         Skeleton* _skeleton;
@@ -91,21 +94,24 @@ namespace Scene {
         }
         virtual void drawPivot(const float&) const = 0;
 
-        // The following is expressed in the frame of _bone
-        virtual std::pair<glm::vec3, glm::vec3> alignAnchorToTarget() = 0;
-        virtual std::pair<glm::vec3, glm::vec3> alignThisToBone() = 0;
 
         /////////////////
         //// GETTERS ////
         /////////////////
 
-        Skeleton* skeleton();
-        Connection* opposingConnection();
-        Bone* opposingBone();
+        Skeleton* skeleton() const;
+        Connection* opposingConnection() const;
+        Bone* opposingBone() const;
         std::pair<Socket*, Joint*> socketJoint();
-        glm::vec3 translationToOpposingConnection();
-        glm::vec3 rotationToOpposingConnection();
-        std::pair<glm::vec3, glm::vec3> transformsToConnection(const std::vector<Connection*>&);
+        glm::vec3 translationToOpposingConnection() const;
+        glm::vec3 rotationToOpposingConnection() const;
+        glm::vec3 translationFromOpposingConnection() const;
+        glm::vec3 rotationFromOpposingConnection() const;
+
+        bool alignToConnection(Connection*, glm::vec3&, glm::vec3&);
+        std::pair<glm::vec3, glm::vec3> transformsToConnection(const std::vector<Connection*>&) const;
+
+        virtual bool transformAnchorToTarget(glm::vec3&, glm::vec3&) const = 0;
 
         Bone* bone() const { return _bone; }
         glm::vec3 translationFromBone() const { return _tFromBone; }
@@ -141,8 +147,7 @@ namespace Scene {
 
         Socket* socket() const { return _socket; }
 
-        std::pair<glm::vec3, glm::vec3> alignAnchorToTarget();
-        std::pair<glm::vec3, glm::vec3> alignThisToBone();
+        bool transformAnchorToTarget(glm::vec3&, glm::vec3&) const;
 
         virtual int type() const { return -1; }
     protected:
@@ -191,14 +196,16 @@ namespace Scene {
 
         glm::vec3 translationToJoint() const { return _tToJoint; }
         glm::vec3 rotationToJoint() const { return _wToJoint; }
+        glm::vec3 translationFromJoint() const { return Math::rotate(-_tToJoint, -_wToJoint); }
+        glm::vec3 rotationFromJoint() const { return -_wToJoint; }
         Joint* joint() const { return _joint; }
 
-        std::pair<glm::vec3, glm::vec3> alignAnchorToTarget();
-        std::pair<glm::vec3, glm::vec3> alignThisToBone();
+        bool transformAnchorToTarget(glm::vec3&, glm::vec3&) const;
 
         // in the name of the function below, Params refers to the params of the socket
         // Tip refers to the translation from the local coordinate system origin to the position of the argument
-        virtual arma::mat Jacobian_ParamsToTip(Connection*);
+
+        //virtual arma::mat Jacobian_ParamsToTip(Connection*);
 
         virtual int type() const { return -2; }
     protected:

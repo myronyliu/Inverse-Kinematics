@@ -30,7 +30,7 @@ void Body::doDraw() {
     }
 
     vec3 translation;
-    AxisAngleRotation2 rotation;
+    vec3 rotation;
 
     Bone* bone;
     Connection* connection; // the halfJoint that connects bone to the Bone it descended from in the graph-theoretic sense
@@ -62,7 +62,7 @@ void Body::doDraw() {
                 nPop++;
             }
             if (depthVisited[depth] && bone != root) {
-                tie(translation, rotation) = connection->alignAnchorToTarget();
+                connection->transformAnchorToTarget(translation,rotation);
 
                 glPopMatrix();
                 glPushMatrix();
@@ -76,7 +76,7 @@ void Body::doDraw() {
                 glPopMatrix();
                 nPop++;
             }
-            tie(translation, rotation) = connection->alignAnchorToTarget();
+            connection->transformAnchorToTarget(translation, rotation);
             glPushMatrix();
             pushTranslation(translation);
             pushRotation(rotation);

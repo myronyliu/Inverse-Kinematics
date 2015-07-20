@@ -89,57 +89,35 @@ void Socket::setConstraint(const int& key, const float& value) {
     buildTransformsFromParams();
 }
 
-std::pair<glm::vec3, glm::vec3> Socket::alignAnchorToTarget() {
-    if (opposingBone() == NULL)
-        return make_pair(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
+bool Socket::transformAnchorToTarget(glm::vec3& t, glm::vec3& w) const {
+    if (opposingBone() == NULL) return false;
 
-    glm::mat3 SocketAxes_Socketed = Math::R(_wFromBone);
-    glm::mat3 SocketToJoint_Socketed = revertFromBasis(Math::R(_wToJoint), SocketAxes_Socketed);
-    glm::mat3 FlippedJointAxes_Socketed = SocketToJoint_Socketed*SocketAxes_Socketed;
-    glm::mat3 JointAxes_Socketed = FlippedJointAxes_Socketed;
-    JointAxes_Socketed[0] *= -1;
-    JointAxes_Socketed[2] *= -1;
-    // ^ z axes face opposite directions and y's are aligned (our arbitrary convention)
+    std::vector<std::pair<glm::vec3, glm::vec3>> localTransforms(4);
+    localTransforms[0] = std::make_pair(_tFromBone, _wFromBone);
+    localTransforms[1] = std::make_pair(_tToJoint, _wToJoint);
+    localTransforms[2] = std::make_pair(glm::vec3(0, 0, 0), glm::vec3(0, M_PI, 0));
+    localTransforms[3] = std::make_pair(Math::rotate(-_joint->_tFromBone, -_joint->_wFromBone), -_joint->_wFromBone);
 
-    glm::vec3 t = _tFromBone + FlippedJointAxes_Socketed*(_tToJoint);
-
-    glm::mat3 JointAxes_Jointed = Math::R(_joint->_wFromBone);
-    glm::mat3 JointedAxes_Joint = glm::inverse(JointAxes_Jointed);
-    
-    // The following aligns the joint axes from the Jointed Bone frame to the
-    // joint axes in the Socketed Bone frame
-    glm::mat3 R_align = JointAxes_Socketed*JointedAxes_Joint;
-    t -= R_align*_joint->_tFromBone;
-
-    auto asdf = R_align*_joint->_tFromBone;
-
-    glm::mat3 JointToJointed_Socketed
-        = revertFromBasis(JointedAxes_Joint, JointAxes_Socketed);
-    // we've now reversed from the (unflipped) JointAxes representation of the last rotation, to the Socketed-Body representation
-
-    glm::mat3 SocketedToJointed_Socketed = JointToJointed_Socketed*JointAxes_Socketed;
-
-    return make_pair(t, Math::w(SocketedToJointed_Socketed));
+    std::pair<glm::vec3, glm::vec3> tw = Math::composeLocalTransforms(localTransforms).back();
+    t = tw.first;
+    w = tw.second;
+    return true;
 }
 
-std::pair<glm::vec3, glm::vec3> Socket::alignThisToBone() {
-    return make_pair(glm::vec3(0, 0, 0), glm::vec3(0, 0, 0));
-}
-
-arma::mat Socket::Jacobian_ParamsToTip(Connection*) {
-
-    return arma::mat();
-
-    float delta = 1.0f / 1024;
-
-    backup();
-
-    std::map<int, float> adjustable = adjustableParams();
-    for (auto param : adjustable) {
-        _params[param.first] -= delta;
-
-    }
-    
-
-    restore();
-}
+//arma::mat Socket::Jacobian_ParamsToTip(Connection*) {
+//
+//    return arma::mat();
+//
+//    float delta = 1.0f / 1024;
+//
+//    backup();
+//
+//    std::map<int, float> adjustable = adjustableParams();
+//    for (auto param : adjustable) {
+//        _params[param.first] -= delta;
+//
+//    }
+//    
+//
+//    restore();
+//}
