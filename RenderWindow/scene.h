@@ -188,7 +188,7 @@ class Arrow : public Object{
 public:
     Arrow() : Object(), _length(1) {}
     Arrow(const glm::vec3& origin, const glm::vec3& displacement) :
-        Object(origin, displacement), _length(glm::length(displacement)) {}
+        Object(origin, Math::axisAngleAlignZtoVEC3(displacement)), _length(glm::length(displacement)) {}
     void doDraw();
 private:
     float _length;

@@ -259,24 +259,23 @@ TreeNode<Bone*>* Connection::boneTree() {
     Bone* opposingBone = this->opposingBone();
     if (opposingBone == NULL) return root;
 
-    std::vector<std::tuple<Bone*, Connection*, TreeNode<Bone*>*>> stack;
-    stack.push_back(std::make_tuple(opposingBone, opposingConnection(), root));
-    std::set<Bone*> visitedBones({ opposingBone });
+    std::vector<std::pair<Bone*, TreeNode<Bone*>*>> stack;
+    stack.push_back(std::make_pair(opposingBone, root));
+    std::set<Bone*> visitedBones({ _bone });
 
     Bone* bone;
-    Connection* connectionToPrevious;
     TreeNode<Bone*>* parent;
     do {
-        std::tie(bone, connectionToPrevious, parent) = stack.back();
+        std::tie(bone, parent) = stack.back();
         stack.pop_back();
 
+        TreeNode<Bone*>* subtree = new TreeNode<Bone*>(bone, parent);
+        visitedBones.insert(bone);
+
         for (auto connection : bone->connections()) {
-            if (connection == connectionToPrevious) continue;
-            TreeNode<Bone*>* subtree = new TreeNode<Bone*>(bone, parent);
             opposingBone = connection->opposingBone();
             if (opposingBone == NULL || visitedBones.find(opposingBone) != visitedBones.end()) continue;
-            visitedBones.insert(opposingBone);
-            stack.push_back(std::make_tuple(opposingBone, connection->opposingConnection(), subtree));
+            stack.push_back(std::make_pair(opposingBone, subtree));
         }
     } while (stack.size() > 0);
 

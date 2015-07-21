@@ -31,6 +31,9 @@ namespace Scene {
         SkeletonComponent() : _tGlobal(glm::vec3(0, 0, 0)), _wGlobal(glm::vec3(0, 0, 0)) {}
         SkeletonComponent(const glm::vec3& t, const glm::vec3& w) : _tGlobal(t), _wGlobal(w) {}
 
+        glm::vec3 globalTranslation() const { return _tGlobal; }
+        glm::vec3 globalRotation() const { return _wGlobal; }
+
         void setGlobalTranslation(const glm::vec3&);
         void setGlobalRotation(const glm::vec3&);
         void setGlobalTranslationAndRotation(const glm::vec3&, const glm::vec3&);
@@ -269,7 +272,7 @@ namespace Scene {
         std::set<Joint*> joints() const;
 
         // The following updates global transformations assuming that the "root of input" is fixed (and doens't need to be updated)
-        void updateGlobals(TreeNode<Bone*>*);
+        void updateGlobals(TreeNode<Bone*>* = NULL);
 
         void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
     private:

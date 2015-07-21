@@ -18,8 +18,8 @@ public:
     void setDepth(const int&);
 
     // in DFS, leaf nodes should only appear once. Internal nodes should appear "their number of children plus one" times
-    std::vector<TreeNode*> depthFirstSearchSequence() const;
-    std::vector<TreeNode*> iterativeRecursionSequence() const;
+    std::vector<TreeNode*> depthFirstSearchSequence();
+    std::vector<TreeNode*> iterativeRecursionSequence();
 
     TreeNode* parent() const { return _parent; }
     std::set<TreeNode*> children() const { return _children; }

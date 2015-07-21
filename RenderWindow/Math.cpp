@@ -14,7 +14,7 @@ glm::vec3 Math::rotate(const glm::vec3& v, const glm::vec3& w) {
 }
 
 float Math::clamp(const float& lowerBound, const float& value, const float& upperBound) {
-    if (lowerBound >= upperBound) return value;
+    if (lowerBound > upperBound) return value;
     else if (value < lowerBound) return lowerBound;
     else if (value > upperBound) return upperBound;
     else return value;

@@ -488,20 +488,17 @@ void GlutDraw::drawParallelepiped(glm::vec3 center, glm::vec3 xAxis, glm::vec3 y
 void GlutDraw::drawPyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseToFirst, int nFaces, bool mode) {
 
     float r = glm::length(baseToFirst);
-    glm::vec3 y = baseToFirst / r;
+    if (mode) r *= sqrt(2);
+    glm::vec3 y = glm::normalize(baseToFirst);
     glm::vec3 z = glm::normalize(baseToTip - glm::dot(baseToTip, y)*y);
 
     glm::vec3 baseToTip_local = baseToTip;
-    glm::vec3 rotAxis = Math::axisAngleAlignVECStoZY3(z, y);
-    float rotAngle = glm::length(rotAxis);
-    if (rotAngle > 0) {
-        rotAxis /= rotAngle;
-        baseToTip_local = glm::rotate(baseToTip, M_PI*rotAngle / 2, rotAxis);
-    }
+    glm::vec3 w = Math::axisAngleAlignZYtoVECS3(z, y);
+    baseToTip_local = Math::rotate(baseToTip, -w);
 
     glPushMatrix();
-    glTranslatef(base[0], base[1], base[2]);
-    if (rotAngle > 0) glRotatef(90 * rotAngle, rotAxis[0], rotAxis[1], rotAxis[2]);
+    pushTranslation(base);
+    pushRotation(w);
 
     float dPhi = 2 * M_PI / nFaces;
 
@@ -540,20 +537,17 @@ void GlutDraw::drawPyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseTo
 void GlutDraw::drawDoublePyramid(glm::vec3 base, glm::vec3 baseToTip, glm::vec3 baseToFirst, int nFaces, bool mode) {
 
     float r = glm::length(baseToFirst);
-    glm::vec3 y = baseToFirst / r;
+    if (mode) r *= sqrt(2);
+    glm::vec3 y = glm::normalize(baseToFirst);
     glm::vec3 z = glm::normalize(baseToTip - glm::dot(baseToTip, y)*y);
 
     glm::vec3 baseToTip_local = baseToTip;
-    glm::vec3 rotAxis = Math::axisAngleAlignVECStoZY3(z, y);
-    float rotAngle = glm::length(rotAxis);
-    if (rotAngle > 0) {
-        rotAxis /= rotAngle;
-        baseToTip_local = glm::rotate(baseToTip, M_PI*rotAngle / 2, rotAxis);
-    }
+    glm::vec3 w = Math::axisAngleAlignZYtoVECS3(z, y);
+    baseToTip_local = Math::rotate(baseToTip, -w);
 
     glPushMatrix();
-    glTranslatef(base[0], base[1], base[2]);
-    if (rotAngle > 0) glRotatef(90 * rotAngle, rotAxis[0], rotAxis[1], rotAxis[2]);
+    pushTranslation(base);
+    pushRotation(w);
 
     float dPhi = 2 * M_PI / nFaces;
 

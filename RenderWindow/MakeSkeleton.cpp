@@ -15,11 +15,8 @@ Body* axisTree(const int& depth) {
     std::vector<Socket*> rootSockets(6);
     for (int i = 0; i < rootSockets.size(); i++) {
         rootSockets[i] = new BallSocket(i);
-        //rootSockets[i]->setTranslationFromBone(randRot());
-        /*rootSockets[i]->setConstraint(0, 0.4*M_PI);
-        rootSockets[i]->setConstraint(1, 0.6*M_PI);
-        rootSockets[i]->setConstraint(2, 0);
-        rootSockets[i]->setConstraint(3, M_PI / 4);*/
+        //rootSockets[i]->setConstraint(0, 0.2*M_PI);
+        rootSockets[i]->setConstraint(1, 0.3*M_PI);
     }
 
     Bone* root = new Bone(rootSockets, std::vector<Joint*>());
@@ -28,9 +25,8 @@ Body* axisTree(const int& depth) {
         std::vector<Socket*> sockets(5);
         for (int i = 0; i < sockets.size(); i++) {
             sockets[i] = new BallSocket(i, 0.5);
-            //rootSockets[i]->setRotationFromBone(randRot());
-            /*rootSocket->setConstraint(0, 0.4*M_PI);
-            rootSocket->setConstraint(1, 0.6*M_PI);*/
+            //sockets[i]->setConstraint(0, 0.2*M_PI);
+            sockets[i]->setConstraint(1, 0.3*M_PI);
         }
         for (auto socket : sockets) {
             socket->couple(new BallJoint(0, 0.5, new Bone()));
@@ -41,7 +37,10 @@ Body* axisTree(const int& depth) {
     }
 
     Scene::Skeleton* skeleton = new Scene::Skeleton(root);
-    return new Scene::Body(skeleton);
+    Scene::Body* body = new Scene::Body(skeleton);
+    body->anchor(root);
+    body->hardUpdate();
+    return body;
 }
 
 Body* chain(const int& nJoints) {
@@ -54,5 +53,7 @@ Body* chain(const int& nJoints) {
     }
     
     Scene::Skeleton* skeleton = new Scene::Skeleton(root);
-    return new Scene::Body(skeleton);
+    Scene::Body* body = new Scene::Body(skeleton);
+    body->anchor(root);
+    return body;
 }

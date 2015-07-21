@@ -259,14 +259,30 @@ void Bone::doDraw(const float& scale) const {
             GlutDraw::drawCone(glm::vec3(0, 0, 0), glm::length(pts[0]) / 2, pts[0]);
         }
         else {
-            /*float d0 = glm::length(pts[0]);
+
+            float d0 = glm::length(pts[0]);
             float d1 = glm::length(pts[1]);
-            float coneAngle = M_PI / 6;
-            float cosTwoAngle = glm::dot(glm::normalize(pts[0]), glm::normalize(pts[1]));
+            float b = fmin(d0, d1) / 4.0f;
+            glm::vec3 n0 = pts[0] / d0;
+            glm::vec3 n1 = pts[1] / d1;
+            float cosTwoAngle = glm::dot(n0, n1);
+            if (cosTwoAngle < -0.999999) {
+                GlutDraw::drawPyramid(glm::vec3(0, 0, 0), pts[0], glm::vec3(0, b, 0));
+                GlutDraw::drawPyramid(glm::vec3(0, 0, 0), pts[1], glm::vec3(0, b, 0));
+                return;
+            }
             float angle = acos(Math::clamp(-1.0f, cosTwoAngle, 1.0f)) / 2;
-            glm::length(pts[0])*/
-            GlutDraw::drawCone(glm::vec3(0, 0, 0), glm::length(pts[0]) / 2, pts[0]);
-            GlutDraw::drawCone(glm::vec3(0, 0, 0), glm::length(pts[1]) / 2, pts[1]);
+            float dh = b / tan(angle);
+            glm::vec3 bisect = n0 + n1;
+            glm::vec3 y0 = glm::normalize(bisect - glm::dot(bisect, n0)*n0)*b;
+            glm::vec3 y1 = glm::normalize(bisect - glm::dot(bisect, n1)*n1)*b;
+            GlutDraw::drawPyramid(pts[0] * dh / d0, pts[0] * (1.0f - dh / d0), y0);
+            GlutDraw::drawPyramid(pts[1] * dh / d1, pts[1] * (1.0f - dh / d1), y1);
+            glm::vec3 A = glm::normalize(bisect)*b / sin(angle);
+            glm::vec3 B = A - 2.0f * y0;
+            glm::vec3 C = A - 2.0f * y1;
+            glm::vec3 axis = glm::normalize(glm::cross(n0, n1))*b;
+            GlutDraw::drawTriangularPrism(A, B, C, axis);
         }
     }
     else {

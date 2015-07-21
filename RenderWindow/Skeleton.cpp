@@ -47,35 +47,45 @@ std::set<Joint*> Skeleton::joints() const {
 }
 
 void Skeleton::updateGlobals(TreeNode<Bone*>* boneTree) {
-    //if (boneTree == NULL) return;
-    //std::vector<TreeNode<Bone*>*> seqn = boneTree->depthFirstSearchSequence();
+    if (boneTree == NULL) {
+        Bone* bone = *_bones.begin();
+        Connection* connection = *bone->connections().begin();
+        TreeNode<Bone*>* treeF = connection->boneTree();
+        TreeNode<Bone*>* treeB = connection->opposingConnection()->boneTree();
+        updateGlobals(treeF);
+        //updateGlobals(treeB);
+        delete treeF;
+        //delete treeB;
+        return;
+    }
+    std::vector<TreeNode<Bone*>*> seqn = boneTree->depthFirstSearchSequence();
 
-    //Bone* root = seqn[0]->data();
-    //TransformStack transformStack(root->_tGlobal, root->_wGlobal);
-    //
-    //for (int i = 1; i < seqn.size(); i++) {
-    //    Bone* bone = seqn[i]->data();
+    Bone* root = seqn[0]->data();
+    TransformStack transformStack(root->_tGlobal, root->_wGlobal);
+    
+    for (int i = 1; i < seqn.size(); i++) {
+        Bone* bone = seqn[i]->data();
 
-    //    int depth = seqn[i]->depth();
-    //    int previousDepth = seqn[i-1]->depth();
+        int depth = seqn[i]->depth();
+        int previousDepth = seqn[i-1]->depth();
 
-    //    if (depth < previousDepth) {
-    //        transformStack.pop();
-    //    }
-    //    else if (depth == previousDepth) {
-    //        std::cout << std::endl; // this should never happen
-    //    }
-    //    else {
-    //        Bone* previousBone = seqn[i - 1]->data();
-    //        Connection* previousToCurrent = previousBone->getConnectionToBone(bone);
-    //        glm::vec3 t, w;
-    //        previousToCurrent->transformAnchorToTarget(t, w);
+        if (depth < previousDepth) {
+            transformStack.pop();
+        }
+        else if (depth == previousDepth) {
+            std::cout << std::endl; // this should never happen
+        }
+        else {
+            Bone* previousBone = seqn[i - 1]->data();
+            Connection* previousToCurrent = previousBone->getConnectionToBone(bone);
+            glm::vec3 t, w;
+            previousToCurrent->transformAnchorToTarget(t, w);
 
-    //        transformStack.push();
-    //        transformStack.translate(t);
-    //        transformStack.rotate(w);
+            transformStack.push();
+            transformStack.translate(t);
+            transformStack.rotate(w);
 
-    //        bone->setGlobalTranslationAndRotation(transformStack.getTranslation(), transformStack.getRotation());
-    //    }
-    //}
+            bone->setGlobalTranslationAndRotation(transformStack.getTranslation(), transformStack.getRotation());
+        }
+    }
 }

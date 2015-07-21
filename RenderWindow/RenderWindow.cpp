@@ -11,7 +11,7 @@ Scene::Path* anchorPath;
 Scene::Body* body;
 
 void idle(void) {
-    /*skeleton->jiggle(2);
+    /*body->jiggle(4);
     glutPostRedisplay();*/
 }
 
@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    body = axisTree(5);
+    body = axisTree(3);
     world.addObject(body);
 
 
@@ -75,7 +75,7 @@ int main(int argc, char* argv[])
     ///// Keyboard Hotkey Assignments /////
     ///////////////////////////////////////
     auto ilambda = [&]() {
-        body->skeleton()->jiggle(2);
+        body->jiggle(2);
     };
     auto jlambda = [&]() {
     };

@@ -13,7 +13,9 @@ void Body::doDraw() {
     if (_skeleton == NULL) return;
     if (_skeleton->bones().size() == 0) return;
 
-    Bone* root = *_skeleton->bones().begin();
+    Bone* root;
+    if (_anchoredBones.empty()) root = *_skeleton->bones().begin();
+    else root = *_anchoredBones.begin();
 
     int nPush = 0;
     int nPop = 0;
@@ -55,33 +57,41 @@ void Body::doDraw() {
                 stack.push_back(make_tuple(target.second, target.first, depth + 1));
             }
         }
+        if (false) {
+            glPushMatrix();
+            pushTranslation(bone->globalTranslation());
+            pushRotation(bone->globalRotation());
+            bone->draw(0.2);
+            glPopMatrix();
+        }
+        if (true) {
+            if (depth < previousDepth) {
+                for (int i = 0; i < previousDepth - depth; i++) {
+                    glPopMatrix();
+                    nPop++;
+                }
+                if (depthVisited[depth] && bone != root) {
+                    connection->transformAnchorToTarget(translation, rotation);
 
-        if (depth < previousDepth) {
-            for (int i = 0; i < previousDepth - depth; i++) {
-                glPopMatrix();
-                nPop++;
+                    glPopMatrix();
+                    glPushMatrix();
+                    pushTranslation(translation);
+                    pushRotation(rotation);
+                }
+                bone->draw(0.2);
             }
-            if (depthVisited[depth] && bone != root) {
-                connection->transformAnchorToTarget(translation,rotation);
-
-                glPopMatrix();
+            else {
+                if (depth == previousDepth) {
+                    glPopMatrix();
+                    nPop++;
+                }
+                connection->transformAnchorToTarget(translation, rotation);
                 glPushMatrix();
                 pushTranslation(translation);
                 pushRotation(rotation);
+                bone->draw(0.2);
+                nPush++;
             }
-            bone->draw(0.2);
-        }
-        else {
-            if (depth == previousDepth) {
-                glPopMatrix();
-                nPop++;
-            }
-            connection->transformAnchorToTarget(translation, rotation);
-            glPushMatrix();
-            pushTranslation(translation);
-            pushRotation(rotation);
-            bone->draw(0.2);
-            nPush++;
         }
         drawn.insert(bone);
         previousDepth = depth;
@@ -92,5 +102,14 @@ void Body::doDraw() {
     }
     if (nPush != nPop) {
         int j = 0;
+    }
+}
+
+void Body::hardUpdate() {
+    Bone* anchor = *_anchoredBones.begin();
+    for (auto connection : anchor->connections()) {
+        TreeNode<Bone*>* boneTree = connection->boneTree();
+        _skeleton->updateGlobals(boneTree);
+        delete boneTree;
     }
 }
