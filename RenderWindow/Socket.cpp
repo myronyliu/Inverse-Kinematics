@@ -43,6 +43,26 @@ bool Socket::getParam(const int& key, float& value) const {
 //// SETTERS ////
 /////////////////
 
+void Socket::setParams(const std::map<int, float>& params_unconstrained) {
+    if (opposingBone() == NULL) return;
+    _params = params_unconstrained;
+    constrainParams();
+    buildTransformsFromParams();
+}
+void Socket::setParam(const int& key, const float& value) {
+    if (opposingBone() == NULL) return;
+    _params[key] = value;
+    constrainParams();
+    buildTransformsFromParams();
+}
+
+void Socket::perturbJoint(const float& scale) {
+    if (opposingBone() == NULL) return;
+    perturbParams(scale);
+    constrainParams();
+    buildTransformsFromParams();
+}
+
 Joint* Socket::couple(Joint* joint) {
     if (joint == _joint || joint->type() != type())
         return joint;
@@ -71,12 +91,14 @@ void Socket::decouple() {
 }
 
 void Socket::setTranslationToJoint(const glm::vec3& translation) {
+    if (opposingBone() == NULL) return;
     _tToJoint = translation;
     buildParamsFromTransforms();
     constrainParams();
     buildTransformsFromParams();
 }
 void Socket::setRotationToJoint(const glm::vec3& w) {
+    if (opposingBone() == NULL) return;
     _wToJoint = Math::clampRotation(w);
     buildParamsFromTransforms();
     constrainParams();
@@ -104,20 +126,46 @@ bool Socket::transformAnchorToTarget(glm::vec3& t, glm::vec3& w) const {
     return true;
 }
 
-//arma::mat Socket::Jacobian_ParamsToTip(Connection*) {
-//
-//    return arma::mat();
-//
-//    float delta = 1.0f / 1024;
-//
-//    backup();
-//
-//    std::map<int, float> adjustable = adjustableParams();
-//    for (auto param : adjustable) {
-//        _params[param.first] -= delta;
-//
-//    }
-//    
-//
-//    restore();
-//}
+std::pair<arma::mat, arma::mat> Socket::J(SkeletonComponent* tip) {
+    std::map<int, float> adjustableParams = this->adjustableParams();
+    arma::mat dt_dparam(3, adjustableParams.size());
+    arma::mat dw_dparam(3, adjustableParams.size());
+    if (opposingBone() == NULL)
+        return std::make_pair(dt_dparam, dw_dparam);
+
+    float dParam = 1.0f / 1024;
+    backup();
+
+    glm::vec3 tPlus, tMinus, wPlus, wMinus;
+    
+    glm::mat3 Ranchor = Math::R(_bone->_wGlobal);
+    //glm::mat3 RtoTip = Math::R(glm::inverse()tip->_wGlobal)
+
+    int column = 0;
+    for (auto param : adjustableParams) {
+        _params[param.first] += dParam;
+        transformAnchorToTarget(tPlus, wPlus);
+        tPlus = Ranchor*tPlus;
+        wPlus = Math::w(Math::R(Ranchor*wPlus)*Ranchor);
+        restore();
+
+        _params[param.first] -= dParam;
+        transformAnchorToTarget(tMinus, wMinus);
+        tPlus = Ranchor*tPlus;
+        wPlus = Math::w(Math::R(Ranchor*wPlus)*Ranchor);
+        restore();
+
+        glm::vec3 Dt = (tPlus - tMinus) / dParam;
+        glm::vec3 Dw = (wPlus - wMinus) / dParam;
+
+        dt_dparam(0, column) = Dt[0];
+        dt_dparam(1, column) = Dt[1];
+        dt_dparam(2, column) = Dt[2];
+        dw_dparam(0, column) = Dw[0];
+        dw_dparam(1, column) = Dw[1];
+        dw_dparam(2, column) = Dw[2];
+        column++;
+    }
+    
+    return std::make_pair(dt_dparam, dw_dparam);
+}

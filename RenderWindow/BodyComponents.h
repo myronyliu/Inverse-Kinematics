@@ -203,7 +203,7 @@ namespace Scene {
         void restore() { _params = _stashedParams; }
         void backup() { _stashedParams = _params; }
 
-        void perturbJoint(const float& scale = 1) { perturbParams(scale); constrainParams(); buildTransformsFromParams(); }
+        void perturbJoint(const float& scale = 1);
         virtual float reach() const { return 0; }
 
         /////////////////
@@ -225,7 +225,7 @@ namespace Scene {
         // in the name of the function below, Params refers to the params of the socket
         // Tip refers to the translation from the local coordinate system origin to the position of the argument
 
-        //virtual arma::mat Jacobian_ParamsToTip(Connection*);
+        std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip);
 
         virtual int type() const { return -2; }
     protected:

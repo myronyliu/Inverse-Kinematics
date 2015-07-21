@@ -57,14 +57,14 @@ void Body::doDraw() {
                 stack.push_back(make_tuple(target.second, target.first, depth + 1));
             }
         }
-        if (false) {
+        if (true) {
             glPushMatrix();
             pushTranslation(bone->globalTranslation());
             pushRotation(bone->globalRotation());
             bone->draw(0.2);
             glPopMatrix();
         }
-        if (true) {
+        if (false) {
             if (depth < previousDepth) {
                 for (int i = 0; i < previousDepth - depth; i++) {
                     glPopMatrix();

@@ -4,7 +4,7 @@
 void TransformStack::rotate(const glm::vec3& w) {
     if (_mode == LOCAL) {
         glm::mat3 R = Math::R(_stack.back().second);
-        _stack.back().second = R*R*w;
+        _stack.back().second = Math::w(Math::R(R*w)*R);
     }
     else if (_mode == GLOBAL)
         _stack.back().second = Math::w(Math::R(w)*Math::R(_stack.back().second));

@@ -16,7 +16,9 @@ Body* axisTree(const int& depth) {
     for (int i = 0; i < rootSockets.size(); i++) {
         rootSockets[i] = new BallSocket(i);
         //rootSockets[i]->setConstraint(0, 0.2*M_PI);
-        rootSockets[i]->setConstraint(1, 0.3*M_PI);
+        rootSockets[i]->setConstraint(1, 0.0*M_PI);
+        //rootSockets[i]->setConstraint(4, 0.0*M_PI);
+        //rootSockets[i]->setConstraint(5, 0.0*M_PI);
     }
 
     Bone* root = new Bone(rootSockets, std::vector<Joint*>());
@@ -26,7 +28,9 @@ Body* axisTree(const int& depth) {
         for (int i = 0; i < sockets.size(); i++) {
             sockets[i] = new BallSocket(i, 0.5);
             //sockets[i]->setConstraint(0, 0.2*M_PI);
-            sockets[i]->setConstraint(1, 0.3*M_PI);
+            sockets[i]->setConstraint(1, 0.0*M_PI);
+            //sockets[i]->setConstraint(4, 0.0*M_PI);
+            //sockets[i]->setConstraint(5, 0.0*M_PI);
         }
         for (auto socket : sockets) {
             socket->couple(new BallJoint(0, 0.5, new Bone()));

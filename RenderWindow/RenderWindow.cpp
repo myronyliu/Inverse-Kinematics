@@ -11,8 +11,8 @@ Scene::Path* anchorPath;
 Scene::Body* body;
 
 void idle(void) {
-    /*body->jiggle(4);
-    glutPostRedisplay();*/
+    body->jiggle(4);
+    glutPostRedisplay();
 }
 
 GlutUI::Manager MANAGER;
