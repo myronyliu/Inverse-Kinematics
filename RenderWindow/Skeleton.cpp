@@ -45,3 +45,37 @@ std::set<Joint*> Skeleton::joints() const {
         joints.insert(socketJoint.second);
     return joints;
 }
+
+void Skeleton::updateGlobals(TreeNode<Bone*>* boneTree) {
+    //if (boneTree == NULL) return;
+    //std::vector<TreeNode<Bone*>*> seqn = boneTree->depthFirstSearchSequence();
+
+    //Bone* root = seqn[0]->data();
+    //TransformStack transformStack(root->_tGlobal, root->_wGlobal);
+    //
+    //for (int i = 1; i < seqn.size(); i++) {
+    //    Bone* bone = seqn[i]->data();
+
+    //    int depth = seqn[i]->depth();
+    //    int previousDepth = seqn[i-1]->depth();
+
+    //    if (depth < previousDepth) {
+    //        transformStack.pop();
+    //    }
+    //    else if (depth == previousDepth) {
+    //        std::cout << std::endl; // this should never happen
+    //    }
+    //    else {
+    //        Bone* previousBone = seqn[i - 1]->data();
+    //        Connection* previousToCurrent = previousBone->getConnectionToBone(bone);
+    //        glm::vec3 t, w;
+    //        previousToCurrent->transformAnchorToTarget(t, w);
+
+    //        transformStack.push();
+    //        transformStack.translate(t);
+    //        transformStack.rotate(w);
+
+    //        bone->setGlobalTranslationAndRotation(transformStack.getTranslation(), transformStack.getRotation());
+    //    }
+    //}
+}

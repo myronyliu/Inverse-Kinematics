@@ -31,7 +31,8 @@ bool Bone::eraseConnection(Connection* connection) {
     return false;
 }
 
-Bone::Bone(vector<Socket*> sockets, vector<Joint*> joints) {
+Bone::Bone(vector<Socket*> sockets, vector<Joint*> joints) : SkeletonComponent()
+{
     for (auto socket : sockets) attach(socket);
     for (auto joint : joints) attach(joint);
 }

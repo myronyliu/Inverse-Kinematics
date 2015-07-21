@@ -3,8 +3,8 @@
 using namespace Math;
 using namespace Scene;
 
-Connection::Connection(const int& i, const float& scale, Bone* bone) {
-
+Connection::Connection(const int& i, const float& scale, Bone* bone) : SkeletonComponent()
+{
     if (i == 0) {
         _tFromBone = scale*glm::vec3(1, 0, 0);
         _wFromBone = glm::vec3(0, M_PI / 2, 0);
@@ -186,24 +186,6 @@ std::pair<Socket*, Joint*> Connection::socketJoint() {
     else
         return std::make_pair((Socket*)NULL, (Joint*)NULL);
 }
-std::pair<glm::vec3, glm::vec3> Connection::transformsToConnection(const std::vector<Connection*>& sequence) const {
-    glm::mat3 R;
-    std::vector<std::pair<glm::vec3, glm::vec3>> localTransforms;
-    glm::vec3 t_local, w_local;
-    for (int i = 0; i < sequence.size(); i++) {
-        Connection* connection = sequence[i];
-        t_local = connection->translationToOpposingConnection();
-        w_local = connection->rotationToOpposingConnection();
-        localTransforms.push_back(std::make_pair(t_local, w_local));
-        t_local = -connection->opposingConnection()->translationFromBone();
-        w_local = -connection->opposingConnection()->rotationFromBone();
-        localTransforms.push_back(std::make_pair(t_local, w_local));
-        t_local = sequence[i + 1]->translationFromBone();
-        w_local = sequence[i + 1]->rotationFromBone();
-        // TODO: fix the out-of-bounds condition on the last iteration
-    }
-    return std::pair<glm::vec3, glm::vec3>();
-}
 
 
 Bone* Connection::attach(Bone* bone) {
@@ -232,4 +214,72 @@ void Connection::draw(const float& scale) const {
     drawPivot(scale);
 
     glPopMatrix();
+}
+
+TreeNode<Connection*>* Connection::connectionTree() {
+    /*if (opposingConnection() == NULL) return new TreeNode<Connection*>(NULL);
+    
+    Connection* node = this;
+    TreeNode<Connection*>* root = new TreeNode<Connection*>(node);
+
+    Bone* opposingBone = this->opposingBone();
+    if (opposingBone == NULL) return root;
+
+    std::vector<std::tuple<Bone*, Connection*, TreeNode<Connection*>*>> stack;
+    stack.push_back(std::make_tuple(opposingBone, opposingConnection(), root));
+    std::set<Bone*> visitedBones({ opposingBone });
+
+    Bone* bone;
+    Connection* connectionToPrevious;
+    TreeNode<Connection*>* parent;
+    do {
+        std::tie(bone, connectionToPrevious, parent) = stack.back();
+        stack.pop_back();
+
+        for (auto connection : bone->connections()) {
+            if (connection == connectionToPrevious) continue;
+            TreeNode<Connection*>* subtree = new TreeNode<Connection*>(connection, parent);
+            opposingBone = connection->opposingBone();
+            if (opposingBone == NULL || visitedBones.find(opposingBone) == visitedBones.end()) continue;
+            visitedBones.insert(opposingBone);
+            stack.push_back(std::make_tuple(opposingBone, connection->opposingConnection(), subtree));
+        }
+    } while (stack.size() > 0);
+
+    return root;*/
+    return NULL;
+}
+
+TreeNode<Bone*>* Connection::boneTree() {
+    if (_bone == NULL) return NULL;
+
+    Bone* node = _bone;
+    TreeNode<Bone*>* root = new TreeNode<Bone*>(_bone);
+
+    Bone* opposingBone = this->opposingBone();
+    if (opposingBone == NULL) return root;
+
+    std::vector<std::tuple<Bone*, Connection*, TreeNode<Bone*>*>> stack;
+    stack.push_back(std::make_tuple(opposingBone, opposingConnection(), root));
+    std::set<Bone*> visitedBones({ opposingBone });
+
+    Bone* bone;
+    Connection* connectionToPrevious;
+    TreeNode<Bone*>* parent;
+    do {
+        std::tie(bone, connectionToPrevious, parent) = stack.back();
+        stack.pop_back();
+
+        for (auto connection : bone->connections()) {
+            if (connection == connectionToPrevious) continue;
+            TreeNode<Bone*>* subtree = new TreeNode<Bone*>(bone, parent);
+            opposingBone = connection->opposingBone();
+            if (opposingBone == NULL || visitedBones.find(opposingBone) != visitedBones.end()) continue;
+            visitedBones.insert(opposingBone);
+            stack.push_back(std::make_tuple(opposingBone, connection->opposingConnection(), subtree));
+        }
+    } while (stack.size() > 0);
+
+    return root;
+    return NULL;
 }

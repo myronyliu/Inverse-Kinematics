@@ -6,6 +6,9 @@
 #include "GlutDraw.h"
 #include "utils.h"
 #include "Math.h"
+#include "TreeNode.h"
+#include "TreeNode.cpp"
+#include "TransformStack.h"
 
 enum {
     PIN = 0,
@@ -20,24 +23,35 @@ namespace Scene {
     class Socket;
     class Connection;
     class Skeleton;
+    class SkeletonComponent;
 
     class SkeletonComponent // Wrapper class for Bones and Connections (Sockets and Joints)
     {
     public:
-        glm::vec3 _globalTranslation;
-        glm::vec3 _globalRotation;
+        SkeletonComponent() : _tGlobal(glm::vec3(0, 0, 0)), _wGlobal(glm::vec3(0, 0, 0)) {}
+        SkeletonComponent(const glm::vec3& t, const glm::vec3& w) : _tGlobal(t), _wGlobal(w) {}
+
+        void setGlobalTranslation(const glm::vec3&);
+        void setGlobalRotation(const glm::vec3&);
+        void setGlobalTranslationAndRotation(const glm::vec3&, const glm::vec3&);
+
+        virtual void dummy() {}
+
+    protected:
+        glm::vec3 _tGlobal;
+        glm::vec3 _wGlobal;
     };
 
     
 
-    class Bone : SkeletonComponent
+    class Bone : public SkeletonComponent
     {
         friend class Joint;
         friend class Socket;
         friend class Skeleton;
         friend class Connection;
     public:
-        Bone() : _sockets(std::set<Socket*>()), _joints(std::set<Joint*>()) {}
+        Bone() : SkeletonComponent(), _sockets(std::set<Socket*>()), _joints(std::set<Joint*>()) {}
         Bone(std::vector<Socket*> sockets, std::vector<Joint*> joints);
         void draw(const float& scale = 1) const;
         virtual void doDraw(const float& scale = 0.2) const;
@@ -86,7 +100,7 @@ namespace Scene {
     public:
         Connection(const int& = 4, const float& = 1, Bone* = NULL);
         Connection(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
-            _bone(bone), _tFromBone(t), _wFromBone(w) {}
+            SkeletonComponent(), _bone(bone), _tFromBone(t), _wFromBone(w) {}
 
         virtual void draw(const float&) const;
         virtual void drawAnchor(const float&) const {
@@ -109,7 +123,10 @@ namespace Scene {
         glm::vec3 rotationFromOpposingConnection() const;
 
         bool alignToConnection(Connection*, glm::vec3&, glm::vec3&);
-        std::pair<glm::vec3, glm::vec3> transformsToConnection(const std::vector<Connection*>&) const;
+
+        TreeNode<Connection*>* connectionTree(); // in the direction going away from _bone
+        // For the other direction, call connectionTree() from opposingConnection()
+        TreeNode<Bone*>* boneTree();
 
         virtual bool transformAnchorToTarget(glm::vec3&, glm::vec3&) const = 0;
 
@@ -250,6 +267,9 @@ namespace Scene {
         std::set<Bone*> bones() const { return _bones; }
         std::set<Socket*> sockets() const;
         std::set<Joint*> joints() const;
+
+        // The following updates global transformations assuming that the "root of input" is fixed (and doens't need to be updated)
+        void updateGlobals(TreeNode<Bone*>*);
 
         void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
     private:
