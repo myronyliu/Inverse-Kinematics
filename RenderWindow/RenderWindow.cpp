@@ -9,9 +9,10 @@
 Scene::Path* tipPath;
 Scene::Path* anchorPath;
 Scene::Body* body;
+Scene::Bone* bone;
 
 void idle(void) {
-    body->jiggle(4);
+    body->setTranslation(bone, glm::vec3(2, 0, 0));
     glutPostRedisplay();
 }
 
@@ -58,8 +59,9 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    body = axisTree(3);
+    std::tie(body, bone) = chain(5);
     world.addObject(body);
+    body->jiggle(4);
 
 
     Scene::Camera * cam = new Scene::Camera();
@@ -75,7 +77,9 @@ int main(int argc, char* argv[])
     ///// Keyboard Hotkey Assignments /////
     ///////////////////////////////////////
     auto ilambda = [&]() {
-        body->jiggle(2);
+        //body->jiggle(2);
+        body->setTranslation(bone, glm::vec3(0, 1, 0));
+        
     };
     auto jlambda = [&]() {
     };

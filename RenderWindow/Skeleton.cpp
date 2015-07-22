@@ -54,15 +54,17 @@ void Skeleton::updateGlobals(TreeNode<Bone*>* boneTree) {
         TreeNode<Bone*>* treeB = connection->opposingConnection()->boneTree();
         updateGlobals(treeF);
         //updateGlobals(treeB);
-        delete treeF;
+        treeF->suicide();
         //delete treeB;
         return;
     }
-    std::vector<TreeNode<Bone*>*> seqn = boneTree->depthFirstSearchSequence();
+    std::vector<TreeNode<Bone*>*> seqn = boneTree->DFSsequence();
 
     Bone* root = seqn[0]->data();
     TransformStack transformStack(root->_tGlobal, root->_wGlobal);
-    
+    root->setGlobalTranslationAndRotation(transformStack.getTranslation(), transformStack.getRotation());
+
+
     for (int i = 1; i < seqn.size(); i++) {
         Bone* bone = seqn[i]->data();
 

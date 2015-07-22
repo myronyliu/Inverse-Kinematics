@@ -1,6 +1,21 @@
 #include "TreeNode.h"
 
 template <class T>
+void TreeNode<T>::insertParent(TreeNode* parent) {
+    parent->_parent = _parent;
+    parent->_children.insert(this);
+    _parent = parent;
+    parent->setDepth(_depth);
+}
+
+template <class T>
+void TreeNode<T>::insertChild(TreeNode* child) {
+    child->_parent = this;
+    _children.insert(child);
+    child->setDepth(_depth + 1);
+}
+
+template <class T>
 TreeNode<T>::TreeNode(const T& data, TreeNode* parent, const std::set<TreeNode*>& children) :
 _data(data), _parent(parent), _children(children)
 {
@@ -37,9 +52,21 @@ TreeNode<T>* TreeNode<T>::leftMostLeaf() const {
     return NULL;
 }
 
+template <class T>
+std::vector<TreeNode<T>*> TreeNode<T>::leaves() const {
+    std::vector<TreeNode*> leaves;
+    std::vector<TreeNode*> seqn = BFSsequence();
+    for (auto node : seqn) {
+        if (node->_children.empty()) {
+            leaves.push_back(node);
+        }
+    }
+    return seqn;
+}
+
 
 template <class T>
-std::vector<TreeNode<T>*> TreeNode<T>::iterativeRecursionSequence() {
+std::vector<TreeNode<T>*> TreeNode<T>::BFSsequence() {
     std::vector<TreeNode*> seqn;
     std::vector<TreeNode*> stack({ this });
     TreeNode* node;
@@ -57,7 +84,7 @@ std::vector<TreeNode<T>*> TreeNode<T>::iterativeRecursionSequence() {
 }
 
 template <class T>
-std::vector<TreeNode<T>*> TreeNode<T>::depthFirstSearchSequence() {
+std::vector<TreeNode<T>*> TreeNode<T>::DFSsequence() {
     std::vector<TreeNode*> seqn;
     std::set<TreeNode*> traversed;
     TreeNode* node = this;
@@ -124,4 +151,14 @@ void TreeNode<T>::setDepth(const int& depth) {
 template <class T>
 int TreeNode<T>::nDescendantGenerations() const {
     return 0;
+}
+
+template <class T>
+void TreeNode<T>::pruneToLeafset(const std::set<TreeNode*> leaves) {
+    std::vector<TreeNode*> seqn = DFSsequence();
+    for (auto node : seqn) {
+        if (node->children().empty() && leaves.find(node) == leaves.end()) {
+            node->suicide();
+        }
+    }
 }

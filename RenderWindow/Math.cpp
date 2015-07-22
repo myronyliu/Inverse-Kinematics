@@ -124,7 +124,7 @@ glm::mat3 Math::R(const float& angle, const glm::vec2& axis) {
 
 glm::vec3 Math::w(const glm::mat3& R) {
     float acosArg = (R[0][0] + R[1][1] + R[2][2] - 1) / 2;
-    if (acosArg < -0.999999) {
+    if (acosArg < -0.99999999) {
         if (R[0][0] >= R[1][1] && R[0][0] >= R[2][2]) {
             float x = sqrt((R[0][0] + 1) / 2);
             return M_PI*glm::vec3(x, R[1][0] / (2 * x), R[2][0] / (2 * x));
@@ -138,7 +138,7 @@ glm::vec3 Math::w(const glm::mat3& R) {
             return M_PI*glm::vec3(R[0][2] / (2 * z), R[1][2] / (2 * z), z);
         }
     }
-    else if (acosArg > 0.999999) {
+    else if (acosArg > 0.99999999) {
         return glm::vec3(0, 0, 0);
     }
     else{

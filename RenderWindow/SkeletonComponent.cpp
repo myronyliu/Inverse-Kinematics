@@ -58,3 +58,46 @@ void SkeletonComponent::setGlobalTranslationAndRotation(const glm::vec3& tGlobal
         }
     }
 }
+
+std::set<SkeletonComponent*> SkeletonComponent::connectedComponents() const {
+    if (const Bone* bone = dynamic_cast<const Bone*>(this)) {
+        std::set<Connection*> connections = bone->connections();
+        return std::set<SkeletonComponent*>(connections.begin(), connections.end());
+    }
+    else if (const Connection* connection = dynamic_cast<const Connection*>(this)) {
+        return std::set<SkeletonComponent*>({ connection->opposingConnection(), connection->bone() });
+    }
+}
+
+TreeNode<SkeletonComponent*>* SkeletonComponent::buildTreeToTargets(std::set<SkeletonComponent*> targets) {
+
+    if (targets.size() == 0) return new TreeNode<SkeletonComponent*>();
+
+    TreeNode<SkeletonComponent*>* root = new TreeNode<SkeletonComponent*>(this);
+
+    std::vector<TreeNode<SkeletonComponent*>*> stack({ root });
+    std::set<SkeletonComponent*> visited;
+
+    std::vector<TreeNode<SkeletonComponent*>*> targetNodes;
+
+    TreeNode<SkeletonComponent*>* tree;
+    do {
+        tree = stack.back();
+        stack.pop_back();
+
+        SkeletonComponent* data = tree->data();
+        if (targets.find(data) != targets.end()) targetNodes.push_back(tree);
+
+        visited.insert(data);
+
+        for (auto component : data->connectedComponents()) {
+            if (visited.find(component) == visited.end()) {
+                TreeNode<SkeletonComponent*>* subTree = new TreeNode<SkeletonComponent*>(component, tree);
+                stack.push_back(subTree);
+            }
+        }
+    } while (stack.size() > 0 && targetNodes.size() < targets.size());
+
+    root->pruneToLeafset(std::set<TreeNode<SkeletonComponent*>*>(targetNodes.begin(), targetNodes.end()));
+    return root;
+}

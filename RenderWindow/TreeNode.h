@@ -11,15 +11,23 @@ public:
     
     TreeNode(const T& data, TreeNode* parent = NULL, const std::set<TreeNode*>& children = std::set<TreeNode<T>*>());
 
-    ~TreeNode() { for (auto child : _children) delete child; }
+    void suicide() {
+        if (_parent != NULL) _parent->_children.erase(this);
+        delete this;
+    }
 
     TreeNode* root();
     TreeNode* leftMostLeaf() const;
+    std::vector<TreeNode*> leaves() const;
     void setDepth(const int&);
+    void pruneToLeafset(const std::set<TreeNode*> leaves);
+
+    void insertParent(TreeNode* parent);
+    void insertChild(TreeNode* child);
 
     // in DFS, leaf nodes should only appear once. Internal nodes should appear "their number of children plus one" times
-    std::vector<TreeNode*> depthFirstSearchSequence();
-    std::vector<TreeNode*> iterativeRecursionSequence();
+    std::vector<TreeNode*> DFSsequence();
+    std::vector<TreeNode*> BFSsequence();
 
     TreeNode* parent() const { return _parent; }
     std::set<TreeNode*> children() const { return _children; }
@@ -32,6 +40,8 @@ private:
     std::set<TreeNode*> _children;
     T _data;
     int _depth;
+
+    ~TreeNode() { for (auto child : _children) delete child; }
 };
 
 #endif

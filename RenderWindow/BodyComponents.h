@@ -38,6 +38,9 @@ namespace Scene {
         void setGlobalRotation(const glm::vec3&);
         void setGlobalTranslationAndRotation(const glm::vec3&, const glm::vec3&);
 
+        std::set<SkeletonComponent*> connectedComponents() const;
+        TreeNode<SkeletonComponent*>* buildTreeToTargets(std::set<SkeletonComponent*> = std::set<SkeletonComponent*>({}));
+
         virtual void dummy() {}
 
     protected:
@@ -99,6 +102,8 @@ namespace Scene {
     class Connection : public SkeletonComponent
     {
         friend class Bone;
+        friend class Joint;
+        friend class Socket;
         friend class Skeleton;
     public:
         Connection(const int& = 4, const float& = 1, Bone* = NULL);
@@ -111,6 +116,7 @@ namespace Scene {
         }
         virtual void drawPivot(const float&) const = 0;
 
+        TreeNode<Bone*>* boneTree();
 
         /////////////////
         //// GETTERS ////
@@ -127,15 +133,15 @@ namespace Scene {
 
         bool alignToConnection(Connection*, glm::vec3&, glm::vec3&);
 
-        TreeNode<Connection*>* connectionTree(); // in the direction going away from _bone
-        // For the other direction, call connectionTree() from opposingConnection()
-        TreeNode<Bone*>* boneTree();
-
         virtual bool transformAnchorToTarget(glm::vec3&, glm::vec3&) const = 0;
 
         Bone* bone() const { return _bone; }
         glm::vec3 translationFromBone() const { return _tFromBone; }
         glm::vec3 rotationFromBone() const { return _wFromBone; }
+
+        std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip);
+        void nudge(SkeletonComponent* tip, const glm::vec3& step);
+
 
         /////////////////
         //// SETTERS ////
@@ -151,12 +157,16 @@ namespace Scene {
         Bone* _bone;
         glm::vec3 _tFromBone;
         glm::vec3 _wFromBone;
+
+        glm::vec3 _tFromBone_stashed;
+        glm::vec3 _wFromBone_stashed;
         
     };
 
     class Joint : public Connection
     {
         friend class Socket;
+        friend class Connection;
         friend class Skeleton;
     public:
         Joint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Connection(i, scale, NULL) { Connection::attach(bone); }
@@ -178,6 +188,7 @@ namespace Scene {
     class Socket :public Connection
     {
         friend class Joint;
+        friend class Connection;
     public:
         Socket(const int& i = 4, const float& scale = 1, Bone* bone = NULL);
         Socket(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
@@ -200,8 +211,8 @@ namespace Scene {
         void setParam(const int& key, const float& value);
         void setConstraint(const int& key, const float& value);
 
-        void restore() { _params = _stashedParams; }
-        void backup() { _stashedParams = _params; }
+        void restore() { _params = _params_stashed; _tFromBone = _tFromBone_stashed; _wFromBone = _wFromBone_stashed; }
+        void backup() { _params_stashed = _params; _tFromBone_stashed = _tFromBone; _wFromBone_stashed = _wFromBone; }
 
         void perturbJoint(const float& scale = 1);
         virtual float reach() const { return 0; }
@@ -224,8 +235,6 @@ namespace Scene {
 
         // in the name of the function below, Params refers to the params of the socket
         // Tip refers to the translation from the local coordinate system origin to the position of the argument
-
-        std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip);
 
         virtual int type() const { return -2; }
     protected:
@@ -256,7 +265,7 @@ namespace Scene {
 
         std::map<int, float> _constraints;  // Constraints are keyed on indices of our choosing
         std::map<int, float> _params;
-        std::map<int, float> _stashedParams;
+        std::map<int, float> _params_stashed;
     };
 
     class Skeleton

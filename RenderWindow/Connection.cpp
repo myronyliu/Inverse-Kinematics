@@ -216,39 +216,6 @@ void Connection::draw(const float& scale) const {
     glPopMatrix();
 }
 
-TreeNode<Connection*>* Connection::connectionTree() {
-    /*if (opposingConnection() == NULL) return new TreeNode<Connection*>(NULL);
-    
-    Connection* node = this;
-    TreeNode<Connection*>* root = new TreeNode<Connection*>(node);
-
-    Bone* opposingBone = this->opposingBone();
-    if (opposingBone == NULL) return root;
-
-    std::vector<std::tuple<Bone*, Connection*, TreeNode<Connection*>*>> stack;
-    stack.push_back(std::make_tuple(opposingBone, opposingConnection(), root));
-    std::set<Bone*> visitedBones({ opposingBone });
-
-    Bone* bone;
-    Connection* connectionToPrevious;
-    TreeNode<Connection*>* parent;
-    do {
-        std::tie(bone, connectionToPrevious, parent) = stack.back();
-        stack.pop_back();
-
-        for (auto connection : bone->connections()) {
-            if (connection == connectionToPrevious) continue;
-            TreeNode<Connection*>* subtree = new TreeNode<Connection*>(connection, parent);
-            opposingBone = connection->opposingBone();
-            if (opposingBone == NULL || visitedBones.find(opposingBone) == visitedBones.end()) continue;
-            visitedBones.insert(opposingBone);
-            stack.push_back(std::make_tuple(opposingBone, connection->opposingConnection(), subtree));
-        }
-    } while (stack.size() > 0);
-
-    return root;*/
-    return NULL;
-}
 
 TreeNode<Bone*>* Connection::boneTree() {
     if (_bone == NULL) return NULL;
@@ -281,4 +248,93 @@ TreeNode<Bone*>* Connection::boneTree() {
 
     return root;
     return NULL;
+}
+
+std::pair<arma::mat, arma::mat> Connection::J(SkeletonComponent* tip) {
+
+    Bone* opposingBone = this->opposingBone();
+    if (opposingBone == NULL)
+        return std::make_pair(arma::mat(0, 0), arma::mat(0, 0));
+
+    if (Socket* socket = dynamic_cast<Socket*>(this)) {
+        std::map<int, float> adjustableParams = socket->adjustableParams();
+        arma::mat dt_dparam(3, adjustableParams.size());
+        arma::mat dw_dparam(3, adjustableParams.size());
+
+        float dParam = 1.0f / 1024;
+
+        glm::vec3 tPlus, tMinus, wPlus, wMinus;
+
+        Connection* joint = opposingConnection();
+        glm::mat3 R_root2socket
+            = Math::R(_wGlobal);
+        glm::mat3 R_root2joint // This one will change
+            = Math::R(R_root2socket*socket->rotationToJoint())*R_root2socket;
+        glm::mat3 R_joint2tip
+            = Math::R(tip->globalRotation())*Math::R(-joint->globalRotation());
+        glm::vec3 t_joint2tip_jointFrame
+            = glm::inverse(R_root2joint)*(tip->globalTranslation() - joint->globalTranslation());
+
+        socket->backup();
+        int column = 0;
+        for (auto param : adjustableParams) {
+            socket->_params[param.first] += dParam;
+            socket->buildTransformsFromParams();
+            R_root2joint = Math::R(R_root2socket*socket->rotationToJoint())*R_root2socket;
+            tPlus = R_root2socket*socket->translationToJoint() + R_root2joint*t_joint2tip_jointFrame;
+            wPlus = Math::w(R_joint2tip*R_root2joint);
+            socket->restore();
+
+            socket->_params[param.first] -= dParam;
+            socket->buildTransformsFromParams();
+            R_root2joint = Math::R(R_root2socket*socket->rotationToJoint())*R_root2socket;
+            tMinus = R_root2socket*socket->translationToJoint() + R_root2joint*t_joint2tip_jointFrame;
+            wMinus = Math::w(R_joint2tip*R_root2joint);
+            socket->restore();
+
+            glm::vec3 Dt = (tPlus - tMinus) / dParam;
+            glm::vec3 Dw = (wPlus - wMinus) / dParam;
+
+            dt_dparam(0, column) = Dt[0];
+            dt_dparam(1, column) = Dt[1];
+            dt_dparam(2, column) = Dt[2];
+            dw_dparam(0, column) = Dw[0];
+            dw_dparam(1, column) = Dw[1];
+            dw_dparam(2, column) = Dw[2];
+            column++;
+        }
+
+        //dt_dparam.print();
+
+        return std::make_pair(dt_dparam, dw_dparam);
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(this)) {
+        return J(opposingConnection());
+    }
+}
+
+
+void Connection::nudge(SkeletonComponent* tip, const glm::vec3& step) {
+    Connection* opposingConnection = this->opposingConnection();
+    if (opposingConnection == NULL) return;
+
+    if (Socket* socket = dynamic_cast<Socket*>(this)) {
+        arma::mat J;
+        std::tie(J, std::ignore) = this->J(tip);
+
+        std::map<int, float> adjustableParams = socket->adjustableParams();
+
+        arma::vec dParams = J.t()*arma::vec(std::vector<double>({ step[0], step[1], step[2] }));
+        //dParams.print();
+        
+        std::map<int, float>::iterator it = adjustableParams.begin();
+        for (int i = 0; i < dParams.size(); i++) {
+            socket->_params[it->first] += dParams[i];
+            it++;
+        }
+        socket->setParams(socket->_params);
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(this)) {
+        opposingConnection->nudge(tip, step);
+    }
 }

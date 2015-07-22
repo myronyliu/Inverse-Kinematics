@@ -5,6 +5,6 @@
 
 Scene::Body* axisTree(const int& depth = 2);
 
-Scene::Body* chain(const int& nJoints = 5);
+std::pair<Scene::Body*,Scene::Bone*> chain(const int& nJoints = 5);
 
 #endif

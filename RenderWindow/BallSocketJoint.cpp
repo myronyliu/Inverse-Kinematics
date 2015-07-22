@@ -35,7 +35,7 @@ void BallSocket::constrainParams() {
     float spin = mod(_params[2], 2 * M_PI);
     if (theta > M_PI) {
         theta = 2 * M_PI - theta;
-        phi = -phi;
+        phi += M_PI;
     } // trivial clamping has been performed to prevent degeneracies
     // proceed to actual user-specified constraints
 
@@ -97,7 +97,7 @@ std::map<int, float> BallSocket::adjustableParams() const {
 
     // ... SPIN ...
     if (!getConstraint(4, lower) || !getConstraint(5, upper))
-        params[2] = params.at(2);
+        params[2] = _params.at(2);
     else {
         lower = mod(lower, 2 * M_PI);
         upper = mod(upper, 2 * M_PI);

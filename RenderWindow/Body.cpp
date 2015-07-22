@@ -5,8 +5,56 @@ using namespace glm;
 using namespace Math;
 using namespace Scene;
 
-void anchor(Bone* bone);
-void unanchor(Bone* bone);
+//////////////////////
+//// CONSTRUCTORS ////
+//////////////////////
+
+Body::Body() :
+Object(), _skeleton(NULL),
+_anchoredTranslations(std::map<SkeletonComponent*, glm::vec3>()),
+_anchoredRotations(std::map<SkeletonComponent*, glm::vec3>())
+{}
+
+Body::Body(Skeleton* skeleton) :
+Object(), _skeleton(skeleton),
+_anchoredTranslations(std::map<SkeletonComponent*, glm::vec3>()),
+_anchoredRotations(std::map<SkeletonComponent*, glm::vec3>())
+{}
+
+Body::Body(Bone* bone) :
+Object(), _skeleton(bone->skeleton()),
+_anchoredTranslations(std::map<SkeletonComponent*, glm::vec3>()),
+_anchoredRotations(std::map<SkeletonComponent*, glm::vec3>())
+{}
+
+
+
+
+std::set<SkeletonComponent*> Body::anchors() const {
+    std::set<SkeletonComponent*> anchors;
+    for (auto anchor : _anchoredTranslations)
+        anchors.insert(anchor.first);
+    for (auto anchor : _anchoredRotations)
+        anchors.insert(anchor.first);
+    return anchors;
+}
+
+void Body::anchor(SkeletonComponent* component, const bool& tFixed, const bool& wFixed) {
+    if (tFixed)
+        _anchoredTranslations[component] = component->globalTranslation();
+    else
+        _anchoredTranslations.erase(component);
+
+    if (wFixed)
+        _anchoredRotations[component] = component->globalRotation();
+    else
+        _anchoredRotations.erase(component);
+}
+void Body::unanchor(SkeletonComponent* component) {
+    _anchoredTranslations.erase(component);
+    _anchoredRotations.erase(component);
+}
+
 
 void Body::doDraw() {
 
@@ -14,8 +62,8 @@ void Body::doDraw() {
     if (_skeleton->bones().size() == 0) return;
 
     Bone* root;
-    if (_anchoredBones.empty()) root = *_skeleton->bones().begin();
-    else root = *_anchoredBones.begin();
+    if (_root == NULL) root = *_skeleton->bones().begin();
+    else root = _root;
 
     int nPush = 0;
     int nPop = 0;
@@ -105,11 +153,31 @@ void Body::doDraw() {
     }
 }
 
-void Body::hardUpdate() {
-    Bone* anchor = *_anchoredBones.begin();
-    for (auto connection : anchor->connections()) {
+void Body::hardUpdate() const {
+    for (auto connection : _root->connections()) {
         TreeNode<Bone*>* boneTree = connection->boneTree();
         _skeleton->updateGlobals(boneTree);
-        delete boneTree;
+        boneTree->suicide();
     }
+}
+
+void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) const {
+    if (_anchoredTranslations.find(component) != _anchoredTranslations.end()) return;
+    
+    glm::vec3 dComponent = 0.0001f*glm::normalize(t - component->globalTranslation());
+
+    TreeNode<SkeletonComponent*>* componentToAnchors
+        = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
+
+    std::vector<TreeNode<SkeletonComponent*>*> seqn = componentToAnchors->DFSsequence();
+    for (auto node : seqn) {
+        SkeletonComponent* data = node->data();
+        if (Connection* connection = dynamic_cast<Connection*>(data)) {
+            connection->nudge(component, dComponent);
+            hardUpdate();
+            //break; // TODO: remove this later, when we fix the double counting
+        }
+    }
+    hardUpdate();
+    componentToAnchors->suicide();
 }

@@ -229,11 +229,11 @@ bool Bone::hasConnection(Connection* connection) const {
 void Bone::draw(const float& scale) const {
     doDraw();
 
-    for (auto socket : _sockets) {
-        socket->draw(0.1);
-    }
-    for (auto joint : _joints) {
-        joint->draw(0.1);
+    for (auto connection : connections()) {
+        Connection* opposingConnection = connection->opposingConnection();
+        float d0 = glm::length(connection->translationFromBone());
+        float d1 = glm::length(opposingConnection->translationFromBone());
+        connection->draw(fmin(d0, d1) / 8);
     }
 }
 
@@ -256,7 +256,7 @@ void Bone::doDraw(const float& scale) const {
         for (auto joint : _joints)
             pts.push_back(joint->_tFromBone);
         if (pts.size() == 1) {
-            GlutDraw::drawCone(glm::vec3(0, 0, 0), glm::length(pts[0]) / 2, pts[0]);
+            GlutDraw::drawPyramid(glm::vec3(0, 0, 0), pts[0], glm::vec3(0, 1, 0)*glm::length(pts[0]) / 4.0f);
         }
         else {
 

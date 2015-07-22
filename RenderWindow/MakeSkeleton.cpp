@@ -3,61 +3,63 @@
 
 using namespace Scene;
 
-Body* axisTree(const int& depth) {
+Body* axisTree(const int& maxDepth) {
 
-    auto randRot = []() {
-        float x = 2.0f*(float)rand() / RAND_MAX - 1.0f;
-        float y = 2.0f*(float)rand() / RAND_MAX - 1.0f;
-        float z = 2.0f*(float)rand() / RAND_MAX - 1.0f;
-        return glm::vec3(x,y,z);
-    };
+    int nBranches = 5;
 
-    std::vector<Socket*> rootSockets(6);
-    for (int i = 0; i < rootSockets.size(); i++) {
-        rootSockets[i] = new BallSocket(i);
-        //rootSockets[i]->setConstraint(0, 0.2*M_PI);
-        rootSockets[i]->setConstraint(1, 0.0*M_PI);
-        //rootSockets[i]->setConstraint(4, 0.0*M_PI);
-        //rootSockets[i]->setConstraint(5, 0.0*M_PI);
-    }
+    std::vector<std::pair<Bone*, int>> stack({ std::make_pair(new Bone(), 0) });
 
-    Bone* root = new Bone(rootSockets, std::vector<Joint*>());
+    Bone *root = NULL;
 
-    for (auto rootSocket : rootSockets) {
-        std::vector<Socket*> sockets(5);
-        for (int i = 0; i < sockets.size(); i++) {
-            sockets[i] = new BallSocket(i, 0.5);
-            //sockets[i]->setConstraint(0, 0.2*M_PI);
-            sockets[i]->setConstraint(1, 0.0*M_PI);
+    Bone *bone = NULL;
+    int depth;
+    do {
+        std::tie(bone, depth) = stack.back();
+        stack.pop_back();
+
+        if (depth == maxDepth) continue;
+
+        std::vector<Socket*> sockets(nBranches);
+        for (int i = 0; i < nBranches; i++) {
+            Bone *newBone = new Bone();
+            sockets[i] = new BallSocket(i, pow(0.5f, depth));
+            sockets[i]->couple(new BallJoint(5, pow(0.5, depth), newBone));
+            stack.push_back(std::make_pair(newBone, depth + 1));
+
+            //sockets[i]->setConstraint(1, 0.0*M_PI);
             //sockets[i]->setConstraint(4, 0.0*M_PI);
             //sockets[i]->setConstraint(5, 0.0*M_PI);
         }
-        for (auto socket : sockets) {
-            socket->couple(new BallJoint(0, 0.5, new Bone()));
-        }
+        bone->attach(sockets);
+        if (depth == 0) root = bone;
+    } while (stack.size() > 0);
 
-        rootSocket->couple(new BallJoint(5))->attach(new Bone())->attach(sockets);
-
-    }
-
-    Scene::Skeleton* skeleton = new Scene::Skeleton(root);
-    Scene::Body* body = new Scene::Body(skeleton);
-    body->anchor(root);
+    Scene::Skeleton *skeleton = new Scene::Skeleton(bone);
+    Scene::Body *body = new Scene::Body(skeleton);
+    body->setRoot(root);
+    //body->anchor(root);
     body->hardUpdate();
     return body;
 }
 
-Body* chain(const int& nJoints) {
+std::pair<Body*,Bone*> chain(const int& nJoints) {
     Bone* root = new Bone();
     Bone* bone = root;
+    Bone* asdf = NULL;
     for (int i = 0; i < nJoints; i++) {
         Bone* nextBone = new Bone();
-        bone->attach(new BallSocket())->couple(new BallJoint(5))->attach(nextBone);
+        if (i == 0) asdf = nextBone;
+        auto asdf = new BallSocket();
+        //asdf->setConstraint(1, 0.3f*M_PI);
+        bone->attach(asdf)->couple(new BallJoint(5))->attach(nextBone);
         bone = nextBone;
     }
     
     Scene::Skeleton* skeleton = new Scene::Skeleton(root);
     Scene::Body* body = new Scene::Body(skeleton);
-    body->anchor(root);
-    return body;
+    body->setRoot(root);
+    body->anchor(asdf, true, true);
+    body->hardUpdate();
+    return std::make_pair(body, bone);
+    //return body;
 }

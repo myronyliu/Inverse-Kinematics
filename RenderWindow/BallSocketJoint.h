@@ -19,7 +19,9 @@ namespace Scene {
         BallSocket(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Socket(i, scale, bone) {}
 
         std::map<int, float> adjustableParams() const;
-        void buildTransformsFromParams() { _wToJoint = Math::w(AxisSpinRotation(glm::vec2(_params[0], _params[1]), _params[2])); }
+        void buildTransformsFromParams() {
+            _wToJoint = Math::w(AxisSpinRotation(glm::vec2(_params[0], _params[1]), _params[2]));
+        }
         void buildParamsFromTransforms();
         void constrainParams();
         void perturbParams(const float& scale);
