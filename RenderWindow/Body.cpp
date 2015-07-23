@@ -61,9 +61,16 @@ void Body::doDraw() {
     if (_skeleton == NULL) return;
     if (_skeleton->bones().size() == 0) return;
 
-    Bone* root;
-    if (_root == NULL) root = *_skeleton->bones().begin();
-    else root = _root;
+    std::set<SkeletonComponent*> anchors = this->anchors();
+    if (anchors.size() == 0) return;
+    SkeletonComponent* firstAnchor = *anchors.begin();
+    Bone* root = NULL;
+    if (Connection* connection = dynamic_cast<Connection*>(firstAnchor)) {
+        if (connection->bone() != NULL) root = connection->bone();
+        else root = connection->opposingBone();
+    }
+    else root = dynamic_cast<Bone*>(firstAnchor);
+
 
     int nPush = 0;
     int nPop = 0;
@@ -154,17 +161,23 @@ void Body::doDraw() {
 }
 
 void Body::hardUpdate() const {
-    for (auto connection : _root->connections()) {
-        TreeNode<Bone*>* boneTree = connection->boneTree();
-        _skeleton->updateGlobals(boneTree);
-        boneTree->suicide();
-    }
+    std::set<SkeletonComponent*> anchors = this->anchors();
+    if (anchors.size() == 0) return;
+    SkeletonComponent* root = *anchors.begin();
+
+    TreeNode<SkeletonComponent*>* updateTree = root->buildTreeTowards(root->connectedComponents());
+    _skeleton->updateGlobals(updateTree);
+    updateTree->suicide();
 }
 
 void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) const {
     if (_anchoredTranslations.find(component) != _anchoredTranslations.end()) return;
     
-    glm::vec3 dComponent = 0.0001f*glm::normalize(t - component->globalTranslation());
+    glm::vec3 displacement = t - component->globalTranslation();
+    float distance = glm::length(displacement);
+    
+    if (distance < 0.000001f) return;
+    if (distance > 0.0001f) displacement *= 0.0001f / distance;
 
     TreeNode<SkeletonComponent*>* componentToAnchors
         = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
@@ -173,7 +186,7 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) cons
     for (auto node : seqn) {
         SkeletonComponent* data = node->data();
         if (Connection* connection = dynamic_cast<Connection*>(data)) {
-            connection->nudge(component, dComponent);
+            connection->nudge(component, displacement);
             hardUpdate();
             //break; // TODO: remove this later, when we fix the double counting
         }

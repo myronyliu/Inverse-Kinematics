@@ -34,12 +34,18 @@ namespace Scene {
         glm::vec3 globalTranslation() const { return _tGlobal; }
         glm::vec3 globalRotation() const { return _wGlobal; }
 
-        void setGlobalTranslation(const glm::vec3&);
-        void setGlobalRotation(const glm::vec3&);
-        void setGlobalTranslationAndRotation(const glm::vec3&, const glm::vec3&);
+        void setGlobalTranslation(const glm::vec3& tGlobal) { _tGlobal = tGlobal; }
+        void setGlobalRotation(const glm::vec3& wGlobal) { _wGlobal = wGlobal; }
+
+        void localUpdateGlobalTranslation(const glm::vec3&);
+        void localUpdateGlobalRotation(const glm::vec3&);
+        void localUpdateGlobalTranslationAndRotation(const glm::vec3&, const glm::vec3&);
 
         std::set<SkeletonComponent*> connectedComponents() const;
-        TreeNode<SkeletonComponent*>* buildTreeToTargets(std::set<SkeletonComponent*> = std::set<SkeletonComponent*>({}));
+        TreeNode<SkeletonComponent*>* buildTreeToTargets(std::set<SkeletonComponent*>);
+        TreeNode<SkeletonComponent*>* buildTreeTowards(std::set<SkeletonComponent*>);
+
+        std::map<SkeletonComponent*, std::pair<glm::vec3, glm::vec3>> transformsToConnectedComponents() const;
 
         virtual void dummy() {}
 
@@ -108,7 +114,10 @@ namespace Scene {
     public:
         Connection(const int& = 4, const float& = 1, Bone* = NULL);
         Connection(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
-            SkeletonComponent(), _bone(bone), _tFromBone(t), _wFromBone(w) {}
+            SkeletonComponent(), _tFromBone(t), _wFromBone(w)
+        {
+            attach(bone); // ARGH Dynamic-Casting doesn't work inside constructors... ARGH
+        }
 
         virtual void draw(const float&) const;
         virtual void drawAnchor(const float&) const {
@@ -138,6 +147,8 @@ namespace Scene {
         Bone* bone() const { return _bone; }
         glm::vec3 translationFromBone() const { return _tFromBone; }
         glm::vec3 rotationFromBone() const { return _wFromBone; }
+        glm::vec3 translationToBone() const { return Math::rotate(-_tFromBone, -_wFromBone); }
+        glm::vec3 rotationToBone() const { return -_wFromBone; }
 
         std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip);
         void nudge(SkeletonComponent* tip, const glm::vec3& step);
@@ -226,9 +237,19 @@ namespace Scene {
         bool getParam(const int& key, float& value) const;
 
         glm::vec3 translationToJoint() const { return _tToJoint; }
-        glm::vec3 rotationToJoint() const { return _wToJoint; }
-        glm::vec3 translationFromJoint() const { return Math::rotate(-_tToJoint, -_wToJoint); }
-        glm::vec3 rotationFromJoint() const { return -_wToJoint; }
+        glm::vec3 rotationToJoint() const {
+            glm::mat3 R0 = Math::R(_wToJoint);
+            glm::mat3 R1 = Math::R(R0*glm::vec3(0, M_PI, 0));
+            return Math::w(R1*R0);
+        }
+        glm::vec3 translationFromJoint() const { return Math::rotate(-_tToJoint, -rotationToJoint()); }
+        glm::vec3 rotationFromJoint() const { return -rotationToJoint(); }
+
+        glm::vec3 socketJointTranslation() const { return _tToJoint; }
+        glm::vec3 socketJointRotation() const { return _wToJoint; }
+        glm::vec3 jointSocketTranslation() const { return Math::rotate(-_tToJoint, -_wToJoint); }
+        glm::vec3 jointSocketRotation() const { return -_wToJoint; }
+
         Joint* joint() const { return _joint; }
 
         bool transformAnchorToTarget(glm::vec3&, glm::vec3&) const;
@@ -281,7 +302,7 @@ namespace Scene {
         std::set<Joint*> joints() const;
 
         // The following updates global transformations assuming that the "root of input" is fixed (and doens't need to be updated)
-        void updateGlobals(TreeNode<Bone*>* = NULL);
+        void updateGlobals(TreeNode<SkeletonComponent*>* = NULL);
 
         void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
     private:

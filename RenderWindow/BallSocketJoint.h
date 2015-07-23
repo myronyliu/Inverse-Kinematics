@@ -17,6 +17,7 @@ namespace Scene {
     {
     public:
         BallSocket(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Socket(i, scale, bone) {}
+        BallSocket(Bone* bone, const glm::vec3& t, const glm::vec3& w) : Socket(bone, t, w) {}
 
         std::map<int, float> adjustableParams() const;
         void buildTransformsFromParams() {
@@ -36,6 +37,8 @@ namespace Scene {
     {
     public:
         BallJoint(const int& i = 4, const float& scale = 1, Bone* bone = NULL) : Joint(i, scale, bone) {}
+        BallJoint(Bone* bone, const glm::vec3& t, const glm::vec3& w) : Joint(bone, t, w) {}
+
         void drawPivot(const float&) const;
 
         int type() const { return BALL; }

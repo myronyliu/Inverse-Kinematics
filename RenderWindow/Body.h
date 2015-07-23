@@ -18,9 +18,6 @@ namespace Scene {
         Body(Skeleton* skeleton);
         Body(Bone* bone);
 
-        Bone* root() const { return _root; }
-        void setRoot(Bone* root) { _root = root; }
-
         void anchor(SkeletonComponent*, const bool& = true, const bool& = false);
         void unanchor(SkeletonComponent*);
 
@@ -40,11 +37,12 @@ namespace Scene {
 
         void doDraw();
     private:
-        Bone* _root;
-        // All global transforms are computed relative to _root.
         std::map<SkeletonComponent*, glm::vec3> _anchoredTranslations;
         std::map<SkeletonComponent*, glm::vec3> _anchoredRotations;
         Skeleton* _skeleton;
+
+        const glm::vec3 _t = glm::vec3(0, 0, 0);
+        const glm::vec3 _w = glm::vec3(0, 0, 0);
     };
 
 }

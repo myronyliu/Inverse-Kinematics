@@ -46,27 +46,15 @@ std::set<Joint*> Skeleton::joints() const {
     return joints;
 }
 
-void Skeleton::updateGlobals(TreeNode<Bone*>* boneTree) {
-    if (boneTree == NULL) {
-        Bone* bone = *_bones.begin();
-        Connection* connection = *bone->connections().begin();
-        TreeNode<Bone*>* treeF = connection->boneTree();
-        TreeNode<Bone*>* treeB = connection->opposingConnection()->boneTree();
-        updateGlobals(treeF);
-        //updateGlobals(treeB);
-        treeF->suicide();
-        //delete treeB;
-        return;
-    }
-    std::vector<TreeNode<Bone*>*> seqn = boneTree->DFSsequence();
+void Skeleton::updateGlobals(TreeNode<SkeletonComponent*>* componentTree) {
+    std::vector<TreeNode<SkeletonComponent*>*> seqn = componentTree->DFSsequence();
 
-    Bone* root = seqn[0]->data();
-    TransformStack transformStack(root->_tGlobal, root->_wGlobal);
-    root->setGlobalTranslationAndRotation(transformStack.getTranslation(), transformStack.getRotation());
+    SkeletonComponent* root = seqn[0]->data();
+    TransformStack transformStack(root->globalTranslation(), root->globalRotation());
 
 
     for (int i = 1; i < seqn.size(); i++) {
-        Bone* bone = seqn[i]->data();
+        SkeletonComponent* component = seqn[i]->data();
 
         int depth = seqn[i]->depth();
         int previousDepth = seqn[i-1]->depth();
@@ -78,16 +66,16 @@ void Skeleton::updateGlobals(TreeNode<Bone*>* boneTree) {
             std::cout << std::endl; // this should never happen
         }
         else {
-            Bone* previousBone = seqn[i - 1]->data();
-            Connection* previousToCurrent = previousBone->getConnectionToBone(bone);
             glm::vec3 t, w;
-            previousToCurrent->transformAnchorToTarget(t, w);
+            SkeletonComponent* previousComponent = seqn[i - 1]->data();
+            std::tie(t, w) = previousComponent->transformsToConnectedComponents()[component];
 
             transformStack.push();
             transformStack.translate(t);
             transformStack.rotate(w);
 
-            bone->setGlobalTranslationAndRotation(transformStack.getTranslation(), transformStack.getRotation());
+            component->setGlobalTranslation(transformStack.getTranslation());
+            component->setGlobalRotation(transformStack.getRotation());
         }
     }
 }

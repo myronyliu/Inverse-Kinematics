@@ -247,7 +247,6 @@ TreeNode<Bone*>* Connection::boneTree() {
     } while (stack.size() > 0);
 
     return root;
-    return NULL;
 }
 
 std::pair<arma::mat, arma::mat> Connection::J(SkeletonComponent* tip) {

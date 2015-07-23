@@ -109,8 +109,7 @@ std::vector<TreeNode<T>*> TreeNode<T>::DFSsequence() {
             traversed.erase(child);
         }
         node = node->_parent;
-    } while (node != this);
-    if (seqn.size() > 1) seqn.push_back(this);
+    } while (node != _parent);
     return seqn;
 }
 
