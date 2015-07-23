@@ -218,7 +218,7 @@ namespace Controls
     class Keyboard
     {
     public:
-        Keyboard(Panel * panel, Scene::Camera * camera) : _panel(panel), _camera(camera), _camStep(0.1) { init(); }
+        Keyboard(Panel * panel, Scene::Camera * camera) : _panel(panel), _camera(camera), _camStep(0.5) { init(); }
         void init();
 
         void register_hotkey(unsigned char, std::function<void (void)>);

@@ -32,7 +32,7 @@ namespace Scene {
         void hardUpdate() const;
         void jiggle(const float& magnitude = 1) { _skeleton->jiggle(magnitude); hardUpdate(); }
 
-        void setTranslation(SkeletonComponent* component, const glm::vec3& t) const;
+        void setTranslation(SkeletonComponent* component, const glm::vec3& t);
 
         void doDraw();
     private:
@@ -42,6 +42,9 @@ namespace Scene {
 
         const glm::vec3 _t = glm::vec3(0, 0, 0);
         const glm::vec3 _w = glm::vec3(0, 0, 0);
+
+        std::vector<SkeletonComponent*> _path;
+        bool _pathReady = false;
     };
 
 }

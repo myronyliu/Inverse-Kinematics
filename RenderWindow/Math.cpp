@@ -98,7 +98,7 @@ glm::mat3 Math::R(const glm::vec3& w) {
     float theta = glm::length(w);
     theta -= (2 * M_PI)*floor(theta / (2 * M_PI));
     if (theta == 0) return glm::mat3();
-    glm::vec3 wHat = w / theta;
+    glm::vec3 wHat = glm::normalize(w);
     glm::mat3 wCross(
         glm::vec3(0, wHat[2], -wHat[1]),
         glm::vec3(-wHat[2], 0, wHat[0]),

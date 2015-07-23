@@ -32,6 +32,7 @@ namespace Scene {
     void updateGlobals(const std::vector<SkeletonComponent*>&);
     // The following sets the last SkeletonComponent to the target destination
     void linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget);
+    void linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase);
 
     class SkeletonComponent // Wrapper class for Bones and Connections (Sockets and Joints)
     {
@@ -63,7 +64,7 @@ namespace Scene {
         void restore() {
             _tGlobal = _tGlobal_stashed;
             _wGlobal = _wGlobal_stashed;
-            backupLocals();
+            restoreLocals();
         }
         virtual void backupLocals() {}
         virtual void restoreLocals() {}
@@ -254,8 +255,16 @@ namespace Scene {
         void setParam(const int& key, const float& value);
         void setConstraint(const int& key, const float& value);
 
-        void restoreLink() { _params = _params_stashed; _tFromBone = _tFromBone_stashed; _wFromBone = _wFromBone_stashed; }
-        void backupLink() { _params_stashed = _params; _tFromBone_stashed = _tFromBone; _wFromBone_stashed = _wFromBone; }
+        void restoreLink() {
+            _params = _params_stashed;
+            _tToJoint = _tToJoint_stashed;
+            _wToJoint = _wToJoint_stashed;
+        }
+        void backupLink() {
+            _params_stashed = _params;
+            _tToJoint_stashed = _tToJoint;
+            _wToJoint_stashed = _wToJoint;
+        }
 
         void perturbJoint(const float& scale = 1);
         virtual float reach() const { return 0; }
@@ -315,6 +324,9 @@ namespace Scene {
 
         glm::vec3 _tToJoint;            // IN THE COORDINATE FRAME OF THE JOINT's "BASE" (in "default" configuration)
         glm::vec3 _wToJoint;
+
+        glm::vec3 _tToJoint_stashed;
+        glm::vec3 _wToJoint_stashed;
 
         std::map<int, float> _constraints;  // Constraints are keyed on indices of our choosing
         std::map<int, float> _params;

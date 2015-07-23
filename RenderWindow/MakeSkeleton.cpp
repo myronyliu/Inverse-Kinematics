@@ -90,9 +90,44 @@ std::pair<Body*, Bone*> starfish(const int& nLegs, const int& nJoints) {
     Scene::Body* body = new Scene::Body(skeleton);
     body->anchor(hubBone, true, true);
     body->hardUpdate();
-    /*body->anchor(leaves[nLegs / 2], true, true);
+    body->unanchor(hubBone);
+    body->anchor(leaves[nLegs / 2], true, true);
     body->anchor(leaves[nLegs / 2 - 1], true, true);
-    body->unanchor(hubBone);*/
     return std::make_pair(body, leaves[0]);
-    //return body;
+}
+
+
+std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints) {
+    Bone* hubBone = new Bone();
+
+    std::vector<Socket*> hubSockets(2, NULL);
+    std::vector<float> angles({ 0.0f, M_PI - 0.1f, M_PI + 0.1f });
+    for (int i = 0; i < hubSockets.size(); i++) {
+        float phi = angles[i];
+        glm::vec3 t = glm::vec3(cos(phi), sin(phi), 0);
+        glm::vec3 w = Math::axisAngleAlignZtoVEC3(t);
+        hubSockets[i] = new BallSocket(4);
+        hubSockets[i]->couple(new BallJoint(NULL, t, w))->attach(hubBone);
+    }
+
+    std::vector<Bone*> leaves(2, NULL);
+    for (int i = 0; i < leaves.size(); i++) {
+        leaves[i] = new Bone();
+        Bone* bone = leaves[i];
+        for (int i = 0; i < nJoints; i++) {
+            Bone* nextBone = new Bone();
+            bone->attach(new BallSocket(4))->couple(new BallJoint(5))->attach(nextBone);
+            bone = nextBone;
+        }
+        bone->attach(hubSockets[i]);
+    }
+
+    Scene::Skeleton* skeleton = new Scene::Skeleton(hubBone);
+    Scene::Body* body = new Scene::Body(skeleton);
+    body->anchor(hubBone, true, true);
+    body->hardUpdate();
+    body->unanchor(hubBone);
+    body->anchor(leaves[1], true, true);
+    //body->anchor(leaves[2], true, true);
+    return std::make_pair(body, leaves[0]);
 }

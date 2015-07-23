@@ -43,10 +43,29 @@ void Scene::updateGlobals(const std::vector<SkeletonComponent*>& components) {
     SkeletonComponent* root = components[0];
     TransformStack transformStack(root->globalTranslation(), root->globalRotation());
 
+    glm::vec3 t, w;
+
+    auto warn = [&]() {
+        auto reupdate = [&]() {
+            transformStack.pop();
+            transformStack.push();
+            transformStack.translate(t);
+            transformStack.rotate(w);
+        };
+        glm::vec3 trans = transformStack.getTranslation();
+        glm::vec3 rot = transformStack.getRotation();
+        if (!isfinite(trans[0]) || !isfinite(trans[1]) || !isfinite(trans[2])) {
+            reupdate();
+        }
+        if (!isfinite(rot[0]) || !isfinite(rot[1]) || !isfinite(rot[2])) {
+            reupdate();
+        }
+    };
+
+    warn();
+
     for (int i = 1; i < components.size(); i++) {
         SkeletonComponent* component = components[i];
-
-        glm::vec3 t, w;
         SkeletonComponent* previousComponent = components[i - 1];
         auto transformsToConnectedComponents = previousComponent->transformsToConnectedComponents();
         auto it = transformsToConnectedComponents.find(component);
@@ -59,6 +78,8 @@ void Scene::updateGlobals(const std::vector<SkeletonComponent*>& components) {
         transformStack.translate(t);
         transformStack.rotate(w);
 
+        warn();
+
         component->setGlobalTranslation(transformStack.getTranslation());
         component->setGlobalRotation(transformStack.getRotation());
     }
@@ -68,6 +89,11 @@ void Scene::updateGlobals(const std::vector<SkeletonComponent*>& components) {
 void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget) {
 
     SkeletonComponent* tip = armBaseToTip.back();
+
+    auto backupAll = [&]() {
+        for (auto component : armBaseToTip)
+            component->backup();
+    };
 
     auto restoreAll = [&]() {
         for (auto component : armBaseToTip)
@@ -84,7 +110,9 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
     glm::vec3 stepToTarget = tipTarget - tipPosition;
     float distanceToTarget = glm::length(stepToTarget);
 
-    while (distanceToTarget>0.0001f) {
+    int maxTries = 64;
+    int tries = 0;
+    while (distanceToTarget > 0.01f && tries < maxTries) {
 
         for (auto socket : sockets) {
             socket->nudge(tip, stepToTarget);
@@ -96,13 +124,24 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
         float newDistanceToTarget = glm::length(newStepToTarget);
 
         if (newDistanceToTarget < distanceToTarget) {
+            backupAll();
             distanceToTarget = newDistanceToTarget;
             tipPosition = newTipPosition;
             stepToTarget = newStepToTarget;
+            tries = 0;
         }
         else {
             restoreAll();
             stepToTarget /= 2;
+            tries++;
         }
     }
+}
+void Scene::linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase) {
+    int n = armTipToBase.size();
+    std::vector<SkeletonComponent*> armBaseToTip(n, NULL);
+    for (int i = 0; i < n; i++) {
+        armBaseToTip[i] = armTipToBase[n - 1 - i];
+    }
+    linearIK(armBaseToTip, tipTarget);
 }

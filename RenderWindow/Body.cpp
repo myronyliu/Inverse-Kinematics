@@ -170,20 +170,10 @@ void Body::hardUpdate() const {
     updateTree->suicide();
 }
 
-void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) const {
+void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) {
     if (_anchoredTranslations.find(component) != _anchoredTranslations.end()) return;
-    
-    glm::vec3 displacement = t - component->globalTranslation();
-    float distance = glm::length(displacement);
-    
-    if (distance < 0.000001f) return;
-    if (distance > 0.0001f) displacement *= 0.0001f / distance;
 
     typedef std::vector<TreeNode<SkeletonComponent*>*> Path;
-    TreeNode<SkeletonComponent*>* componentToAnchorsTree
-        = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
-    TreeNode<Path>* branchTree = componentToAnchorsTree->buildBranchTree();
-
     auto pathData = [](const Path& path) {
         std::vector<SkeletonComponent*> pathData(path.size(), NULL);
         for (int i = 0; i < path.size(); i++) {
@@ -193,26 +183,42 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) cons
     };
     auto reverse = [](const std::vector<SkeletonComponent*>& path) {
         int n = path.size();
-        std::vector<SkeletonComponent*> reversedPath(n,NULL);
+        std::vector<SkeletonComponent*> reversedPath(n, NULL);
         for (int i = 0; i < n; i++) {
             reversedPath[n - i - 1] = path[i];
         }
         return reversedPath;
     };
+    
+    glm::vec3 displacement = t - component->globalTranslation();
+    float distance = glm::length(displacement);
+    
+    if (distance < 0.000001f) return;
+    if (distance > 0.0001f) displacement *= 0.0001f / distance;
+
+    
+    
+    TreeNode<SkeletonComponent*>* componentToAnchorsTree
+        = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
+    TreeNode<Path>* branchTree = componentToAnchorsTree->buildBranchTree();
+
 
     std::vector<TreeNode<Path>*> seqn = branchTree->BFSsequence();
+   Path mainPath = seqn[0]->data();
 
-    Path mainPath = seqn[0]->data();
-    for (auto node : mainPath) {
+    std::vector<SkeletonComponent*> updatePath = reverse(pathData(mainPath));
+    /*for (auto node : mainPath) {
         if (Socket* socket = dynamic_cast<Socket*>(node->data())) {
             socket->nudge(component, displacement);
+            updateGlobals(updatePath);
         }
-    }
-    updateGlobals(reverse(pathData(mainPath)));
+    }*/
+    linearIK(updatePath,t);
+    updateGlobals(updatePath);
 
     for (int i = 1; i < seqn.size(); i++) {
         Path path = seqn[i]->data();
-        std::vector<SkeletonComponent*> armComponents = pathData(path);
+        std::vector<SkeletonComponent*> armComponents = reverse(pathData(path));
         armComponents.insert(armComponents.begin(), path[0]->parent()->data());
         linearIK(reverse(armComponents), armComponents.front()->globalTranslation());
     }
