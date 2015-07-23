@@ -179,18 +179,44 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) cons
     if (distance < 0.000001f) return;
     if (distance > 0.0001f) displacement *= 0.0001f / distance;
 
-    TreeNode<SkeletonComponent*>* componentToAnchors
+    typedef std::vector<TreeNode<SkeletonComponent*>*> Path;
+    TreeNode<SkeletonComponent*>* componentToAnchorsTree
         = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
+    TreeNode<Path>* branchTree = componentToAnchorsTree->buildBranchTree();
 
-    std::vector<TreeNode<SkeletonComponent*>*> seqn = componentToAnchors->DFSsequence();
-    for (auto node : seqn) {
-        SkeletonComponent* data = node->data();
-        if (Connection* connection = dynamic_cast<Connection*>(data)) {
-            connection->nudge(component, displacement);
-            //hardUpdate();
-            //break; // TODO: remove this later, when we fix the double counting
+    auto pathData = [](const Path& path) {
+        std::vector<SkeletonComponent*> pathData(path.size(), NULL);
+        for (int i = 0; i < path.size(); i++) {
+            pathData[i] = path[i]->data();
+        }
+        return pathData;
+    };
+    auto reverse = [](const std::vector<SkeletonComponent*>& path) {
+        int n = path.size();
+        std::vector<SkeletonComponent*> reversedPath(n,NULL);
+        for (int i = 0; i < n; i++) {
+            reversedPath[n - i - 1] = path[i];
+        }
+        return reversedPath;
+    };
+
+    std::vector<TreeNode<Path>*> seqn = branchTree->BFSsequence();
+
+    Path mainPath = seqn[0]->data();
+    for (auto node : mainPath) {
+        if (Socket* socket = dynamic_cast<Socket*>(node->data())) {
+            socket->nudge(component, displacement);
         }
     }
-    hardUpdate();
-    componentToAnchors->suicide();
+    updateGlobals(reverse(pathData(mainPath)));
+
+    for (int i = 1; i < seqn.size(); i++) {
+        Path path = seqn[i]->data();
+        std::vector<SkeletonComponent*> armComponents = pathData(path);
+        armComponents.insert(armComponents.begin(), path[0]->parent()->data());
+        linearIK(reverse(armComponents), armComponents.front()->globalTranslation());
+    }
+
+    branchTree->suicide();
+    componentToAnchorsTree->suicide();
 }

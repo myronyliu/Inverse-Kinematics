@@ -12,7 +12,7 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    body->setTranslation(bone, glm::vec3(2, 0, 0));
+    body->setTranslation(bone, glm::vec3(1, 1, 1));
     glutPostRedisplay();
 }
 
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    std::tie(body, bone) = chain(5);
+    std::tie(body, bone) = chain(4);
     world.addObject(body);
     body->jiggle(4);
 

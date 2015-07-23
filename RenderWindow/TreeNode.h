@@ -16,6 +16,8 @@ public:
         delete this;
     }
 
+    int nChildren() const { return _children.size(); }
+
     TreeNode* root();
     TreeNode* leftMostLeaf() const;
     std::vector<TreeNode*> pathToLeftMostLeaf() const;

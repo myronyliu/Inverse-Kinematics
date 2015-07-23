@@ -90,6 +90,9 @@ std::pair<Body*, Bone*> starfish(const int& nLegs, const int& nJoints) {
     Scene::Body* body = new Scene::Body(skeleton);
     body->anchor(hubBone, true, true);
     body->hardUpdate();
+    /*body->anchor(leaves[nLegs / 2], true, true);
+    body->anchor(leaves[nLegs / 2 - 1], true, true);
+    body->unanchor(hubBone);*/
     return std::make_pair(body, leaves[0]);
     //return body;
 }
