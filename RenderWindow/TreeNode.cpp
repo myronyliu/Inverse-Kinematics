@@ -46,11 +46,38 @@ template <class T>
 TreeNode<T>* TreeNode<T>::leftMostLeaf() const {
     TreeNode* node = this;
     while (true) {
+        bool childFound = false;
         if (_children.size() == 0) return node;
-        node = *(node->_children.begin());
+        for (auto child : node->children()) {
+            if (child != NULL) {
+                node = child;
+                childFound = true;
+                break;
+            }
+        }
+        if (!childFound) return node;
     }
-    return NULL;
 }
+
+template <class T>
+std::vector<TreeNode<T>*> TreeNode<T>::pathToLeftMostLeaf() const {
+    std::vector<TreeNode*> path({ this });
+    TreeNode* node = this;
+    while (true) {
+        bool childFound = false;
+        if (_children.size() == 0) return path;
+        for (auto child : node->children()) {
+            if (child != NULL) {
+                path.push_back(child);
+                node = child;
+                childFound = true;
+                break;
+            }
+        }
+        if (!childFound) return path;
+    }
+}
+
 
 template <class T>
 std::vector<TreeNode<T>*> TreeNode<T>::leaves() const {
@@ -160,4 +187,86 @@ void TreeNode<T>::pruneToLeafset(const std::set<TreeNode*> leaves) {
             node->suicide();
         }
     }
+}
+
+template <class T>
+std::vector<TreeNode<T>*> TreeNode<T>::findPathTo(TreeNode* target) const {
+    TreeNode* node0 = this;
+    TreeNode* node1 = target;
+    std::list<TreeNode*> path0;
+    std::list<TreeNode*> path1;
+
+    while (node0->depth() > node1->depth()) {
+        path0.push_back(node0);
+        node0 = node0->parent();
+    }
+    while (node1->depth() > node0->depth()) {
+        path1.push_front(node1);
+        node1 = node1->parent();
+    }
+
+    do {
+        if (node0 == node1) break;
+        path0.push_back(node0);
+        path1.push_front(node1);
+        node0 = node0->parent();
+        node1 = node1->parent();
+    } while (node0 != NULL || node1 != NULL);
+
+    if (node0 != node1) return std::vector<TreeNode*>();
+    path0->push_back(node0);
+    path0->splice(path0.end(), path1);
+    return std::vector<TreeNode*>(path0.begin(), path0.end());
+}
+
+template <class T>
+std::vector<TreeNode<T>*> TreeNode<T>::upstreamForks() const {
+
+}
+
+template <class T>
+TreeNode<T>* TreeNode<T>::invertedBranch() const {
+    TreeNode* node = this;
+    int depthCounter = 0;
+    while (true) {
+        std::set<TreeNode*> children = node->children();
+        if (children.size() == 1) {
+            node = *children.begin();
+            depthCounter++;
+        }
+        else break;
+    }
+
+    TreeNode* root = new TreeNode(node->data);
+    for (int i = 0; i < depthCounter; i++) {
+        new TreeNode(node->parent()->data(), node);
+        node = node->parent();
+    }
+    return root;
+}
+
+template <class T>
+// Let "mother-tree" refer to the tree that calls this function
+// Let "branch-tree" refer to the tree that this function returns.
+//
+// ///////////////////////////////////////////////
+// //// The branch-tree will be as follows... ////
+// ///////////////////////////////////////////////
+//
+// The root of branch-tree will be the left-most-branch of the mother-tree
+// ... i.e the branch starting at the mother-tree's root and ending at the mother-tree's left-most-leaf
+// Along the mother-tree's left-most-branch will be some other branches splitting off to the right
+// These branches (that split off) will be the children of the the branch-tree's root
+// The rest of the tree is recursively constructed, treating the aforementioned children as the new roots
+//
+// Put another way, consider the literal-plant analogy
+// Usually, we treat the root as the "base" of the plant nearest to the soil
+// (NOTE how the trunk is considered no differently from the rest of the plant's branches in this paradigm)
+// (... also how the graph-theoretic nodes lie at the points where literal-plant-branches split apart)
+//
+// The difference now is the the "trunk" itself becomes the graph-theoretic root
+// The branches that grow off the trunk become children of the trunk
+// (NOTE how the plant-branches themselves are now graph-nodes)
+TreeNode<std::vector<TreeNode<T>*>>* TreeNode<T>::buildBranchTree() const {
+    return NULL;
 }

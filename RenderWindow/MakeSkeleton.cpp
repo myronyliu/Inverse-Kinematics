@@ -44,10 +44,8 @@ Body* axisTree(const int& maxDepth) {
 std::pair<Body*, Bone*> chain(const int& nJoints) {
     Bone* root = new Bone();
     Bone* bone = root;
-    Bone* asdf = NULL;
     for (int i = 0; i < nJoints; i++) {
         Bone* nextBone = new Bone();
-        if (i == 0) asdf = nextBone;
         auto asdf = new BallSocket();
         //asdf->setConstraint(1, 0.3f*M_PI);
         bone->attach(asdf)->couple(new BallJoint(5))->attach(nextBone);

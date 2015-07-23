@@ -32,7 +32,6 @@ namespace Scene {
         void hardUpdate() const;
         void jiggle(const float& magnitude = 1) { _skeleton->jiggle(magnitude); hardUpdate(); }
 
-
         void setTranslation(SkeletonComponent* component, const glm::vec3& t) const;
 
         void doDraw();

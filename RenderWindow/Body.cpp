@@ -166,7 +166,7 @@ void Body::hardUpdate() const {
     SkeletonComponent* root = *anchors.begin();
 
     TreeNode<SkeletonComponent*>* updateTree = root->buildTreeTowards(root->connectedComponents());
-    _skeleton->updateGlobals(updateTree);
+    updateGlobals(updateTree);
     updateTree->suicide();
 }
 
@@ -187,7 +187,7 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) cons
         SkeletonComponent* data = node->data();
         if (Connection* connection = dynamic_cast<Connection*>(data)) {
             connection->nudge(component, displacement);
-            hardUpdate();
+            //hardUpdate();
             //break; // TODO: remove this later, when we fix the double counting
         }
     }

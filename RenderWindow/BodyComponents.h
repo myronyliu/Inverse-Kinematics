@@ -16,6 +16,8 @@ enum {
     PRISM = 2
 };
 
+
+
 namespace Scene {
 
     class Bone;
@@ -24,6 +26,12 @@ namespace Scene {
     class Connection;
     class Skeleton;
     class SkeletonComponent;
+
+    // The following updates global transformations assuming that the "root of input" is fixed (and doens't need to be updated)
+    void updateGlobals(TreeNode<SkeletonComponent*>*);
+    void updateGlobals(const std::vector<SkeletonComponent*>&);
+    // The following sets the last SkeletonComponent to the target destination
+    void linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget);
 
     class SkeletonComponent // Wrapper class for Bones and Connections (Sockets and Joints)
     {
@@ -47,11 +55,25 @@ namespace Scene {
 
         std::map<SkeletonComponent*, std::pair<glm::vec3, glm::vec3>> transformsToConnectedComponents() const;
 
-        virtual void dummy() {}
+        void backup() {
+            _tGlobal_stashed = _tGlobal;
+            _wGlobal_stashed = _wGlobal;
+            backupLocals();
+        }
+        void restore() {
+            _tGlobal = _tGlobal_stashed;
+            _wGlobal = _wGlobal_stashed;
+            backupLocals();
+        }
+        virtual void backupLocals() {}
+        virtual void restoreLocals() {}
 
     protected:
         glm::vec3 _tGlobal;
         glm::vec3 _wGlobal;
+
+        glm::vec3 _tGlobal_stashed;
+        glm::vec3 _wGlobal_stashed;
     };
 
     
@@ -93,7 +115,6 @@ namespace Scene {
 
         Connection* getConnectionToBone(Bone*) const;
         
-
     protected:
         Skeleton* _skeleton;
         std::set<Joint*> _joints;
@@ -153,7 +174,18 @@ namespace Scene {
         std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip);
         void nudge(SkeletonComponent* tip, const glm::vec3& step);
 
-
+        virtual void backupLink() {};
+        virtual void restoreLink() {};
+        void backupLocals() {
+            _tFromBone_stashed = _tFromBone;
+            _wFromBone_stashed = _wFromBone;
+            backupLink();
+        }
+        void restoreLocals() {
+            _tFromBone = _tFromBone_stashed;
+            _wFromBone = _wFromBone_stashed;
+            restoreLink();
+        }
         /////////////////
         //// SETTERS ////
         /////////////////
@@ -222,8 +254,8 @@ namespace Scene {
         void setParam(const int& key, const float& value);
         void setConstraint(const int& key, const float& value);
 
-        void restore() { _params = _params_stashed; _tFromBone = _tFromBone_stashed; _wFromBone = _wFromBone_stashed; }
-        void backup() { _params_stashed = _params; _tFromBone_stashed = _tFromBone; _wFromBone_stashed = _wFromBone; }
+        void restoreLink() { _params = _params_stashed; _tFromBone = _tFromBone_stashed; _wFromBone = _wFromBone_stashed; }
+        void backupLink() { _params_stashed = _params; _tFromBone_stashed = _tFromBone; _wFromBone_stashed = _wFromBone; }
 
         void perturbJoint(const float& scale = 1);
         virtual float reach() const { return 0; }
@@ -300,9 +332,6 @@ namespace Scene {
         std::set<Bone*> bones() const { return _bones; }
         std::set<Socket*> sockets() const;
         std::set<Joint*> joints() const;
-
-        // The following updates global transformations assuming that the "root of input" is fixed (and doens't need to be updated)
-        void updateGlobals(TreeNode<SkeletonComponent*>* = NULL);
 
         void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
     private:

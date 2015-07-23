@@ -45,37 +45,3 @@ std::set<Joint*> Skeleton::joints() const {
         joints.insert(socketJoint.second);
     return joints;
 }
-
-void Skeleton::updateGlobals(TreeNode<SkeletonComponent*>* componentTree) {
-    std::vector<TreeNode<SkeletonComponent*>*> seqn = componentTree->DFSsequence();
-
-    SkeletonComponent* root = seqn[0]->data();
-    TransformStack transformStack(root->globalTranslation(), root->globalRotation());
-
-
-    for (int i = 1; i < seqn.size(); i++) {
-        SkeletonComponent* component = seqn[i]->data();
-
-        int depth = seqn[i]->depth();
-        int previousDepth = seqn[i-1]->depth();
-
-        if (depth < previousDepth) {
-            transformStack.pop();
-        }
-        else if (depth == previousDepth) {
-            std::cout << std::endl; // this should never happen
-        }
-        else {
-            glm::vec3 t, w;
-            SkeletonComponent* previousComponent = seqn[i - 1]->data();
-            std::tie(t, w) = previousComponent->transformsToConnectedComponents()[component];
-
-            transformStack.push();
-            transformStack.translate(t);
-            transformStack.rotate(w);
-
-            component->setGlobalTranslation(transformStack.getTranslation());
-            component->setGlobalRotation(transformStack.getRotation());
-        }
-    }
-}

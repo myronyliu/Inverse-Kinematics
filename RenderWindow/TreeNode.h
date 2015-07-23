@@ -18,6 +18,7 @@ public:
 
     TreeNode* root();
     TreeNode* leftMostLeaf() const;
+    std::vector<TreeNode*> pathToLeftMostLeaf() const;
     std::vector<TreeNode*> leaves() const;
     void setDepth(const int&);
     void pruneToLeafset(const std::set<TreeNode*> leaves);
@@ -34,6 +35,12 @@ public:
     T data() const { return _data; }
     int depth() const { return _depth; }
     int nDescendantGenerations() const;
+
+    std::vector<TreeNode*> findPathTo(TreeNode*) const;
+    std::vector<TreeNode*> upstreamForks() const;
+
+    TreeNode* invertedBranch() const;
+    TreeNode<std::vector<TreeNode*>>* buildBranchTree() const;
 
 private:
     TreeNode* _parent;

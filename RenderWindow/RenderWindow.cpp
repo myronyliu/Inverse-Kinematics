@@ -12,8 +12,8 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    /*body->setTranslation(bone, glm::vec3(2, 0, 0));
-    glutPostRedisplay();*/
+    body->setTranslation(bone, glm::vec3(2, 0, 0));
+    glutPostRedisplay();
 }
 
 GlutUI::Manager MANAGER;
@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    std::tie(body, bone) = starfish(5,2);
+    std::tie(body, bone) = chain(5);
     world.addObject(body);
     body->jiggle(4);
 
