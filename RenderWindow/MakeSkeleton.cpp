@@ -115,7 +115,9 @@ std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints) {
     for (int i = 0; i < leaves.size(); i++) {
         leaves[i] = new Bone();
         Bone* bone = leaves[i];
-        for (int i = 0; i < nJoints; i++) {
+        int jMax = nJoints;
+        if (i == 0) jMax = 1;
+        for (int j = 0; j < jMax; j++) {
             Bone* nextBone = new Bone();
             bone->attach(new BallSocket(4))->couple(new BallJoint(5))->attach(nextBone);
             bone = nextBone;
@@ -125,8 +127,8 @@ std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints) {
 
     Scene::Skeleton* skeleton = new Scene::Skeleton(hubBone);
     Scene::Body* body = new Scene::Body(skeleton);
+    body->hardUpdate(hubBone);
     body->anchor(leaves[1], true, true);
-    body->hardUpdate();
     body->anchor(leaves[2], true, true);
     
     return std::make_pair(body, leaves[0]);

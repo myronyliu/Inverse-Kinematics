@@ -12,7 +12,7 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    body->setTranslation(bone, tipPath->stepT(0.001f));
+    body->setTranslation(bone, tipPath->stepT(0.01f));
     glutPostRedisplay();
 }
 
@@ -51,8 +51,9 @@ int main(int argc, char* argv[])
     world.addObject(yAxis);
     world.addObject(zAxis);
 
-    tipPath = new Scene::Path(6);
-    tipPath->setTranslation(glm::vec3(0, 0, 1));
+    tipPath = new Scene::Path(2);
+    tipPath->setRotation(glm::vec3(0, M_PI / 2, 0));
+    tipPath->setTranslation(glm::vec3(3, 0, 0));
     anchorPath = new Scene::Path(1);
     tipPath->setParameterization(PathParameterizations::circle);
     anchorPath->setParameterization(PathParameterizations::line);
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    std::tie(body, bone) = chain(4);
+    std::tie(body, bone) = test(2);
     world.addObject(body);
 
 

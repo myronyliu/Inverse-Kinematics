@@ -160,11 +160,17 @@ void Body::doDraw() {
     }
 }
 
-void Body::hardUpdate() const {
-    std::set<SkeletonComponent*> anchors = this->anchors();
-    if (anchors.size() == 0) return;
-    SkeletonComponent* root = *anchors.begin();
-
+void Body::hardUpdate(SkeletonComponent* rootIn) const {
+    SkeletonComponent* root = rootIn;
+    if (root == NULL) {
+        std::set<SkeletonComponent*> anchors = this->anchors();
+        if (anchors.size() == 0) {
+            root = *_skeleton->bones().begin();
+        }
+        else {
+            root = *anchors.begin();
+        }
+    }
     TreeNode<SkeletonComponent*>* updateTree = root->buildTreeTowards(root->connectedComponents());
     updateGlobals(updateTree);
     updateTree->suicide();
@@ -202,24 +208,28 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) {
 
 
     std::vector<TreeNode<Path>*> seqn = branchTree->BFSsequence();
-   Path mainPath = seqn[0]->data();
+   Path mainPath_reversed = seqn[0]->data();
 
-    std::vector<SkeletonComponent*> updatePath = reverse(pathData(mainPath));
+    std::vector<SkeletonComponent*> mainPathComponents = reverse(pathData(mainPath_reversed));
     /*for (auto node : mainPath) {
         if (Socket* socket = dynamic_cast<Socket*>(node->data())) {
             socket->nudge(component, displacement);
             updateGlobals(updatePath);
         }
     }*/
-    linearIK(updatePath,t);
-    updateGlobals(updatePath);
+    linearIK(mainPathComponents,t);
 
-    /*for (int i = 1; i < seqn.size(); i++) {
-        Path path = seqn[i]->data();
-        std::vector<SkeletonComponent*> armComponents = reverse(pathData(path));
-        armComponents.insert(armComponents.begin(), path[0]->parent()->data());
-        linearIK(reverse(armComponents), armComponents.front()->globalTranslation());
-    }*/
+    for (int i = 1; i < seqn.size(); i++) {
+        Path subPath_reversed = seqn[i]->data();
+        TreeNode<SkeletonComponent*>* subRoot = subPath_reversed[0];
+        std::vector<SkeletonComponent*> subPathComponents = reverse(pathData(subPath_reversed));
+        (*subPathComponents.rbegin())->backup();
+        std::vector<SkeletonComponent*> updatePath({ subRoot->parent()->data(), subRoot->data() });
+        updateGlobals(updatePath);
+        glm::vec3 target = subRoot->data()->globalTranslation();
+        (*subPathComponents.rbegin())->restore();
+        linearIK(subPathComponents, target);
+    }
 
     branchTree->suicide();
     componentToAnchorsTree->suicide();

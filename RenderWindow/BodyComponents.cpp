@@ -149,6 +149,7 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
     if (!success) for (auto forwardConnection : forwardConnections) {
         forwardConnection->perturbCoupling();
     }
+    Scene::updateGlobals(armBaseToTip);
 }
 void Scene::linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase) {
     int n = armTipToBase.size();

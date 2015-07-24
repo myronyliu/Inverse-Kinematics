@@ -29,7 +29,7 @@ namespace Scene {
         std::vector<Joint*> joints() const;
         Skeleton* skeleton() const { return _skeleton; }
 
-        void hardUpdate() const;
+        void hardUpdate(SkeletonComponent* root = NULL) const;
         void jiggle(const float& magnitude = 1) { _skeleton->jiggle(magnitude); hardUpdate(); }
 
         void setTranslation(SkeletonComponent* component, const glm::vec3& t);

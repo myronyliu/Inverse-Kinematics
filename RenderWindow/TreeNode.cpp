@@ -3,7 +3,7 @@
 template <class T>
 void TreeNode<T>::insertParent(TreeNode* parent) {
     parent->_parent = _parent;
-    parent->_children.insert(this);
+    parent->_children.push_back(this);
     _parent = parent;
     parent->setDepth(_depth);
 }
@@ -11,12 +11,12 @@ void TreeNode<T>::insertParent(TreeNode* parent) {
 template <class T>
 void TreeNode<T>::insertChild(TreeNode* child) {
     child->_parent = this;
-    _children.insert(child);
+    _children.push_back(child);
     child->setDepth(_depth + 1);
 }
 
 template <class T>
-TreeNode<T>::TreeNode(const T& data, TreeNode* parent, const std::set<TreeNode*>& children) :
+TreeNode<T>::TreeNode(const T& data, TreeNode* parent, const std::list<TreeNode*>& children) :
 _data(data), _parent(parent), _children(children)
 {
     if (!_children.empty()) {
@@ -27,7 +27,7 @@ _data(data), _parent(parent), _children(children)
     if (parent == NULL)
         setDepth(0);
     else {
-        parent->_children.insert(this);
+        parent->_children.push_back(this);
         setDepth(parent->_depth + 1);
     }
 }
@@ -46,16 +46,8 @@ template <class T>
 TreeNode<T>* TreeNode<T>::leftMostLeaf() const {
     TreeNode* node = this;
     while (true) {
-        bool childFound = false;
-        if (_children.size() == 0) return node;
-        for (auto child : node->children()) {
-            if (child != NULL) {
-                node = child;
-                childFound = true;
-                break;
-            }
-        }
-        if (!childFound) return node;
+        if (node->children().empty()) return node;
+        node = *(node->children().begin());
     }
 }
 
@@ -64,17 +56,10 @@ std::vector<TreeNode<T>*> TreeNode<T>::pathToLeftMostLeaf() const {
     std::vector<TreeNode*> path({ const_cast<TreeNode*>(this) });
     const TreeNode* node = this;
     while (true) {
-        bool childFound = false;
-        if (_children.size() == 0) return path;
-        for (auto child : node->children()) {
-            if (child != NULL) {
-                path.push_back(child);
-                node = child;
-                childFound = true;
-                break;
-            }
-        }
-        if (!childFound) return path;
+        if (node->children().empty()) return path;
+        TreeNode* child = *(node->children().begin());
+        path.push_back(child);
+        node = child;
     }
 }
 
@@ -84,7 +69,7 @@ std::vector<TreeNode<T>*> TreeNode<T>::leaves() const {
     std::vector<TreeNode*> leaves;
     std::vector<TreeNode*> seqn = BFSsequence();
     for (auto node : seqn) {
-        if (node->_children.empty()) {
+        if (node->children().empty()) {
             leaves.push_back(node);
         }
     }
@@ -102,7 +87,7 @@ std::vector<TreeNode<T>*> TreeNode<T>::BFSsequence() {
         stack.pop_back();
         seqn.push_back(node);
 
-        for (auto child : node->_children) {
+        for (auto child : node->children()) {
             if (child == NULL) continue;
             stack.push_back(child);
         }
@@ -119,7 +104,7 @@ std::vector<TreeNode<T>*> TreeNode<T>::DFSsequence() {
         seqn.push_back(node);
 
         bool foundUncharted = false;
-        for (auto child : node->_children) {
+        for (auto child : node->children()) {
             if (child == NULL) continue;
             if (traversed.find(child) == traversed.end()) {
                 node = child;
@@ -130,7 +115,7 @@ std::vector<TreeNode<T>*> TreeNode<T>::DFSsequence() {
         if (foundUncharted) continue;
 
         traversed.insert(node);
-        for (auto child : node->_children) {
+        for (auto child : node->children()) {
             // Although the children have all been traversed, since we have added "node" to the set of traversed nodes
             // we have zero chance of entering the subtree rooted at "node", so we might as truncate "traversed"
             traversed.erase(child);
@@ -166,7 +151,7 @@ void TreeNode<T>::setDepth(const int& depth) {
 
             node->_depth = node->_parent->_depth + 1;
 
-            for (auto child : node->_children) {
+            for (auto child : node->children()) {
                 if (child == NULL) continue;
                 stack.push_back(child);
             }
@@ -229,9 +214,9 @@ TreeNode<T>* TreeNode<T>::invertedBranch() const {
     TreeNode* node = this;
     int depthCounter = 0;
     while (true) {
-        std::set<TreeNode*> children = node->children();
+        std::list<TreeNode*> children = node->children();
         if (children.size() == 1) {
-            node = *children.begin();
+            node = *(children.begin());
             depthCounter++;
         }
         else break;
@@ -282,9 +267,9 @@ TreeNode<std::vector<TreeNode<T>*>>* TreeNode<T>::buildBranchTree() const {
         Branch branch = branchNode->data();
 
         for (auto node : branch) {
-            std::set<TreeNode*> children = node->children();
+            std::list<TreeNode*> children = node->children();
             if (children.size() > 1) {
-                std::set<TreeNode*>::iterator it = children.begin();
+                std::list<TreeNode*>::iterator it = children.begin();
                 it++;
                 for (it; it != children.end(); it++) {
                     Branch subBranch = (*it)->pathToLeftMostLeaf();

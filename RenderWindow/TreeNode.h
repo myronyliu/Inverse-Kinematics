@@ -7,12 +7,16 @@ template <class T>
 class TreeNode
 {
 public:
-    TreeNode() : _parent(NULL), _children(std::set<TreeNode*>()), _depth(0) {}
+    TreeNode() : _parent(NULL), _children(std::list<TreeNode*>()), _depth(0) {}
     
-    TreeNode(const T& data, TreeNode* parent = NULL, const std::set<TreeNode*>& children = std::set<TreeNode<T>*>());
+    TreeNode(const T& data, TreeNode* parent = NULL, const std::list<TreeNode*>& children = std::list<TreeNode<T>*>());
 
     void suicide() {
-        if (_parent != NULL) _parent->_children.erase(this);
+        if (_parent != NULL) {
+            for (std::list<TreeNode*>::iterator it = _parent->_children.begin(); it != _parent->_children.end(); it++) {
+                if (*it == this) _parent->_children.erase(it);
+            }
+        }
         delete this;
     }
 
@@ -33,7 +37,7 @@ public:
     std::vector<TreeNode*> BFSsequence();
 
     TreeNode* parent() const { return _parent; }
-    std::set<TreeNode*> children() const { return _children; }
+    std::list<TreeNode*> children() const { return _children; }
     T data() const { return _data; }
     int depth() const { return _depth; }
     int nDescendantGenerations() const;
@@ -46,7 +50,7 @@ public:
 
 private:
     TreeNode* _parent;
-    std::set<TreeNode*> _children;
+    std::list<TreeNode*> _children;
     T _data;
     int _depth;
 
