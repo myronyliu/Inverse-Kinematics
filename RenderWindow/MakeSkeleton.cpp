@@ -69,7 +69,8 @@ std::pair<Body*, Bone*> starfish(const int& nLegs, const int& nJoints) {
     for (int i = 0; i < hubSockets.size(); i++) {
         float phi = (2 * M_PI / hubSockets.size())*i;
         glm::vec3 t = glm::vec3(cos(phi), sin(phi), 0);
-        glm::vec3 w = Math::axisAngleAlignZtoVEC3(t);
+        glm::vec3 y = glm::vec3(-sin(phi), cos(phi), 0);
+        glm::vec3 w = Math::axisAngleAlignZYtoVECS3(t, y);
         hubSockets[i] = new BallSocket(4);
         hubSockets[i]->couple(new BallJoint(NULL,t,w))->attach(hubBone);
     }
@@ -100,17 +101,18 @@ std::pair<Body*, Bone*> starfish(const int& nLegs, const int& nJoints) {
 std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints) {
     Bone* hubBone = new Bone();
 
-    std::vector<Socket*> hubSockets(2, NULL);
+    std::vector<Socket*> hubSockets(3, NULL);
     std::vector<float> angles({ 0.0f, M_PI - 0.1f, M_PI + 0.1f });
     for (int i = 0; i < hubSockets.size(); i++) {
         float phi = angles[i];
         glm::vec3 t = glm::vec3(cos(phi), sin(phi), 0);
-        glm::vec3 w = Math::axisAngleAlignZtoVEC3(t);
+        glm::vec3 y = glm::vec3(-sin(phi), cos(phi), 0);
+        glm::vec3 w = Math::axisAngleAlignZYtoVECS3(t, y);
         hubSockets[i] = new BallSocket(4);
         hubSockets[i]->couple(new BallJoint(NULL, t, w))->attach(hubBone);
     }
 
-    std::vector<Bone*> leaves(2, NULL);
+    std::vector<Bone*> leaves(3, NULL);
     for (int i = 0; i < leaves.size(); i++) {
         leaves[i] = new Bone();
         Bone* bone = leaves[i];
@@ -124,10 +126,9 @@ std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints) {
 
     Scene::Skeleton* skeleton = new Scene::Skeleton(hubBone);
     Scene::Body* body = new Scene::Body(skeleton);
-    body->anchor(hubBone, true, true);
-    body->hardUpdate();
-    body->unanchor(hubBone);
     body->anchor(leaves[1], true, true);
-    //body->anchor(leaves[2], true, true);
+    body->hardUpdate();
+    body->anchor(leaves[2], true, true);
+    
     return std::make_pair(body, leaves[0]);
 }

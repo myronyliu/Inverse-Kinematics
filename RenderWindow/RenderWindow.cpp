@@ -12,8 +12,8 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    body->setTranslation(bone, tipPath->stepT(0.01));
-    glutPostRedisplay();
+    /*body->setTranslation(bone, tipPath->stepT(0.01));
+    glutPostRedisplay();*/
 }
 
 GlutUI::Manager MANAGER;
@@ -59,9 +59,8 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    std::tie(body, bone) = chain(3);
+    std::tie(body, bone) = test(2);
     world.addObject(body);
-    body->jiggle(8);
 
 
     Scene::Camera * cam = new Scene::Camera();

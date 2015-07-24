@@ -27,13 +27,14 @@ void Scene::updateGlobals(TreeNode<SkeletonComponent*>* componentTree) {
             glm::vec3 t, w;
             SkeletonComponent* previousComponent = seqn[i - 1]->data();
             std::tie(t, w) = previousComponent->transformsToConnectedComponents()[component];
-
+            
             transformStack.push();
             transformStack.translate(t);
             transformStack.rotate(w);
 
             component->setGlobalTranslation(transformStack.getTranslation());
             component->setGlobalRotation(transformStack.getRotation());
+
         }
     }
 }
@@ -74,7 +75,6 @@ void Scene::updateGlobals(const std::vector<SkeletonComponent*>& components) {
 
         std::tie(t, w) = it->second;
 
-        transformStack.push();
         transformStack.translate(t);
         transformStack.rotate(w);
 
@@ -110,6 +110,7 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
     glm::vec3 stepToTarget = tipTarget - tipPosition;
     float distanceToTarget = glm::length(stepToTarget);
 
+    bool success = false;
     int maxTries = 64;
     int tries = 0;
     while (distanceToTarget > 0.01f && tries < maxTries) {
@@ -129,6 +130,7 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
             tipPosition = newTipPosition;
             stepToTarget = newStepToTarget;
             tries = 0;
+            success = true;
         }
         else {
             restoreAll();
@@ -136,6 +138,7 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
             tries++;
         }
     }
+    if (!success) for (auto socket : sockets) socket->perturbJoint();
 }
 void Scene::linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase) {
     int n = armTipToBase.size();

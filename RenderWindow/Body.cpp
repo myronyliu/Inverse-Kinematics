@@ -216,12 +216,12 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) {
     linearIK(updatePath,t);
     updateGlobals(updatePath);
 
-    for (int i = 1; i < seqn.size(); i++) {
+    /*for (int i = 1; i < seqn.size(); i++) {
         Path path = seqn[i]->data();
         std::vector<SkeletonComponent*> armComponents = reverse(pathData(path));
         armComponents.insert(armComponents.begin(), path[0]->parent()->data());
         linearIK(reverse(armComponents), armComponents.front()->globalTranslation());
-    }
+    }*/
 
     branchTree->suicide();
     componentToAnchorsTree->suicide();
