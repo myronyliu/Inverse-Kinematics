@@ -16,6 +16,11 @@ enum {
     PRISM = 2
 };
 
+enum {
+    DOWNSTREAM = true,
+    UPSTREAM = false,
+};
+
 
 
 namespace Scene {
@@ -149,6 +154,9 @@ namespace Scene {
 
         TreeNode<Bone*>* boneTree();
 
+        void perturbCoupling(const float& scale = 1);
+
+
         /////////////////
         //// GETTERS ////
         /////////////////
@@ -172,8 +180,8 @@ namespace Scene {
         glm::vec3 translationToBone() const { return Math::rotate(-_tFromBone, -_wFromBone); }
         glm::vec3 rotationToBone() const { return -_wFromBone; }
 
-        std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip);
-        void nudge(SkeletonComponent* tip, const glm::vec3& step);
+        std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip, const bool& tipDirection);
+        void nudge(SkeletonComponent* tip, const glm::vec3& step, const bool& tipDirection);
 
         virtual void backupLink() {};
         virtual void restoreLink() {};
@@ -266,7 +274,6 @@ namespace Scene {
             _wToJoint_stashed = _wToJoint;
         }
 
-        void perturbJoint(const float& scale = 1);
         virtual float reach() const { return 0; }
 
         /////////////////
@@ -345,7 +352,7 @@ namespace Scene {
         std::set<Socket*> sockets() const;
         std::set<Joint*> joints() const;
 
-        void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbJoint(amplitude); }
+        void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbCoupling(amplitude); }
     private:
         std::set<Bone*> _bones;
     };

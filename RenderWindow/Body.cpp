@@ -195,9 +195,7 @@ void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) {
     
     if (distance < 0.000001f) return;
     if (distance > 0.0001f) displacement *= 0.0001f / distance;
-
-    
-    
+ 
     TreeNode<SkeletonComponent*>* componentToAnchorsTree
         = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
     TreeNode<Path>* branchTree = componentToAnchorsTree->buildBranchTree();

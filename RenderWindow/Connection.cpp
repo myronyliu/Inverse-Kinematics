@@ -249,7 +249,7 @@ TreeNode<Bone*>* Connection::boneTree() {
     return root;
 }
 
-std::pair<arma::mat, arma::mat> Connection::J(SkeletonComponent* tip) {
+std::pair<arma::mat, arma::mat> Connection::J(SkeletonComponent* tip, const bool& directionToTip) {
 
     Bone* opposingBone = this->opposingBone();
     if (opposingBone == NULL)
@@ -265,30 +265,47 @@ std::pair<arma::mat, arma::mat> Connection::J(SkeletonComponent* tip) {
         glm::vec3 tPlus, tMinus, wPlus, wMinus;
 
         Connection* joint = opposingConnection();
-        glm::mat3 R_root2socket
-            = Math::R(_wGlobal);
-        glm::mat3 R_root2joint // This one will change
-            = Math::R(R_root2socket*socket->rotationToJoint())*R_root2socket;
-        glm::mat3 R_joint2tip
-            = Math::R(tip->globalRotation())*Math::R(-joint->globalRotation());
-        glm::vec3 t_joint2tip_jointFrame
-            = glm::inverse(R_root2joint)*(tip->globalTranslation() - joint->globalTranslation());
+
+        Connection* rootsideConnection = NULL;
+        Connection* tipsideConnection = NULL;
+        if (directionToTip == DOWNSTREAM) {
+            rootsideConnection = socket;
+            tipsideConnection = joint;
+        }
+        else if (directionToTip == UPSTREAM) {
+            rootsideConnection = joint;
+            tipsideConnection = socket;
+        }
+        glm::mat3 R_root2rootsideConnection
+            = Math::R(rootsideConnection->globalRotation());
+        glm::mat3 R_root2tipsideConnection // This one will change
+            = Math::R(R_root2rootsideConnection*rootsideConnection->rotationToOpposingConnection())*R_root2rootsideConnection;
+        glm::mat3 R_tipsideConnection2tip
+            = Math::R(tip->globalRotation())*Math::R(-tipsideConnection->globalRotation());
+        glm::vec3 t_tipsideConnection2tip_tipSideConnectionFrame
+            = glm::inverse(R_root2tipsideConnection)*(tip->globalTranslation() - tipsideConnection->globalTranslation());
 
         socket->backup();
         int column = 0;
         for (auto param : adjustableParams) {
             socket->_params[param.first] += dParam;
             socket->buildTransformsFromParams();
-            R_root2joint = Math::R(R_root2socket*socket->rotationToJoint())*R_root2socket;
-            tPlus = R_root2socket*socket->translationToJoint() + R_root2joint*t_joint2tip_jointFrame;
-            wPlus = Math::w(R_joint2tip*R_root2joint);
+            R_root2tipsideConnection
+                = Math::R(R_root2rootsideConnection*rootsideConnection->rotationToOpposingConnection())*R_root2rootsideConnection;
+            tPlus
+                = R_root2rootsideConnection*rootsideConnection->translationToOpposingConnection()
+                + R_root2tipsideConnection*t_tipsideConnection2tip_tipSideConnectionFrame;
+            wPlus = Math::w(R_tipsideConnection2tip*R_root2tipsideConnection);
             socket->restore();
 
             socket->_params[param.first] -= dParam;
             socket->buildTransformsFromParams();
-            R_root2joint = Math::R(R_root2socket*socket->rotationToJoint())*R_root2socket;
-            tMinus = R_root2socket*socket->translationToJoint() + R_root2joint*t_joint2tip_jointFrame;
-            wMinus = Math::w(R_joint2tip*R_root2joint);
+            R_root2tipsideConnection
+                = Math::R(R_root2rootsideConnection*rootsideConnection->rotationToOpposingConnection())*R_root2rootsideConnection;
+            tMinus
+                = R_root2rootsideConnection*rootsideConnection->translationToOpposingConnection()
+                + R_root2tipsideConnection*t_tipsideConnection2tip_tipSideConnectionFrame;
+            wMinus = Math::w(R_tipsideConnection2tip*R_root2tipsideConnection);
             socket->restore();
 
             glm::vec3 Dt = (tPlus - tMinus) / dParam;
@@ -308,18 +325,18 @@ std::pair<arma::mat, arma::mat> Connection::J(SkeletonComponent* tip) {
         return std::make_pair(dt_dparam, dw_dparam);
     }
     else if (Joint* joint = dynamic_cast<Joint*>(this)) {
-        return J(opposingConnection());
+        return J(opposingConnection(), !directionToTip);
     }
 }
 
 
-void Connection::nudge(SkeletonComponent* tip, const glm::vec3& step) {
+void Connection::nudge(SkeletonComponent* tip, const glm::vec3& step, const bool& directionToTip) {
     Connection* opposingConnection = this->opposingConnection();
     if (opposingConnection == NULL) return;
 
     if (Socket* socket = dynamic_cast<Socket*>(this)) {
         arma::mat J;
-        std::tie(J, std::ignore) = this->J(tip);
+        std::tie(J, std::ignore) = this->J(tip, directionToTip);
 
         std::map<int, float> adjustableParams = socket->adjustableParams();
 
@@ -334,6 +351,19 @@ void Connection::nudge(SkeletonComponent* tip, const glm::vec3& step) {
         socket->setParams(socket->_params);
     }
     else if (Joint* joint = dynamic_cast<Joint*>(this)) {
-        opposingConnection->nudge(tip, step);
+        opposingConnection->nudge(tip, step, !directionToTip);
+    }
+}
+
+void Connection::perturbCoupling(const float& scale) {
+    if (opposingBone() == NULL) return;
+
+    if (Socket* socket = dynamic_cast<Socket*>(this)) {
+        socket->perturbParams(scale);
+        socket->constrainParams();
+        socket->buildTransformsFromParams();
+    }
+    else if (Joint* joint = dynamic_cast<Joint*>(this)) {
+        joint->socket()->perturbCoupling(scale);
     }
 }

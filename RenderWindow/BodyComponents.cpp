@@ -99,11 +99,19 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
         for (auto component : armBaseToTip)
             component->restore();
     };
-    std::vector<Socket*> sockets;
-    for (auto component : armBaseToTip) {
-        component->backup();
-        if (Socket* socket = dynamic_cast<Socket*>(component))
-            sockets.push_back(socket);
+
+    backupAll();
+
+    std::vector<Connection*> forwardConnections;
+    for (int i = 0; i < armBaseToTip.size() - 1; i++) {
+        SkeletonComponent* component = armBaseToTip[i];
+        if (Connection* forwardConnection = dynamic_cast<Connection*>(component)) {
+            if (forwardConnection->opposingConnection() != NULL) {
+                forwardConnections.push_back(forwardConnection);
+                i += 2;
+                continue;
+            }
+        }
     }
 
     glm::vec3 tipPosition = tip->globalTranslation();
@@ -115,8 +123,8 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
     int tries = 0;
     while (distanceToTarget > 0.01f && tries < maxTries) {
 
-        for (auto socket : sockets) {
-            socket->nudge(tip, stepToTarget);
+        for (auto forwardConnection : forwardConnections) {
+            forwardConnection->nudge(tip, stepToTarget, DOWNSTREAM);
         }
         Scene::updateGlobals(armBaseToTip);
 
@@ -138,7 +146,9 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
             tries++;
         }
     }
-    if (!success) for (auto socket : sockets) socket->perturbJoint();
+    if (!success) for (auto forwardConnection : forwardConnections) {
+        forwardConnection->perturbCoupling();
+    }
 }
 void Scene::linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase) {
     int n = armTipToBase.size();

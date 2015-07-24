@@ -12,8 +12,8 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    /*body->setTranslation(bone, tipPath->stepT(0.01));
-    glutPostRedisplay();*/
+    body->setTranslation(bone, tipPath->stepT(0.001f));
+    glutPostRedisplay();
 }
 
 GlutUI::Manager MANAGER;
@@ -51,7 +51,8 @@ int main(int argc, char* argv[])
     world.addObject(yAxis);
     world.addObject(zAxis);
 
-    tipPath = new Scene::Path(4.0);
+    tipPath = new Scene::Path(6);
+    tipPath->setTranslation(glm::vec3(0, 0, 1));
     anchorPath = new Scene::Path(1);
     tipPath->setParameterization(PathParameterizations::circle);
     anchorPath->setParameterization(PathParameterizations::line);
@@ -59,7 +60,7 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    std::tie(body, bone) = test(2);
+    std::tie(body, bone) = chain(4);
     world.addObject(body);
 
 
@@ -76,9 +77,7 @@ int main(int argc, char* argv[])
     ///// Keyboard Hotkey Assignments /////
     ///////////////////////////////////////
     auto ilambda = [&]() {
-        //body->jiggle(2);
-        body->setTranslation(bone, glm::vec3(0, 1, 0));
-        
+        body->setTranslation(bone, tipPath->stepT(0.000f));
     };
     auto jlambda = [&]() {
     };

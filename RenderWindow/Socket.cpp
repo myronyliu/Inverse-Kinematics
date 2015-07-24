@@ -56,13 +56,6 @@ void Socket::setParam(const int& key, const float& value) {
     buildTransformsFromParams();
 }
 
-void Socket::perturbJoint(const float& scale) {
-    if (opposingBone() == NULL) return;
-    perturbParams(scale);
-    constrainParams();
-    buildTransformsFromParams();
-}
-
 Joint* Socket::couple(Joint* joint) {
     if (joint == _joint || joint->type() != type())
         return joint;

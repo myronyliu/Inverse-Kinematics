@@ -46,9 +46,8 @@ std::pair<Body*, Bone*> chain(const int& nJoints) {
     Bone* bone = root;
     for (int i = 0; i < nJoints; i++) {
         Bone* nextBone = new Bone();
-        auto asdf = new BallSocket();
-        //asdf->setConstraint(1, 0.3f*M_PI);
-        bone->attach(asdf)->couple(new BallJoint(5))->attach(nextBone);
+        //bone->attach(new BallSocket(4))->couple(new BallJoint(5))->attach(nextBone);
+        bone->attach(new BallJoint(4))->couple(new BallSocket(5))->attach(nextBone);
         bone = nextBone;
     }
 
