@@ -12,8 +12,8 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    /*body->setTranslation(bone, tipPath->stepT(0.01f));
-    glutPostRedisplay();*/
+    body->setTranslation(bone, tipPath->stepT(0.01f));
+    glutPostRedisplay();
 }
 
 GlutUI::Manager MANAGER;
@@ -51,9 +51,9 @@ int main(int argc, char* argv[])
     world.addObject(yAxis);
     world.addObject(zAxis);
 
-    tipPath = new Scene::Path(2);
-    tipPath->setRotation(glm::vec3(0, M_PI / 2, 0));
-    tipPath->setTranslation(glm::vec3(3, 0, 0));
+    tipPath = new Scene::Path(1);
+    //tipPath->setRotation(glm::vec3(0, M_PI / 2, 0));
+    tipPath->setTranslation(glm::vec3(0, 0, -3));
     anchorPath = new Scene::Path(1);
     tipPath->setParameterization(PathParameterizations::circle);
     anchorPath->setParameterization(PathParameterizations::line);
@@ -61,14 +61,14 @@ int main(int argc, char* argv[])
     world.addObject(tipPath);
     world.addObject(anchorPath);
 
-    std::tie(body, bone) = test(2);
+    std::tie(body, bone) = test2(2);
     world.addObject(body);
 
 
     Scene::Camera * cam = new Scene::Camera();
     cam->setPos(16.0f*glm::vec3(1, 1, 1));
     cam->setDir(-cam->pos());
-    cam->setUp(glm::vec3(0, 0, 1));
+    cam->setUp(glm::vec3(0, 0, 2));
     mainPanel.setWorld(&world);
     mainPanel.setCamera(cam);
     GlutUI::Controls::Keyboard keyboard(&mainPanel, mainPanel.getCamera());
