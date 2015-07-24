@@ -252,28 +252,26 @@ template <class T>
 // The difference now is the the "trunk" itself becomes the graph-theoretic root
 // The branches that grow off the trunk become children of the trunk
 // (NOTE how the plant-branches themselves are now graph-nodes)
-TreeNode<std::vector<TreeNode<T>*>>* TreeNode<T>::buildBranchTree() const {
+TreeNode<TreeNode<T>*>* TreeNode<T>::buildBranchTree() const {
     typedef std::vector<TreeNode*> Branch;
 
-    Branch trunk = pathToLeftMostLeaf();
-    TreeNode<Branch>* root = new TreeNode<Branch>(trunk);
+    TreeNode<TreeNode*>* root = new TreeNode<TreeNode*>(const_cast<TreeNode*>(this));
 
-    std::vector<TreeNode<Branch>*> stack({ root });
+    std::vector<TreeNode<TreeNode*>*> stack({ root });
 
     do {
-        TreeNode<Branch>* branchNode = stack.back();
+        TreeNode<TreeNode*>* branchNode = stack.back();
         stack.pop_back();
 
-        Branch branch = branchNode->data();
+        std::vector<TreeNode*> branchNode_nodeSeqn = branchNode->data()->pathToLeftMostLeaf();
 
-        for (auto node : branch) {
+        for (auto node : branchNode_nodeSeqn) {
             std::list<TreeNode*> children = node->children();
             if (children.size() > 1) {
                 std::list<TreeNode*>::iterator it = children.begin();
                 it++;
                 for (it; it != children.end(); it++) {
-                    Branch subBranch = (*it)->pathToLeftMostLeaf();
-                    stack.push_back(new TreeNode<Branch>(subBranch, branchNode));
+                    stack.push_back(new TreeNode<TreeNode*>(*it, branchNode));
                 }
             }
         }

@@ -12,8 +12,8 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    body->setTranslation(bone, tipPath->stepT(0.01f));
-    glutPostRedisplay();
+    /*body->setTranslation(bone, tipPath->stepT(0.01f));
+    glutPostRedisplay();*/
 }
 
 GlutUI::Manager MANAGER;

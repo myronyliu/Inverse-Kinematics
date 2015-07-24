@@ -159,3 +159,69 @@ void Scene::linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonCompo
     }
     linearIK(armBaseToTip, tipTarget);
 }
+
+
+void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& t, const glm::vec3 w) {
+    SkeletonComponent* tip = armBaseToTip.back();
+
+    auto backupAll = [&]() {
+        for (auto component : armBaseToTip)
+            component->backup();
+    };
+
+    auto restoreAll = [&]() {
+        for (auto component : armBaseToTip)
+            component->restore();
+    };
+
+    backupAll();
+
+    std::vector<Connection*> forwardConnections;
+    for (int i = 0; i < armBaseToTip.size() - 1; i++) {
+        SkeletonComponent* component = armBaseToTip[i];
+        if (Connection* forwardConnection = dynamic_cast<Connection*>(component)) {
+            if (forwardConnection->opposingConnection() != NULL) {
+                forwardConnections.push_back(forwardConnection);
+                i += 2;
+                continue;
+            }
+        }
+    }
+
+    glm::vec3 tipPosition = tip->globalTranslation();
+    glm::vec3 stepToTarget = t - tipPosition;
+    float distanceToTarget = glm::length(stepToTarget);
+
+    bool success = false;
+    int maxTries = 64;
+    int tries = 0;
+    while (distanceToTarget > 0.01f && tries < maxTries) {
+
+        for (auto forwardConnection : forwardConnections) {
+            forwardConnection->nudge(tip, stepToTarget, DOWNSTREAM);
+        }
+        Scene::updateGlobals(armBaseToTip);
+
+        glm::vec3 newTipPosition = tip->globalTranslation();
+        glm::vec3 newStepToTarget = t - newTipPosition;
+        float newDistanceToTarget = glm::length(newStepToTarget);
+
+        if (newDistanceToTarget < distanceToTarget) {
+            backupAll();
+            distanceToTarget = newDistanceToTarget;
+            tipPosition = newTipPosition;
+            stepToTarget = newStepToTarget;
+            tries = 0;
+            success = true;
+        }
+        else {
+            restoreAll();
+            stepToTarget /= 2;
+            tries++;
+        }
+    }
+    if (!success) for (auto forwardConnection : forwardConnections) {
+        forwardConnection->perturbCoupling();
+    }
+    Scene::updateGlobals(armBaseToTip);
+}

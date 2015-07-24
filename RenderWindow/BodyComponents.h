@@ -38,6 +38,7 @@ namespace Scene {
     // The following sets the last SkeletonComponent to the target destination
     void linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget);
     void linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase);
+    void linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& t, const glm::vec3 w);
 
     class SkeletonComponent // Wrapper class for Bones and Connections (Sockets and Joints)
     {

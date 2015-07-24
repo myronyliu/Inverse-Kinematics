@@ -10,6 +10,7 @@ std::pair<Scene::Body*, Scene::Bone*> chain(const int& nJoints = 5);
 std::pair<Scene::Body*, Scene::Bone*> starfish(const int& nLegs = 3, const int& nJoints = 1);
 
 std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints = 1);
+std::pair<Scene::Body*, Scene::Bone*> test2(const int& nJoints = 1);
 
 
 #endif

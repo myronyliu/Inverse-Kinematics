@@ -101,7 +101,7 @@ std::pair<Scene::Body*, Scene::Bone*> test(const int& nJoints) {
     Bone* hubBone = new Bone();
 
     std::vector<Socket*> hubSockets(3, NULL);
-    std::vector<float> angles({ 0.0f, M_PI - 0.1f, M_PI + 0.1f });
+    std::vector<float> angles({ 0.0f, M_PI - 0.0f, M_PI + 0.0f });
     for (int i = 0; i < hubSockets.size(); i++) {
         float phi = angles[i];
         glm::vec3 t = glm::vec3(cos(phi), sin(phi), 0);

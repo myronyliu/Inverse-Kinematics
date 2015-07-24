@@ -40,6 +40,11 @@ std::set<SkeletonComponent*> Body::anchors() const {
 }
 
 void Body::anchor(SkeletonComponent* component, const bool& tFixed, const bool& wFixed) {
+    if (tFixed || wFixed) {
+        for (auto effector : _effectors)
+            addEffector(effector.first);
+    }
+
     if (tFixed)
         _anchoredTranslations[component] = component->globalTranslation();
     else
@@ -53,7 +58,60 @@ void Body::anchor(SkeletonComponent* component, const bool& tFixed, const bool& 
 void Body::unanchor(SkeletonComponent* component) {
     _anchoredTranslations.erase(component);
     _anchoredRotations.erase(component);
+    for (auto effector : _effectors)
+        addEffector(effector.first);
 }
+
+void Body::addEffector(SkeletonComponent* effector) {
+    typedef TreeNode<SkeletonComponent*>* StandardNode;
+    typedef TreeNode<StandardNode>* BranchNode;
+    typedef std::vector<SkeletonComponent*> ComponentPath;
+
+    auto makeComponentPath = [](const BranchNode& branchNode, const bool& isRoot) {
+        std::vector<StandardNode> nodePath = branchNode->data()->pathToLeftMostLeaf();
+        int n = nodePath.size();
+        ComponentPath componentPath(n, NULL);
+        for (int i = 0; i < n; i++) {
+            componentPath[i] = nodePath[n - 1 - i]->data();
+        }
+        if (!isRoot) {
+            componentPath.push_back(nodePath.front()->parent()->data());
+        }
+        return componentPath;
+    };
+
+
+    TreeNode<SkeletonComponent*>* effectorToAnchorsTree
+        = effector->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
+    TreeNode<TreeNode<SkeletonComponent*>*>* branchTree = effectorToAnchorsTree->buildBranchTree();
+
+    std::vector<BranchNode> branchNodeSeqn = branchTree->DFSsequence();
+
+    TreeNode<ComponentPath>* root = new TreeNode<ComponentPath>(makeComponentPath(branchNodeSeqn[0], true));
+
+    TreeNode<ComponentPath>* previousNode = root;
+    int previousDepth = branchNodeSeqn[0]->depth();
+    for (int i = 1; i < branchNodeSeqn.size(); i++) {
+        int depth = branchNodeSeqn[i]->depth();
+        if (depth > previousDepth) {
+            TreeNode<ComponentPath>* newNode
+                = new TreeNode<ComponentPath>(makeComponentPath(branchNodeSeqn[i], false), previousNode);
+            previousNode = newNode;
+        }
+        else {
+            previousNode = previousNode->parent();
+        }
+        previousDepth = depth;
+    }
+
+    _effectors[effector] = root;
+
+    branchTree->suicide();
+    effectorToAnchorsTree->suicide();
+}
+
+
+
 
 
 void Body::doDraw() {
@@ -176,61 +234,40 @@ void Body::hardUpdate(SkeletonComponent* rootIn) const {
     updateTree->suicide();
 }
 
-void Body::setTranslation(SkeletonComponent* component, const glm::vec3& t) {
-    if (_anchoredTranslations.find(component) != _anchoredTranslations.end()) return;
+void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& t) {
+    if (_anchoredTranslations.find(effector) != _anchoredTranslations.end()) return;
 
-    typedef std::vector<TreeNode<SkeletonComponent*>*> Path;
-    auto pathData = [](const Path& path) {
-        std::vector<SkeletonComponent*> pathData(path.size(), NULL);
-        for (int i = 0; i < path.size(); i++) {
-            pathData[i] = path[i]->data();
-        }
-        return pathData;
-    };
-    auto reverse = [](const std::vector<SkeletonComponent*>& path) {
-        int n = path.size();
-        std::vector<SkeletonComponent*> reversedPath(n, NULL);
-        for (int i = 0; i < n; i++) {
-            reversedPath[n - i - 1] = path[i];
-        }
-        return reversedPath;
-    };
-    
-    glm::vec3 displacement = t - component->globalTranslation();
+    if (_effectors.find(effector) == _effectors.end())
+        addEffector(effector);
+
+    glm::vec3 displacement = t - effector->globalTranslation();
     float distance = glm::length(displacement);
     
     if (distance < 0.000001f) return;
     if (distance > 0.0001f) displacement *= 0.0001f / distance;
  
-    TreeNode<SkeletonComponent*>* componentToAnchorsTree
-        = component->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
-    TreeNode<Path>* branchTree = componentToAnchorsTree->buildBranchTree();
+    TreeNode<std::vector<SkeletonComponent*>>* IKbranchTree = _effectors[effector];
+    std::vector<TreeNode<std::vector<SkeletonComponent*>>*> IKbranchSeqn = IKbranchTree->BFSsequence();
 
+    linearIK(IKbranchSeqn[0]->data(), t);
 
-    std::vector<TreeNode<Path>*> seqn = branchTree->BFSsequence();
-   Path mainPath_reversed = seqn[0]->data();
-
-    std::vector<SkeletonComponent*> mainPathComponents = reverse(pathData(mainPath_reversed));
-    /*for (auto node : mainPath) {
-        if (Socket* socket = dynamic_cast<Socket*>(node->data())) {
-            socket->nudge(component, displacement);
-            updateGlobals(updatePath);
-        }
-    }*/
-    linearIK(mainPathComponents,t);
-
-    for (int i = 1; i < seqn.size(); i++) {
-        Path subPath_reversed = seqn[i]->data();
-        TreeNode<SkeletonComponent*>* subRoot = subPath_reversed[0];
-        std::vector<SkeletonComponent*> subPathComponents = reverse(pathData(subPath_reversed));
-        (*subPathComponents.rbegin())->backup();
-        std::vector<SkeletonComponent*> updatePath({ subRoot->parent()->data(), subRoot->data() });
+    /*for (int i = 1; i < IKbranchSeqn.size(); i++) {
+        std::vector<SkeletonComponent*> IKbranch = IKbranchSeqn[i]->data();
+        glm::vec3 t = IKbranch.back()->globalTranslation();
+        glm::vec3 w = IKbranch.back()->globalRotation();
+        std::vector<SkeletonComponent*> updatePath({ IKbranch[IKbranch.size() - 2], IKbranch.back() });
         updateGlobals(updatePath);
-        glm::vec3 target = subRoot->data()->globalTranslation();
-        (*subPathComponents.rbegin())->restore();
-        linearIK(subPathComponents, target);
-    }
+        linearIK(IKbranch, t, w);
+    }*/
 
-    branchTree->suicide();
-    componentToAnchorsTree->suicide();
+    for (int i = 1; i < IKbranchSeqn.size(); i++) {
+        std::vector<SkeletonComponent*> IKbranch = IKbranchSeqn[i]->data();
+        std::vector<SkeletonComponent*> updatePath({ IKbranch.back(), IKbranch[IKbranch.size() - 2] });
+        IKbranch.pop_back();
+        IKbranch.back()->backup();
+        updateGlobals(updatePath);
+        glm::vec3 t = IKbranch.back()->globalTranslation();
+        IKbranch.back()->restore();
+        linearIK(IKbranch, t);
+    }
 }

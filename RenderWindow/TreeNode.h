@@ -46,7 +46,7 @@ public:
     std::vector<TreeNode*> upstreamForks() const;
 
     TreeNode* invertedBranch() const;
-    TreeNode<std::vector<TreeNode*>>* buildBranchTree() const;
+    TreeNode<TreeNode*>* buildBranchTree() const;
 
 private:
     TreeNode* _parent;

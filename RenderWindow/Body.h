@@ -21,6 +21,8 @@ namespace Scene {
         void anchor(SkeletonComponent*, const bool& = true, const bool& = false);
         void unanchor(SkeletonComponent*);
 
+        void addEffector(SkeletonComponent*);
+
         std::set<SkeletonComponent*> anchors() const;
 
         std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>> bonesSocketsJoints() const;
@@ -39,6 +41,8 @@ namespace Scene {
         std::map<SkeletonComponent*, glm::vec3> _anchoredTranslations;
         std::map<SkeletonComponent*, glm::vec3> _anchoredRotations;
         Skeleton* _skeleton;
+
+        std::map<SkeletonComponent*, TreeNode<std::vector<SkeletonComponent*>>*> _effectors;
 
         const glm::vec3 _t = glm::vec3(0, 0, 0);
         const glm::vec3 _w = glm::vec3(0, 0, 0);
