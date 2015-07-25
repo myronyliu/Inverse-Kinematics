@@ -141,7 +141,7 @@ std::pair<Scene::Body*, Scene::Bone*> test2(const int& nJoints) {
     std::vector<Socket*> hubSockets(3, NULL);
     for (int i = 0; i < hubSockets.size(); i++) {
         float phi = (2 * M_PI / hubSockets.size())*i;
-        glm::vec3 t = glm::vec3(0.5*cos(phi), 0.5*sin(phi), 1);
+        glm::vec3 t = glm::vec3(0.25*cos(phi), 0.25*sin(phi), 0.5);
         glm::vec3 w = phi*glm::vec3(0, 0, 1);
         hubSockets[i] = new BallSocket(5);
         hubSockets[i]->couple(new BallJoint(NULL, t, w))->attach(hubBone);

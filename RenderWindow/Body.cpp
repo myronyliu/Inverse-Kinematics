@@ -254,88 +254,89 @@ void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& target) 
         addEffector(effector);
  
     std::vector<ComponentPath> pathSeqn = _effectors[effector];
+    int nPaths = pathSeqn.size();
 
     linearSetIK(pathSeqn[0], target);
 
-    for (int i = 1; i < pathSeqn.size(); i++) {
-        std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
-        std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
-        IKpath.pop_back();
-        IKpath.back()->backup();
-        updateGlobals(updatePath);
-        glm::vec3 t = IKpath.back()->globalTranslation();
-        IKpath.back()->restore();
-        linearSetIK(IKpath, t);
+    if (true) {
+        for (int i = 1; i < nPaths; i++) {
+            std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
+            std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
+            IKpath.pop_back();
+            IKpath.back()->backup();
+            updateGlobals(updatePath);
+            glm::vec3 t = IKpath.back()->globalTranslation();
+            IKpath.back()->restore();
+            linearSetIK(IKpath, t);
+        }
     }
-
-    /*std::vector<ComponentPath> pathSeqn = _effectors[effector];
-    int nPaths = pathSeqn.size();
-
-    auto backupAll = [&]() {
-        for (auto componentPath: pathSeqn) {
-            for (auto component : componentPath) {
-                component->backup();
-            }
-        }
-    };
-    auto restoreAll = [&]() {
-        for (auto componentPath : pathSeqn) {
-            for (auto component : componentPath) {
-                component->restore();
-            }
-        }
-    };
-
-    glm::vec3 effectorPosition = effector->globalTranslation();
-    glm::vec3 stepToTarget = target - effectorPosition;
-    float distanceToTarget = glm::length(stepToTarget);
-
-    bool success = false;
-    int maxTries = 128;
-    int tries = 0;
-
-    
-
-    backupAll();
-    while (distanceToTarget > 0.1f && tries < maxTries) {
-
-        linearNudgeIK(pathSeqn[0], stepToTarget);
-
-        glm::vec3 newEffectorPosition = effector->globalTranslation();
-        glm::vec3 newStepToTarget = target - newEffectorPosition;
-        float newDistanceToTarget = glm::length(newStepToTarget);
-
-        if (newDistanceToTarget >= distanceToTarget) {
-            restoreSkeletonComponents(pathSeqn[0]);
-            stepToTarget /= 2;
-            tries++;
-        }
-        else {
-            bool anchorsViolated = false;
-            for (int i = 1; i < nPaths; i++) {
-                std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
-                std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
-                IKpath.pop_back();
-                IKpath.back()->backup();
-                updateGlobals(updatePath);
-                glm::vec3 t = IKpath.back()->globalTranslation();
-                IKpath.back()->restore();
-                if (!linearSetIK(IKpath, t)) {
-                    restoreAll();
-                    stepToTarget /= 2;
-                    tries++;
-                    anchorsViolated = true;
-                    break;
+    if (false) {
+        auto backupAll = [&]() {
+            for (auto componentPath : pathSeqn) {
+                for (auto component : componentPath) {
+                    component->backup();
                 }
             }
-            if (anchorsViolated) continue;
+        };
+        auto restoreAll = [&]() {
+            for (auto componentPath : pathSeqn) {
+                for (auto component : componentPath) {
+                    component->restore();
+                }
+            }
+        };
 
-            backupAll();
-            distanceToTarget = newDistanceToTarget;
-            effectorPosition = newEffectorPosition;
-            stepToTarget = newStepToTarget;
-            tries = 0;
-            success = true;
+        glm::vec3 effectorPosition = effector->globalTranslation();
+        glm::vec3 stepToTarget = target - effectorPosition;
+        float distanceToTarget = glm::length(stepToTarget);
+
+        bool success = false;
+        int maxTries = 128;
+        int tries = 0;
+
+
+
+        backupAll();
+        while (distanceToTarget > 0.1f && tries < maxTries) {
+
+            linearNudgeIK(pathSeqn[0], stepToTarget);
+
+            glm::vec3 newEffectorPosition = effector->globalTranslation();
+            glm::vec3 newStepToTarget = target - newEffectorPosition;
+            float newDistanceToTarget = glm::length(newStepToTarget);
+
+            if (newDistanceToTarget >= distanceToTarget) {
+                restoreSkeletonComponents(pathSeqn[0]);
+                stepToTarget /= 2;
+                tries++;
+            }
+            else {
+                bool anchorsViolated = false;
+                for (int i = 1; i < nPaths; i++) {
+                    std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
+                    std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
+                    IKpath.pop_back();
+                    IKpath.back()->backup();
+                    updateGlobals(updatePath);
+                    glm::vec3 t = IKpath.back()->globalTranslation();
+                    IKpath.back()->restore();
+                    if (!linearSetIK(IKpath, t)) {
+                        restoreAll();
+                        stepToTarget /= 2;
+                        tries++;
+                        anchorsViolated = true;
+                        break;
+                    }
+                }
+                if (anchorsViolated) continue;
+
+                backupAll();
+                distanceToTarget = newDistanceToTarget;
+                effectorPosition = newEffectorPosition;
+                stepToTarget = newStepToTarget;
+                tries = 0;
+                success = true;
+            }
         }
-    }*/
+    }
 }
