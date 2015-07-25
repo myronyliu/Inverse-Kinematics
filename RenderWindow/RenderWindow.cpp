@@ -12,7 +12,7 @@ Scene::Body* body;
 Scene::Bone* bone;
 
 void idle(void) {
-    body->setTranslation(bone, tipPath->stepT(0.01f));
+    body->setTranslation(bone, tipPath->stepT(0.005f));
     glutPostRedisplay();
 }
 

@@ -5,6 +5,19 @@ using namespace std;
 using namespace glm;
 using namespace Math;
 
+
+void Scene::backupSkeletonComponents(std::vector<SkeletonComponent*> components) {
+    for (auto component : components) {
+        component->backup();
+    }
+}
+void Scene::restoreSkeletonComponents(std::vector<SkeletonComponent*> components) {
+    for (auto component : components) {
+        component->restore();
+    }
+}
+
+
 void Scene::updateGlobals(TreeNode<SkeletonComponent*>* componentTree) {
     std::vector<TreeNode<SkeletonComponent*>*> seqn = componentTree->DFSsequence();
 
@@ -86,7 +99,7 @@ void Scene::updateGlobals(const std::vector<SkeletonComponent*>& components) {
 }
 
 
-void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget) {
+bool Scene::linearSetIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget) {
 
     SkeletonComponent* tip = armBaseToTip.back();
 
@@ -148,20 +161,13 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
     }
     if (!success) for (auto forwardConnection : forwardConnections) {
         forwardConnection->perturbCoupling();
+        Scene::updateGlobals(armBaseToTip);
     }
-    Scene::updateGlobals(armBaseToTip);
-}
-void Scene::linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase) {
-    int n = armTipToBase.size();
-    std::vector<SkeletonComponent*> armBaseToTip(n, NULL);
-    for (int i = 0; i < n; i++) {
-        armBaseToTip[i] = armTipToBase[n - 1 - i];
-    }
-    linearIK(armBaseToTip, tipTarget);
+    return distanceToTarget < 0.01f;
 }
 
 
-void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& t, const glm::vec3 w) {
+void Scene::linearNudgeIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& stepToTarget) {
     SkeletonComponent* tip = armBaseToTip.back();
 
     auto backupAll = [&]() {
@@ -188,40 +194,7 @@ void Scene::linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const 
         }
     }
 
-    glm::vec3 tipPosition = tip->globalTranslation();
-    glm::vec3 stepToTarget = t - tipPosition;
-    float distanceToTarget = glm::length(stepToTarget);
-
-    bool success = false;
-    int maxTries = 64;
-    int tries = 0;
-    while (distanceToTarget > 0.01f && tries < maxTries) {
-
-        for (auto forwardConnection : forwardConnections) {
-            forwardConnection->nudge(tip, stepToTarget, DOWNSTREAM);
-        }
-        Scene::updateGlobals(armBaseToTip);
-
-        glm::vec3 newTipPosition = tip->globalTranslation();
-        glm::vec3 newStepToTarget = t - newTipPosition;
-        float newDistanceToTarget = glm::length(newStepToTarget);
-
-        if (newDistanceToTarget < distanceToTarget) {
-            backupAll();
-            distanceToTarget = newDistanceToTarget;
-            tipPosition = newTipPosition;
-            stepToTarget = newStepToTarget;
-            tries = 0;
-            success = true;
-        }
-        else {
-            restoreAll();
-            stepToTarget /= 2;
-            tries++;
-        }
-    }
-    if (!success) for (auto forwardConnection : forwardConnections) {
-        forwardConnection->perturbCoupling();
-    }
+    for (auto forwardConnection : forwardConnections)
+        forwardConnection->nudge(tip, stepToTarget, DOWNSTREAM);
     Scene::updateGlobals(armBaseToTip);
 }

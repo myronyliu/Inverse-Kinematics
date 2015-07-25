@@ -80,7 +80,6 @@ void Body::addEffector(SkeletonComponent* effector) {
         return componentPath;
     };
 
-
     TreeNode<SkeletonComponent*>* effectorToAnchorsTree
         = effector->buildTreeToTargets(std::set<SkeletonComponent*>(anchors()));
     TreeNode<TreeNode<SkeletonComponent*>*>* branchTree = effectorToAnchorsTree->buildBranchTree();
@@ -104,7 +103,7 @@ void Body::addEffector(SkeletonComponent* effector) {
         previousDepth = depth;
     }
 
-    _effectors[effector] = root;
+    _effectors[effector] = root->BFSdataSequence();
 
     branchTree->suicide();
     effectorToAnchorsTree->suicide();
@@ -119,15 +118,17 @@ void Body::doDraw() {
     if (_skeleton == NULL) return;
     if (_skeleton->bones().size() == 0) return;
 
-    std::set<SkeletonComponent*> anchors = this->anchors();
-    if (anchors.size() == 0) return;
-    SkeletonComponent* firstAnchor = *anchors.begin();
     Bone* root = NULL;
-    if (Connection* connection = dynamic_cast<Connection*>(firstAnchor)) {
-        if (connection->bone() != NULL) root = connection->bone();
-        else root = connection->opposingBone();
+    std::set<SkeletonComponent*> anchors = this->anchors();
+    if (!anchors.empty()) {
+        SkeletonComponent* firstAnchor = *anchors.begin();
+        if (Connection* connection = dynamic_cast<Connection*>(firstAnchor)) {
+            if (connection->bone() != NULL) root = connection->bone();
+            else root = connection->opposingBone();
+        }
+        else root = dynamic_cast<Bone*>(firstAnchor);
     }
-    else root = dynamic_cast<Bone*>(firstAnchor);
+    else root = *_skeleton->bones().begin();
 
 
     int nPush = 0;
@@ -174,7 +175,19 @@ void Body::doDraw() {
             glPushMatrix();
             pushTranslation(bone->globalTranslation());
             pushRotation(bone->globalRotation());
+
+            glPushAttrib(GL_COLOR_MATERIAL);
+            if (anchors.find(bone) != anchors.end()) {
+                glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+            }
+            else if (_effectors.find(bone) != _effectors.end()) {
+                glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
+            }
+
             bone->draw(0.2);
+
+            glPopAttrib();
+
             glPopMatrix();
         }
         if (false) {
@@ -234,40 +247,95 @@ void Body::hardUpdate(SkeletonComponent* rootIn) const {
     updateTree->suicide();
 }
 
-void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& t) {
+void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& target) {
     if (_anchoredTranslations.find(effector) != _anchoredTranslations.end()) return;
 
     if (_effectors.find(effector) == _effectors.end())
         addEffector(effector);
-
-    glm::vec3 displacement = t - effector->globalTranslation();
-    float distance = glm::length(displacement);
-    
-    if (distance < 0.000001f) return;
-    if (distance > 0.0001f) displacement *= 0.0001f / distance;
  
-    TreeNode<std::vector<SkeletonComponent*>>* IKbranchTree = _effectors[effector];
-    std::vector<TreeNode<std::vector<SkeletonComponent*>>*> IKbranchSeqn = IKbranchTree->BFSsequence();
+    std::vector<ComponentPath> pathSeqn = _effectors[effector];
 
-    linearIK(IKbranchSeqn[0]->data(), t);
+    linearSetIK(pathSeqn[0], target);
 
-    /*for (int i = 1; i < IKbranchSeqn.size(); i++) {
-        std::vector<SkeletonComponent*> IKbranch = IKbranchSeqn[i]->data();
-        glm::vec3 t = IKbranch.back()->globalTranslation();
-        glm::vec3 w = IKbranch.back()->globalRotation();
-        std::vector<SkeletonComponent*> updatePath({ IKbranch[IKbranch.size() - 2], IKbranch.back() });
+    for (int i = 1; i < pathSeqn.size(); i++) {
+        std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
+        std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
+        IKpath.pop_back();
+        IKpath.back()->backup();
         updateGlobals(updatePath);
-        linearIK(IKbranch, t, w);
-    }*/
-
-    for (int i = 1; i < IKbranchSeqn.size(); i++) {
-        std::vector<SkeletonComponent*> IKbranch = IKbranchSeqn[i]->data();
-        std::vector<SkeletonComponent*> updatePath({ IKbranch.back(), IKbranch[IKbranch.size() - 2] });
-        IKbranch.pop_back();
-        IKbranch.back()->backup();
-        updateGlobals(updatePath);
-        glm::vec3 t = IKbranch.back()->globalTranslation();
-        IKbranch.back()->restore();
-        linearIK(IKbranch, t);
+        glm::vec3 t = IKpath.back()->globalTranslation();
+        IKpath.back()->restore();
+        linearSetIK(IKpath, t);
     }
+
+    /*std::vector<ComponentPath> pathSeqn = _effectors[effector];
+    int nPaths = pathSeqn.size();
+
+    auto backupAll = [&]() {
+        for (auto componentPath: pathSeqn) {
+            for (auto component : componentPath) {
+                component->backup();
+            }
+        }
+    };
+    auto restoreAll = [&]() {
+        for (auto componentPath : pathSeqn) {
+            for (auto component : componentPath) {
+                component->restore();
+            }
+        }
+    };
+
+    glm::vec3 effectorPosition = effector->globalTranslation();
+    glm::vec3 stepToTarget = target - effectorPosition;
+    float distanceToTarget = glm::length(stepToTarget);
+
+    bool success = false;
+    int maxTries = 128;
+    int tries = 0;
+
+    
+
+    backupAll();
+    while (distanceToTarget > 0.1f && tries < maxTries) {
+
+        linearNudgeIK(pathSeqn[0], stepToTarget);
+
+        glm::vec3 newEffectorPosition = effector->globalTranslation();
+        glm::vec3 newStepToTarget = target - newEffectorPosition;
+        float newDistanceToTarget = glm::length(newStepToTarget);
+
+        if (newDistanceToTarget >= distanceToTarget) {
+            restoreSkeletonComponents(pathSeqn[0]);
+            stepToTarget /= 2;
+            tries++;
+        }
+        else {
+            bool anchorsViolated = false;
+            for (int i = 1; i < nPaths; i++) {
+                std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
+                std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
+                IKpath.pop_back();
+                IKpath.back()->backup();
+                updateGlobals(updatePath);
+                glm::vec3 t = IKpath.back()->globalTranslation();
+                IKpath.back()->restore();
+                if (!linearSetIK(IKpath, t)) {
+                    restoreAll();
+                    stepToTarget /= 2;
+                    tries++;
+                    anchorsViolated = true;
+                    break;
+                }
+            }
+            if (anchorsViolated) continue;
+
+            backupAll();
+            distanceToTarget = newDistanceToTarget;
+            effectorPosition = newEffectorPosition;
+            stepToTarget = newStepToTarget;
+            tries = 0;
+            success = true;
+        }
+    }*/
 }

@@ -115,30 +115,33 @@ void BallSocket::buildParamsFromTransforms() {
 }
 
 void BallJoint::drawPivot(const float& radius) const {
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+    /*glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
     GlutDraw::drawParallelepiped(glm::vec3(radius, 0, 0), glm::vec3(0, radius, 0) / 16.0f, glm::vec3(0, 0, radius) / 16.0f, glm::vec3(radius, 0, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
     GlutDraw::drawParallelepiped(glm::vec3(0, radius, 0), glm::vec3(0, 0, radius) / 16.0f, glm::vec3(radius, 0, 0) / 16.0f, glm::vec3(0, radius, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, radius), glm::vec3(radius, 0, 0) / 16.0f, glm::vec3(0, radius, 0) / 16.0f, glm::vec3(0, 0, radius));
 
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);*/
     GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, radius));
 }
 
 void BallSocket::drawPivot(const float& radius) const {
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+    /*glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
     GlutDraw::drawParallelepiped(glm::vec3(radius, 0, 0), glm::vec3(0, radius, 0) / 16.0f, glm::vec3(0, 0, radius) / 16.0f, glm::vec3(radius, 0, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
     GlutDraw::drawParallelepiped(glm::vec3(0, radius, 0), glm::vec3(0, 0, radius) / 16.0f, glm::vec3(radius, 0, 0) / 16.0f, glm::vec3(0, radius, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, radius), glm::vec3(radius, 0, 0) / 16.0f, glm::vec3(0, radius, 0) / 16.0f, glm::vec3(0, 0, radius));
 
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);*/
     /*GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.1*radius), M_PI/2, 1.1f);
     return;*/
 
-    if (_constraints.size() == 0) return;
+    if (_constraints.size() == 0) {
+        GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.1*radius), M_PI / 2, 1.1f);
+        return;
+    }
 
     float thetaMin, thetaMax, phiMin, phiMax, spinMin, spinMax;
 
@@ -146,6 +149,7 @@ void BallSocket::drawPivot(const float& radius) const {
         GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1.1*radius), thetaMin, 1.1f);
     if (getConstraint(1, thetaMax) && thetaMax < M_PI)
         GlutDraw::drawDomeShell(glm::vec3(0, 0, 0), glm::vec3(0, 0, -1.1*radius), M_PI - thetaMax, 1.1f);
+
 
     if (getConstraint(2, phiMin) && getConstraint(3, phiMax)) {
         phiMin = mod(phiMin, 2 * M_PI);

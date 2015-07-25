@@ -45,3 +45,32 @@ std::set<Joint*> Skeleton::joints() const {
         joints.insert(socketJoint.second);
     return joints;
 }
+
+std::vector<SkeletonComponent*> Skeleton::getAllComponents() const {
+    if (_bones.size() == 0) return std::vector<SkeletonComponent*>();
+
+    Bone* root = *_bones.begin();
+
+    std::vector<SkeletonComponent*> components;
+    std::set<Bone*> visitedBones;
+    std::vector<Bone*> boneStack({ root });
+
+    do {
+        Bone* bone = boneStack.back();
+        boneStack.pop_back();
+
+        visitedBones.insert(bone);
+        components.push_back(bone);
+
+        for (auto connection : bone->connections()) {
+            components.push_back(connection);
+            Bone* opposingBone = connection->opposingBone();
+            if (opposingBone == NULL) continue;
+            if (visitedBones.find(opposingBone) == visitedBones.end()) {
+                boneStack.push_back(opposingBone);
+            }
+        }
+    } while (boneStack.size() > 0);
+
+    return components;
+}

@@ -34,7 +34,7 @@ public:
 
     // in DFS, leaf nodes should only appear once. Internal nodes should appear "their number of children plus one" times
     std::vector<TreeNode*> DFSsequence();
-    std::vector<TreeNode*> BFSsequence();
+    std::vector<TreeNode*> BFSsequence() const;
 
     TreeNode* parent() const { return _parent; }
     std::list<TreeNode*> children() const { return _children; }
@@ -47,6 +47,8 @@ public:
 
     TreeNode* invertedBranch() const;
     TreeNode<TreeNode*>* buildBranchTree() const;
+
+    std::vector<T> BFSdataSequence() const;
 
 private:
     TreeNode* _parent;

@@ -239,16 +239,17 @@ void Bone::draw(const float& scale) const {
 
 void Bone::doDraw(const float& scale) const {
 
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
+    /*glMaterialfv(GL_FRONT, GL_DIFFUSE, red);
     GlutDraw::drawParallelepiped(glm::vec3(scale, 0, 0), glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, green);
     GlutDraw::drawParallelepiped(glm::vec3(0, scale, 0), glm::vec3(0, 0, scale) / 8.0f, glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0));
     glMaterialfv(GL_FRONT, GL_DIFFUSE, blue);
     GlutDraw::drawParallelepiped(glm::vec3(0, 0, scale), glm::vec3(scale, 0, 0) / 8.0f, glm::vec3(0, scale, 0) / 8.0f, glm::vec3(0, 0, scale));
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, white);*/
 
     //GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, scale));
 
+    float fatness = 8.0f;
     if (_sockets.size() + _joints.size() < 3) {
         vector<glm::vec3> pts;
         for (auto socket : _sockets)
@@ -256,13 +257,13 @@ void Bone::doDraw(const float& scale) const {
         for (auto joint : _joints)
             pts.push_back(joint->_tFromBone);
         if (pts.size() == 1) {
-            GlutDraw::drawPyramid(glm::vec3(0, 0, 0), pts[0], glm::vec3(0, 1, 0)*glm::length(pts[0]) / 4.0f);
+            GlutDraw::drawPyramid(glm::vec3(0, 0, 0), pts[0], glm::vec3(0, 1, 0)*glm::length(pts[0]) / fatness);
         }
         else {
 
             float d0 = glm::length(pts[0]);
             float d1 = glm::length(pts[1]);
-            float b = fmin(d0, d1) / 4.0f;
+            float b = fmin(d0, d1) / fatness;
             glm::vec3 n0 = pts[0] / d0;
             glm::vec3 n1 = pts[1] / d1;
             float cosTwoAngle = glm::dot(n0, n1);

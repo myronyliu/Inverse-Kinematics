@@ -78,9 +78,9 @@ std::vector<TreeNode<T>*> TreeNode<T>::leaves() const {
 
 
 template <class T>
-std::vector<TreeNode<T>*> TreeNode<T>::BFSsequence() {
+std::vector<TreeNode<T>*> TreeNode<T>::BFSsequence() const {
     std::vector<TreeNode*> seqn;
-    std::vector<TreeNode*> stack({ this });
+    std::vector<TreeNode*> stack({ const_cast<TreeNode*>(this) });
     TreeNode* node;
     do {
         node = stack.back();
@@ -278,4 +278,14 @@ TreeNode<TreeNode<T>*>* TreeNode<T>::buildBranchTree() const {
     } while (stack.size() > 0);
 
     return root;
+}
+
+template <class T>
+std::vector<T> TreeNode<T>::BFSdataSequence() const {
+    std::vector<TreeNode*> nodes = BFSsequence();
+    std::vector<T> datas(nodes.size());
+    for (int i = 0; i<nodes.size(); i++) {
+        datas[i] = nodes[i]->data();
+    }
+    return datas;
 }

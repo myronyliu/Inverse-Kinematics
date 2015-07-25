@@ -36,9 +36,10 @@ namespace Scene {
     void updateGlobals(TreeNode<SkeletonComponent*>*);
     void updateGlobals(const std::vector<SkeletonComponent*>&);
     // The following sets the last SkeletonComponent to the target destination
-    void linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget);
-    void linearIK(const glm::vec3& tipTarget, const std::vector<SkeletonComponent*>& armTipToBase);
-    void linearIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& t, const glm::vec3 w);
+    bool linearSetIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipTarget);
+    void linearNudgeIK(const std::vector<SkeletonComponent*>& armBaseToTip, const glm::vec3& tipNudge);
+    void backupSkeletonComponents(std::vector<SkeletonComponent*>);
+    void restoreSkeletonComponents(std::vector<SkeletonComponent*>);
 
     class SkeletonComponent // Wrapper class for Bones and Connections (Sockets and Joints)
     {
@@ -352,6 +353,7 @@ namespace Scene {
         std::set<Bone*> bones() const { return _bones; }
         std::set<Socket*> sockets() const;
         std::set<Joint*> joints() const;
+        std::vector<SkeletonComponent*> getAllComponents() const;
 
         void jiggle(const float& amplitude = 1) { for (auto socket : sockets()) socket->perturbCoupling(amplitude); }
     private:

@@ -11,6 +11,8 @@ namespace Scene {
     class Socket;
     class Skeleton;
 
+    typedef std::vector<SkeletonComponent*> ComponentPath;
+
     class Body : public Object
     {
     public:
@@ -25,10 +27,6 @@ namespace Scene {
 
         std::set<SkeletonComponent*> anchors() const;
 
-        std::tuple<std::vector<Bone*>, std::vector<Socket*>, std::vector<Joint*>> bonesSocketsJoints() const;
-        std::vector<Bone*> bones() const;
-        std::vector<Socket*> sockets() const;
-        std::vector<Joint*> joints() const;
         Skeleton* skeleton() const { return _skeleton; }
 
         void hardUpdate(SkeletonComponent* root = NULL) const;
@@ -42,13 +40,10 @@ namespace Scene {
         std::map<SkeletonComponent*, glm::vec3> _anchoredRotations;
         Skeleton* _skeleton;
 
-        std::map<SkeletonComponent*, TreeNode<std::vector<SkeletonComponent*>>*> _effectors;
+        std::map<SkeletonComponent*, std::vector<ComponentPath>> _effectors;
 
         const glm::vec3 _t = glm::vec3(0, 0, 0);
         const glm::vec3 _w = glm::vec3(0, 0, 0);
-
-        std::vector<SkeletonComponent*> _path;
-        bool _pathReady = false;
     };
 
 }
