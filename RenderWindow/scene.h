@@ -247,7 +247,7 @@ public:
     Sphere() : Object(), _r(5) { }
     Sphere(const glm::vec3& translation, const float& radius) : Object(translation,glm::vec3(0,0,0)), _r(radius) { }
 
-    void doDraw() { GlutDraw::drawSphere(glm::vec3(0, 0, 0), _r); }
+    void doDraw() { GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, _r)); }
 
 protected:
     float _r;

@@ -38,3 +38,6 @@ void printVector(const std::vector<float>&);
 
 void pushTranslation3(const glm::vec3&);
 void pushRotation3(const glm::vec3&);
+
+void pushTranslation(const glm::vec3&);
+void pushRotation(const glm::vec3&);

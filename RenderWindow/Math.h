@@ -5,9 +5,8 @@
 #include "Rotation.h"
 
 namespace Math {
-
-    template <class T>
-    T clamp(const T& lowerBound, const T& value, const T& upperBound);
+    glm::vec3 rotate(const glm::vec3& v, const glm::vec3& w);
+    float clamp(const float& lowerBound, const float& value, const float& upperBound);
 
     glm::mat3 rotationMatrix(const glm::vec3&);
     glm::mat3 rotationMatrix(const AxisAngleRotation2&);

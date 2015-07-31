@@ -2,13 +2,18 @@
 #include "Math.h"
 #include "utils.h"
 
-
-template <class T>
-T Math::clamp(const T& lowerBound, const T& value, const T& upperBound) {
-    if (value < lowerBound) return lowerBound;
-    else if (value > upperBound) return upperBound;
+glm::vec3 Math::rotate(const glm::vec3& v, const glm::vec3& w) {
+    float angle = glm::length(w);
+    if (angle == 0) return v;
+    else return glm::rotate(v, angle, w / angle);
 }
 
+float Math::clamp(const float& lowerBound, const float& value, const float& upperBound) {
+    if (lowerBound > upperBound) return value;
+    else if (value < lowerBound) return lowerBound;
+    else if (value > upperBound) return upperBound;
+    else return value;
+}
 glm::mat3 Math::basisChangeMatrix(const glm::mat3& oldBasis, const glm::mat3& newBasis) {
     return glm::inverse(newBasis)*oldBasis;
 }

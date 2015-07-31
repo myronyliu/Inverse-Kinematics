@@ -111,7 +111,7 @@ void BallJoint::draw(const float& radius) const {
 
     glTranslatef(_translation[0], _translation[1], _translation[2]);
     _rotation.pushRotation();
-    GlutDraw::drawSphere(glm::vec3(0, 0, 0), radius);
+    GlutDraw::drawSphere(glm::vec3(0, 0, 0), glm::vec3(0, 0, radius));
 
     glPopMatrix();
 }
