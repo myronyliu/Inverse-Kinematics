@@ -182,7 +182,8 @@ namespace Scene {
         glm::vec3 translationToBone() const { return Math::rotate(-_tFromBone, -_wFromBone); }
         glm::vec3 rotationToBone() const { return -_wFromBone; }
 
-        std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip, const bool& tipDirection);
+        std::pair<glm::mat3, glm::mat3> J(SkeletonComponent* tip, const bool& tipDirection);
+        //std::pair<arma::mat, arma::mat> J(SkeletonComponent* tip, const bool& tipDirection);
         void nudge(SkeletonComponent* tip, const glm::vec3& step, const bool& tipDirection);
 
         virtual void backupLink() {};
@@ -246,7 +247,13 @@ namespace Scene {
     public:
         Socket(const int& i = 4, const float& scale = 1, Bone* bone = NULL);
         Socket(Bone* bone, const glm::vec3& t, const glm::vec3& w) :
-            Connection(bone, t, w), _tToJoint(glm::vec3(0, 0, 0)), _wToJoint(glm::vec3(0, 0, 0)) {}
+            Connection(bone, t, w), _tToJoint(glm::vec3(0, 0, 0)), _wToJoint(glm::vec3(0, 0, 0))
+        {
+            _params[0] = 0;
+            _params[1] = 0;
+            _params[2] = 0;
+            //buildParamsFromTransforms();
+        }
 
         /////////////////
         //// DRAWING ////

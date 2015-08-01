@@ -140,6 +140,43 @@ std::pair<Scene::Body*, Scene::Bone*> test2(const int& nJoints) {
     hubBone->setGlobalRotation(glm::vec3(0, M_PI, 0));
     std::vector<Socket*> hubSockets(3, NULL);
     for (int i = 0; i < hubSockets.size(); i++) {
+        float phi = M_PI / 2 + (2 * M_PI / hubSockets.size())*i;
+        glm::vec3 t = glm::vec3(0.25*cos(phi), 0.25*sin(phi), 0.5);
+        //glm::vec3 w = phi*glm::vec3(0, 0, 1);
+        glm::vec3 w = Math::axisAngleAlignZYtoVECS3(t, glm::vec3(0, 0, 1));
+
+        hubSockets[i] = new BallSocket(5);
+        hubSockets[i]->couple(new BallJoint(NULL, t, w))->attach(hubBone);
+    }
+
+    std::vector<Bone*> leaves(3, NULL);
+    for (int i = 0; i < leaves.size(); i++) {
+        leaves[i] = new Bone();
+        Bone* bone = leaves[i];
+        for (int j = 0; j < nJoints; j++) {
+            Bone* nextBone = new Bone();
+            bone->attach(new BallSocket(5))->couple(new BallJoint(4))->attach(nextBone);
+            bone = nextBone;
+        }
+        bone->attach(hubSockets[i]);
+    }
+
+    Scene::Skeleton* skeleton = new Scene::Skeleton(hubBone);
+    Scene::Body* body = new Scene::Body(skeleton);
+    body->hardUpdate(hubBone);
+    for (auto leaf : leaves) {
+        body->anchor(leaf, true, true);
+    }
+
+    return std::make_pair(body, hubBone);
+}
+
+std::pair<Scene::Body*, Scene::Bone*> test3(const int& nJoints) {
+
+    Bone* hubBone = new Bone();
+    hubBone->setGlobalRotation(glm::vec3(0, M_PI, 0));
+    std::vector<Socket*> hubSockets(3, NULL);
+    for (int i = 0; i < hubSockets.size(); i++) {
         float phi = (2 * M_PI / hubSockets.size())*i;
         glm::vec3 t = glm::vec3(0.25*cos(phi), 0.25*sin(phi), 0.5);
         glm::vec3 w = phi*glm::vec3(0, 0, 1);

@@ -12,6 +12,10 @@ namespace PathParameterizations {
         return (1 - s)*glm::vec3(0, 0, -0.5) + s*glm::vec3(0, 0, 0.5);
     }
     glm::vec3 circle(const float& t) { return glm::vec3(cos(2 * M_PI*t), sin(2 * M_PI*t), 0); }
+    glm::vec3 cardioid(const float& t) {
+        float s = 0.5f + sin(2 * M_PI*t);
+        return s*glm::vec3(cos(2 * M_PI*t), sin(2 * M_PI*t), 0);
+    }
 }
 
 #endif

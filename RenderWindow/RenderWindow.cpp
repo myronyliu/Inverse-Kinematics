@@ -41,7 +41,7 @@ int main(int argc, char* argv[])
     glEnable(GL_LIGHTING);
     world.addLight(glm::vec3(10, 10, 10), glm::vec4(1, 1, 1, 1));
 
-    Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(2, 0, 0));
+    /*Scene::Arrow * xAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(2, 0, 0));
     Scene::Arrow * yAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 2, 0));
     Scene::Arrow * zAxis = new Scene::Arrow(glm::vec3(-0, -0, -0), glm::vec3(0, 0, 2));
     xAxis->setColor(glm::vec4(1, 0, 0, 1));
@@ -49,24 +49,20 @@ int main(int argc, char* argv[])
     zAxis->setColor(glm::vec4(0, 0, 1, 1));
     world.addObject(xAxis);
     world.addObject(yAxis);
-    world.addObject(zAxis);
+    world.addObject(zAxis);*/
 
     tipPath = new Scene::Path(1);
     //tipPath->setRotation(glm::vec3(0, M_PI / 2, 0));
-    tipPath->setTranslation(glm::vec3(0, 0, -3));
-    anchorPath = new Scene::Path(1);
-    tipPath->setParameterization(PathParameterizations::circle);
-    anchorPath->setParameterization(PathParameterizations::line);
-    anchorPath->setTranslation(glm::vec3(0, 0, 0));
+    tipPath->setTranslation(glm::vec3(0, -0.5, -2.0));
+    tipPath->setParameterization(PathParameterizations::cardioid);
     world.addObject(tipPath);
-    world.addObject(anchorPath);
 
     std::tie(body, bone) = test2(2);
     world.addObject(body);
 
 
     Scene::Camera * cam = new Scene::Camera();
-    cam->setPos(16.0f*glm::vec3(1, 1, 1));
+    cam->setPos(16.0f*glm::vec3(0, 1, 1));
     cam->setDir(-cam->pos());
     cam->setUp(glm::vec3(0, 0, 2));
     mainPanel.setWorld(&world);

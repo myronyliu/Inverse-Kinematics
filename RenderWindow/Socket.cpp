@@ -14,6 +14,12 @@ Socket::Socket(const int& i, const float& scale, Bone* bone) :
 Connection(i, scale, NULL), _tToJoint(glm::vec3(0, 0, 0)), _wToJoint(glm::vec3(0, 0, 0))
 {
     attach(bone);
+
+    _params[0] = 0;
+    _params[1] = 0;
+    _params[2] = 0;
+
+    buildParamsFromTransforms();
 }
 
 /////////////////

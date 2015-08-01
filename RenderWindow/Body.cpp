@@ -290,11 +290,8 @@ void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& target) 
         glm::vec3 stepToTarget = target - effectorPosition;
         float distanceToTarget = glm::length(stepToTarget);
 
-        bool success = false;
-        int maxTries = 128;
+        int maxTries = 1024;
         int tries = 0;
-
-
 
         backupAll();
         while (distanceToTarget > 0.1f && tries < maxTries) {
@@ -313,6 +310,7 @@ void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& target) 
             else {
                 bool anchorsViolated = false;
                 for (int i = 1; i < nPaths; i++) {
+
                     std::vector<SkeletonComponent*> IKpath = pathSeqn[i];
                     std::vector<SkeletonComponent*> updatePath({ IKpath.back(), IKpath[IKpath.size() - 2] });
                     IKpath.pop_back();
@@ -327,15 +325,18 @@ void Body::setTranslation(SkeletonComponent* effector, const glm::vec3& target) 
                         anchorsViolated = true;
                         break;
                     }
+                    else {
+                        std::cout << std::endl;
+                    }
                 }
                 if (anchorsViolated) continue;
-
-                backupAll();
-                distanceToTarget = newDistanceToTarget;
-                effectorPosition = newEffectorPosition;
-                stepToTarget = newStepToTarget;
-                tries = 0;
-                success = true;
+                else {
+                    backupAll();
+                    distanceToTarget = newDistanceToTarget;
+                    effectorPosition = newEffectorPosition;
+                    stepToTarget = newStepToTarget;
+                    tries = 0;
+                }
             }
         }
     }
